@@ -1,6 +1,6 @@
 import { inngest } from "@/lib/inngest";
 import { prisma } from "@/lib/prisma";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { sendPushNotificationFromDBToUser } from "@/lib/utils/pushNotifications";
 
 export const alignedActionSnooze = inngest.createFunction(
   {
@@ -34,11 +34,12 @@ export const alignedActionSnooze = inngest.createFunction(
         popupShown: false,
       },
     });
-    await sendPushNotificationToUser(
-      action.userId,
-      "Aligned Action Reminder",
-      "Here’s your reminder again 👋",
-      { url: "/dashboard/aligned-actions" },
-    );
+    await sendPushNotificationFromDBToUser({
+      type: "ALIGNED_ACTION_REMINDER",
+      userId: action.userId,
+      context: {
+        actionId: action.id,
+      },
+    });
   },
 );

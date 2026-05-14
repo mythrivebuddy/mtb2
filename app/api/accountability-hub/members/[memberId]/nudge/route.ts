@@ -6,12 +6,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { Role } from "@prisma/client";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import {
+  sendPushNotificationFromDBToUser,
+} from "@/lib/utils/pushNotifications";
 import { sendEmail } from "@/utils/sendEmail";
 
 export async function POST(
   req: Request,
-  { params }: { params: { memberId: string } }
+  { params }: { params: { memberId: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,11 +22,21 @@ export async function POST(
     }
 
     const { memberId } = await params;
-    const { groupId,pushNotificationSent,title,description,subject,emailContent,url } = await req.json();
-    
+    const {
+      groupId,
+      pushNotificationSent,
+      // title,
+      description,
+      subject,
+      emailContent,
+      url,
+    } = await req.json();
 
     if (!groupId) {
-      return NextResponse.json({ error: "Group ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 },
+      );
     }
 
     // 1. Verify admin status and get group name
@@ -40,53 +52,67 @@ export async function POST(
     });
 
     if (!adminMembership || !adminMembership.group) {
-      return NextResponse.json({ error: "Forbidden: Not an admin or group not found" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Forbidden: Not an admin or group not found" },
+        { status: 403 },
+      );
     }
-    
+
     // 2. Get recipient's details using the composite unique key
     const recipientMember = await prisma.groupMember.findUnique({
-        where: {
-            // FIX: Use the composite key 'userId_groupId'.
-            // This assumes your schema has @@id([userId, groupId]) or @@unique([userId, groupId]).
-            userId_groupId: {
-                userId: memberId, // 'memberId' from the URL is the user's ID
-                groupId: groupId,
-            },
+      where: {
+        // FIX: Use the composite key 'userId_groupId'.
+        // This assumes your schema has @@id([userId, groupId]) or @@unique([userId, groupId]).
+        userId_groupId: {
+          userId: memberId, // 'memberId' from the URL is the user's ID
+          groupId: groupId,
         },
-        include: { user: { select: { name: true, id: true } } }
+      },
+      include: { user: { select: { name: true, id: true } } },
     });
 
     if (!recipientMember || !recipientMember.user.name) {
-        return NextResponse.json({ error: "Recipient member not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Recipient member not found" },
+        { status: 404 },
+      );
     }
 
     // 3. Send the nudge notification
     if (pushNotificationSent) {
-      await sendPushNotificationToUser(
-        recipientMember.user.id,
-        title,
-        description,
-        {url}
-      )
+      await sendPushNotificationFromDBToUser({
+        type: "ACCOUNTABILITY_NUDGE",
+        userId: recipientMember.user.id,
+        context: {
+          senderName: session.user.name,
+          description,
+          url,
+        },
+      });
     } else {
-     await sendEmail({
+      await sendEmail({
         userId: recipientMember.user.id,
         subject,
-        body: emailContent
-      })
-     
+        body: emailContent,
+      });
     }
     // 4. Log the activity
     await logActivity(
-        groupId,
-        session.user.id,
-        'goal_updated', // Consider a more specific action like 'nudge_sent'
-        `${session.user.name} sent a nudge to ${recipientMember.user.name}.`
+      groupId,
+      session.user.id,
+      "goal_updated", // Consider a more specific action like 'nudge_sent'
+      `${session.user.name} sent a nudge to ${recipientMember.user.name}.`,
     );
 
-    return NextResponse.json({ success: true, message: "Nudge sent successfully" });
+    return NextResponse.json({
+      success: true,
+      message: "Nudge sent successfully",
+    });
   } catch (error) {
     console.error(`[SEND_NUDGE_ERROR]`, error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 },
+    );
   }
 }

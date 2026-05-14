@@ -6,7 +6,6 @@ import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType, ChallengeJoiningType } from "@prisma/client";
-import { sendPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
 import { sendMessageForJoining } from "@/lib/utils/system-message-for-joining";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
 import { checkFeature } from "@/lib/access-control/checkFeature";
@@ -223,24 +222,7 @@ export async function POST(request: Request) {
       "SYSTEM",
       joinedUserId,
     );
-
-    const existingEnrollments = await prisma.challengeEnrollment.findMany({
-      where: { challengeId },
-      select: { userId: true },
-    });
-
-    const participantIds = existingEnrollments.map((e) => e.userId);
-    const notificationRecipients = Array.from(
-      new Set([challengeToJoin.creatorId, ...participantIds]),
-    ).filter((id) => id !== joinedUserId); // Don't notify the person who just joined
-
-    // 3. Use your new batch function
-    await sendPushNotificationMultipleUsers(
-      notificationRecipients,
-      "New challenger alert 🚀",
-      `${userName} joined "${challengeToJoin.title}"!`,
-      { url: `/dashboard/challenge/my-challenges/${challengeToJoin.id}` },
-    );
+  
 
     const paidOrder = isPaid
       ? await prisma.paymentOrder.findFirst({

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deductJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
-import { sendPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
+import { sendPushNotificationFromDBToUser } from "@/lib/utils/pushNotifications";
 
 export async function GET() {
     try {
@@ -98,12 +98,14 @@ export async function GET() {
 
         // ✅ send exact message per user
         for (const [userId, data] of userPenaltyMap.entries()) {
-            await sendPushNotificationMultipleUsers(
-                [userId],
-                "Challenge Penalty ⚠️",
-                `You missed your daily tasks in one or more challenges.\n\n${data.total} GP has been deducted.\n\nDetails: ${data.breakdown.join(", ")}\n\nStay consistent tomorrow to avoid penalties 💪`,
-                { url: "/dashboard/challenge" }
-            );
+           await sendPushNotificationFromDBToUser({
+                type: "CHALLENGE_PENALTY",
+                userId: userId,
+                context: {
+                    total: data.total,
+                    breakdown: data.breakdown.join(", ")
+                }
+            });
         }
 
         return NextResponse.json({

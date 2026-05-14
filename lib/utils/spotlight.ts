@@ -1,4 +1,4 @@
-import { SpotlightStatus } from "@prisma/client";
+import { NotificationType, SpotlightStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { format } from "date-fns";
@@ -32,7 +32,9 @@ export async function activateNextSpotlight() {
         expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS),
       },
     });
-
+    const notification = await prisma.notificationSettings.findUnique({
+      where: { notification_type: NotificationType.SPOTLIGHT_ACTIVE },
+    });
     // Send both in-app and push notifications
     await Promise.all([
       // In-app notification
@@ -40,9 +42,10 @@ export async function activateNextSpotlight() {
       // Push notification
       sendPushNotificationToUser(
         nextSpotlight.userId,
-        "Spotlight Active",
-        "Your spotlight is now active and visible to other users!",
-        { url: "/dashboard" }
+        notification?.title ?? "Spotlight Activated",
+        notification?.message ??
+          "Your spotlight is now active and visible to other users!",
+        { url: notification?.url || "/dashboard/notifications" },
       ),
     ]);
 
@@ -62,7 +65,7 @@ export async function activateNextSpotlight() {
       });
     } else {
       console.warn(
-        "Missing user info or activatedAt date for spotlight email."
+        "Missing user info or activatedAt date for spotlight email.",
       );
     }
   }
@@ -103,8 +106,6 @@ export async function checkAndRotateSpotlight() {
           expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS),
         },
       });
-      
     }
   }
 }
-
