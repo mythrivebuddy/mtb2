@@ -2,7 +2,7 @@
 import { NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-const CMP_NOTIFICATION_SEEDS: {
+const NOTIFICATION_SEEDS: {
   type: NotificationType;
   title: string;
   message: string;
@@ -139,6 +139,14 @@ const CMP_NOTIFICATION_SEEDS: {
     url: "/dashboard/refer-friend",
     isDynamic: false,
   },
+  // 11 Spotlight Active
+  {
+    type:"SPOTLIGHT_ACTIVE",
+    title:"Spotlight Active",
+    message:"Your spotlight is now active and visible to other users!",
+    url:"/dashboard/notifications",
+    isDynamic:false
+  },
   {
     type: "CREATOR_PAYOUT_SUCCESS",
     title: "💸 Payout of {{amount}} {{currency}} processed",
@@ -150,7 +158,7 @@ const CMP_NOTIFICATION_SEEDS: {
 ];
 
 async function main() {
-  for (const seed of CMP_NOTIFICATION_SEEDS) {
+  for (const seed of NOTIFICATION_SEEDS) {
     const exists = await prisma.notificationSettings.findUnique({
       where: { notification_type: seed.type },
       select: { id: true },
