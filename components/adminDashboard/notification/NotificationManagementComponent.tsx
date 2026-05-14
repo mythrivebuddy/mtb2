@@ -14,7 +14,30 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+
+import { toast } from "sonner";
+import axios from "axios";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+import { Pencil } from "lucide-react";
+import { useDebounce } from "@/hooks/use-debounce";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Select,
   SelectContent,
@@ -22,57 +45,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-import axios from "axios";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-
-// Enum values
-const notificationTypes = [
-  // Push notifications
-  "DAILY_CHALLENGE_PUSH_NOTIFICATION",
-  "DAILY_BLOOM_PUSH_NOTIFICATION",
-
-  // CMP – Daily
-  "CMP_DAILY_PRIMARY",
-  "CMP_DAILY_GENTLE_NUDGE",
-
-  // CMP – Weekly (Sunday)
-  "CMP_SUNDAY_MORNING",
-  "CMP_SUNDAY_EVENING_PENDING",
-
-  // CMP – Quarterly
-  "CMP_QUARTER_ENDING_SOON",
-  "CMP_QUARTER_RESET",
-
-  // CMP – Rewards & Levels
-  "CMP_REWARD_UNLOCKED",
-  "CMP_REWARD_UNCLAIMED",
-  "CMP_LEVEL_UP",
-
-  // CMP – Goa Journey
-  "CMP_GOA_PROGRESS_MILESTONE",
-  "CMP_GOA_ELIGIBLE",
-
-  // CMP – Inactivity
-  "CMP_INACTIVITY_3_DAYS",
-  "CMP_INACTIVITY_7_DAYS",
-
-  // CMP – Onboarding
-  "CMP_ONBOARDING_PENDING",
-  "MMP_DAILY_REMINDER"
-] as const;
-
+import PushNotificationToggle from "@/components/notifications/PushNotificationToggle";
 const placeholderValue = "__placeholder__";
 
 // Schema
 const formSchema = z.object({
-  type: z.union([
-    z.literal(placeholderValue),
-    z.enum(notificationTypes, {
-      errorMap: () => ({ message: "Please select a type" }),
-    }),
-  ]),
+  type: z.string().min(1, "Please select a type"),
   title: z.string().min(1, "Title is required"),
   message: z.string().min(1, "Message is required"),
   url: z
@@ -83,7 +61,7 @@ const formSchema = z.object({
 });
 
 type FormValues = {
-  type: typeof placeholderValue | (typeof notificationTypes)[number];
+  type: string;
   title: string;
   message: string;
   url?: string;
@@ -128,16 +106,37 @@ export const NotificationManagementComponent = () => {
   });
 
   const [dynamicVariables, setDynamicVariables] = useState<string[]>([]);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] =
+    useState<NotificationTemplate | null>(null);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [limit, setLimit] = useState(10);
+  const debouncedSearch = useDebounce(search, 500);
 
   // Fetch all templates once on page load
-  const { data: allTemplates = [] } = useQuery<NotificationTemplate[]>({
-    queryKey: ["notificationTemplates"],
+  const { data, isLoading: templatesLoading } = useQuery<{
+    data: NotificationTemplate[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>({
+    queryKey: ["notificationTemplates", page, limit, debouncedSearch],
     queryFn: async () => {
-      const res = await axios.get("/api/admin/notification"); // <-- no type param
-      return res.data.data;
+      const res = await axios.get("/api/admin/notification", {
+        params: { page, limit, search: debouncedSearch },
+      });
+      return res.data;
     },
-    staleTime: Infinity, // cache until manually invalidated
+    staleTime: Infinity,
+    placeholderData: (prev) => prev,
   });
+  const allTemplates = data?.data || [];
+  const totalPages = data?.totalPages || 1;
+  const total = data?.total || 0;
+
+  const start = total === 0 ? 0 : (page - 1) * limit + 1;
+  const end = Math.min(page * limit, total);
 
   // Update form fields when type changes
   useEffect(() => {
@@ -189,7 +188,10 @@ export const NotificationManagementComponent = () => {
   // Save template
   const mutation = useMutation<ApiResponse, Error, FormValues>({
     mutationFn: async (values) => {
-      const res = await axios.post("/api/admin/notification", values);
+      const res = await axios.post("/api/admin/notification", {
+        ...values,
+        isEdit: !!editingTemplate,
+      });
       return res.data;
     },
     onSuccess: async (data) => {
@@ -197,6 +199,7 @@ export const NotificationManagementComponent = () => {
       await queryClient.invalidateQueries({
         queryKey: ["notificationTemplates"],
       });
+      setIsEditOpen(false);
       form.reset({
         type: placeholderValue,
         title: "",
@@ -233,18 +236,158 @@ export const NotificationManagementComponent = () => {
 
     form.setFocus(fieldName);
   };
+  const handleEdit = (template: NotificationTemplate) => {
+    setEditingTemplate(template);
 
+    form.reset({
+      type: template.notification_type,
+      title: template.title,
+      message: template.message,
+      url: template.url || "",
+    });
+
+    if (template.isDynamic) {
+      const allVars = [
+        ...extractPlaceholders(template.title),
+        ...extractPlaceholders(template.message),
+      ];
+      setDynamicVariables(Array.from(new Set(allVars)));
+    } else {
+      setDynamicVariables([]);
+    }
+
+    setIsEditOpen(true);
+  };
   const isLoading = mutation.status === "pending";
 
   return (
-    <div className="max-w-xl mx-auto mt-10 px-4">
-      <Card className="border-blue-500 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-blue-600 text-2xl">
-            Notification Template
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className=" mx-auto mt-10 px-4">
+      {/* Push Notification Settings */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border mb-6 dark:bg-slate-900">
+        <h2 className="text-lg font-medium mb-3 dark:text-gray-200">
+          Notification Settings
+        </h2>
+        <div className="space-y-3">
+          <PushNotificationToggle
+            variant="switch"
+            label="Browser Push Notifications"
+          />
+          <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">
+            Receive notifications even when you are not actively using the site
+          </p>
+        </div>
+      </div>
+      <div className="flex justify-between items-center mb-4">
+        {/* LEFT SIDE */}
+        <div className="flex flex-col w-full">
+          <Input
+            placeholder="Search templates..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="max-w-sm"
+          />
+        </div>
+
+        {/* RIGHT SIDE */}
+        <Select
+          value={String(limit)}
+          onValueChange={(value) => {
+            setLimit(Number(value));
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[120px]">
+            <SelectValue placeholder="Rows" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="5">5 / page</SelectItem>
+            <SelectItem value="10">10 / page</SelectItem>
+            <SelectItem value="20">20 / page</SelectItem>
+            <SelectItem value="50">50 / page</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Type</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Message</TableHead>
+              <TableHead>URL</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {templatesLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-6">
+                  Loading templates...
+                </TableCell>
+              </TableRow>
+            ) : allTemplates.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-6">
+                  No templates found
+                </TableCell>
+              </TableRow>
+            ) : (
+              allTemplates.map((template) => (
+                <TableRow key={template.notification_type}>
+                  <TableCell>
+                    {template.notification_type.replaceAll("_", " ")}
+                  </TableCell>
+
+                  <TableCell className="max-w-[200px] truncate">
+                    {template.title}
+                  </TableCell>
+
+                  <TableCell className="max-w-[250px] truncate">
+                    {template.message}
+                  </TableCell>
+
+                  <TableCell>{template.url || "-"}</TableCell>
+
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEdit(template)} // 🔥 IMPORTANT
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+          <TableRow>
+            <TableCell colSpan={5}>
+              {/* 🔥 THIS IS YOUR LABEL */}
+              <span className="text-xs text-muted-foreground mt-1">
+                Showing {start}–{end} of {total} templates
+              </span>
+              <div className="flex justify-center items-center gap-4 py-4">
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={(newPage) => setPage(newPage)}
+                />
+              </div>
+            </TableCell>
+          </TableRow>
+        </Table>
+      </Card>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Edit Notification Template</DialogTitle>
+          </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Notification Type */}
@@ -255,28 +398,11 @@ export const NotificationManagementComponent = () => {
                   <FormItem>
                     <FormLabel>Notification Type</FormLabel>
                     <FormControl>
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                        }}
-                        value={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Please select any type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem disabled value={placeholderValue}>
-                            Please select any type
-                          </SelectItem>
-                          {notificationTypes.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type.replaceAll("_", " ")}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        value={field.value.replaceAll("_", " ")}
+                        disabled
+                      />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -378,8 +504,8 @@ export const NotificationManagementComponent = () => {
               </Button>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
