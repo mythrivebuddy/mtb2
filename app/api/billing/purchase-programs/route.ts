@@ -124,11 +124,9 @@ export async function POST(req: Request) {
     const orderId = `prog_${internalId}_${Date.now()}`;
 
     // 5. Save billing details (FIXED!)
-    await prisma.billingInformation.upsert({
+    await prisma.userBillingInformation.upsert({
       where: { userId },
       update: {
-        fullName: billingDetails.name,
-        email: billingDetails.email,
         phone: billingDetails.phone,
         addressLine1: billingDetails.addressLine1,
         addressLine2: billingDetails.addressLine2 || "",
@@ -140,8 +138,6 @@ export async function POST(req: Request) {
       },
       create: {
         userId,
-        fullName: billingDetails.name,
-        email: billingDetails.email,
         phone: billingDetails.phone,
         addressLine1: billingDetails.addressLine1,
         addressLine2: billingDetails.addressLine2 || "",

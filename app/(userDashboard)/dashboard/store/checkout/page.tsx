@@ -248,9 +248,8 @@ const BillingForm = ({ billing, onSave, isSaving, onCancel, showCancel }: Billin
                 <select name="country" value={form.country} onChange={handleChange} className={`pl-9 ${inputClass} bg-white dark:bg-slate-950`}>
                   <option value="IN">India</option>
                   <option value="US">United States</option>
-                  <option value="GB">United Kingdom</option>
-                  <option value="AU">Australia</option>
-                  <option value="CA">Canada</option>
+                  <option value="UK">United Kingdom</option>
+                 
                   <option value="OT">Other</option>
                 </select>
               </div>
@@ -403,12 +402,13 @@ const CheckoutContent = () => {
 
   // ── useMutation ───────────────────────────────────────────────────────────
   const saveBillingMutation = useMutation({
+    
     mutationFn: async (data: BillingInfo) => {
-      const gst = data.gstNumber?.trim()
+       const gst = data.gstNumber?.trim()
 
-      if (data.country === "IN" && gst && !GST_REGEX.test(gst)) {
-        toast.error("Invalid GST Number format")
-        return;
+    if (data.country === "IN" && gst && !GST_REGEX.test(gst)) {
+      throw new Error("Invalid GST Number format");
+
       }
       const res = await axios.post("/api/user/store/items/checkout/billinginfo", data);
       return res.data.billingInfo as BillingInfo;
