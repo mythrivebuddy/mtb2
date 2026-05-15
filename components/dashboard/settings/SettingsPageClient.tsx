@@ -2,6 +2,7 @@
 
 import AppearanceSettings from "./AppearanceSettings";
 import FinancialSettings from "./FinancialSettings";
+import NotificationPermissionsSettings from "./NotificationPermissionsSettings";
 
 export default function SettingsPageClient({
   isAffiliateOrCoach,
@@ -12,6 +13,7 @@ export default function SettingsPageClient({
     <div className="mx-auto w-full space-y-4 px-4 pb-8">
       <AppearanceSettings />
       {isAffiliateOrCoach && <FinancialSettings />}
+      <NotificationPermissionsSettings/>
     </div>
   );
 }
