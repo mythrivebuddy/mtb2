@@ -112,12 +112,39 @@ export const dailyBloomSchema = z
       //   });
       // }
       // End time must be after start time
-      if (data.startTime && data.endTime && data.startTime >= data.endTime) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "End time must be after start time.",
-          path: ["endTime"],
-        });
+      // End time must be after start time
+      if (data.startTime && data.endTime) {
+        if (data.dueDate && data.endDate) {
+          // Use UTC string extraction to completely bypass server timezone shifts
+          const startDayStr = data.dueDate.toISOString().split("T")[0];
+          const endDayStr = data.endDate.toISOString().split("T")[0];
+
+          if (startDayStr === endDayStr) {
+            // Same day: times must be strictly sequential
+            if (data.startTime >= data.endTime) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "End time must be after start time.",
+                path: ["endTime"],
+              });
+            }
+          } else if (startDayStr > endDayStr) {
+            // End date placed before start date
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "End date cannot be before start date.",
+              path: ["endDate"],
+            });
+          }
+          // If startDayStr < endDayStr (e.g., May 14 < May 15), it passes!
+        } else if (data.startTime >= data.endTime) {
+          // Fallback if no endDate is provided (assumed same day)
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "End time must be after start time.",
+            path: ["endTime"],
+          });
+        }
       }
     }
   });
@@ -371,7 +398,7 @@ export const businessProfileSchema = z
       .string()
       .min(1, "Discovery call booking link is required")
       .url("Please enter a valid URL"),
-      
+
     preferredCurrency: z.enum(["INR", "USD"], {
       required_error: "Please select a currency",
       invalid_type_error: "Please select a valid currency",
@@ -698,9 +725,7 @@ export const mtbBusinessProfileSchema = z.object({
   address: z.string().min(5, "Address is required"),
   state: z.string().min(2, "State is required"),
   country: z.string().min(2, "Country is required"),
-  pincode: z
-    .string()
-    .regex(/^\d{6}$/, "Enter a valid 6-digit pincode"),
+  pincode: z.string().regex(/^\d{6}$/, "Enter a valid 6-digit pincode"),
 
   gstNumber: z
     .string()

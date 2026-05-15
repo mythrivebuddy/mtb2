@@ -127,6 +127,13 @@ interface Props {
 }
 
 // ---------------- Helpers ----------------
+const toNaiveLocalISO = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  const offset = d.getTimezoneOffset() * 60000; // Offset in milliseconds
+  const localISOTime = new Date(d.getTime() - offset).toISOString().slice(0, -1); 
+  // Result: "2026-05-15T01:30:00.000" (No 'Z' at the end)
+  return localISOTime;
+};
 const canMarkCompleted = (start?: string, allDay?: boolean) => {
   if (!start) return false;
 
@@ -181,9 +188,9 @@ const validateDateTime = (
 
   const startDateStr = start.slice(0, 10);
 
-  if (startDateStr < todayStr) {
-    return { valid: false, message: "Date cannot be in the past" };
-  }
+  // if (startDateStr < todayStr) {
+  //   return { valid: false, message: "Date cannot be in the past" };
+  // }
 
   const isSameDay = startDateStr === todayStr;
 
@@ -969,7 +976,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
             : currentEvent.end
               ? getTimeHHMM(currentEvent.end)
               : undefined,
-          endDate: currentEvent.allDay ? null : currentEvent.end,
+          endDate: currentEvent.allDay ? null : toNaiveLocalISO(currentEvent.end || ""),
         },
       });
 

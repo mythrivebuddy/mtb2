@@ -1025,6 +1025,7 @@ model ChallengeCreatorSignature {
 model NotificationSettings {
   id                String           @id @default(uuid())
   notification_type NotificationType @unique
+  name              String?
   title             String
   message           String
   url               String?
