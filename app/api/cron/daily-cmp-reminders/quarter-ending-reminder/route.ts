@@ -1,17 +1,18 @@
 //! /api/cron/daily-cmp-reminders/quarter-ending-reminder
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
-    getActiveQuarterAndDaysLeft,
-    MTB_DEFAULT_END,
-    MTB_DEFAULT_START,
+  getActiveQuarterAndDaysLeft,
+  MTB_DEFAULT_END,
+  MTB_DEFAULT_START,
 } from "@/lib/utils/makeover-program/makeover-dashboard/get-weeks-quarters";
-import { sendPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
-import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
+import { sendDbPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
 import { NotificationType } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
-    // search params only for testing with ?date=2026-03-28 not use search params in production
+  try {
+    // ⚠️ testing support
     const { searchParams } = new URL(req.url);
     const dateParam = searchParams.get("date");
 
@@ -19,58 +20,86 @@ export async function GET(req: NextRequest) {
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
 
-
-
     const startDate = MTB_DEFAULT_START;
     const endDate = MTB_DEFAULT_END;
 
     const yesterdayResult = getActiveQuarterAndDaysLeft(
-        yesterday,
-        startDate,
-        endDate
+      yesterday,
+      startDate,
+      endDate
     );
-    const result = getActiveQuarterAndDaysLeft(today, startDate, endDate);
 
-    if (!result) {
-        return NextResponse.json({ ok: true, skipped: true });
+    const todayResult = getActiveQuarterAndDaysLeft(
+      today,
+      startDate,
+      endDate
+    );
+
+    if (!todayResult) {
+      return NextResponse.json({ ok: true, skipped: true });
     }
 
-    const { daysLeft } = result;
+    const { daysLeft } = todayResult;
+    const program = await prisma.program.findUnique({
+        where:{
+            slug:"2026-complete-makeover"
+        }
+    })
+    /* ----------------------------------------------------
+       1️⃣ Decide notification type (NO template fetching)
+    ---------------------------------------------------- */
+    let type: NotificationType | null = null;
 
-    let notification = null;
-
-    // 🔹 A. Quarter Ending Reminder (3 days before)
+    // A. Quarter ending soon (3 days left)
     if (daysLeft === 3) {
-        notification = await getCMPNotification(
-            NotificationType.CMP_QUARTER_ENDING_SOON
-        );
+      type = NotificationType.CMP_QUARTER_ENDING_SOON;
     }
 
-    // 🔹 B. Quarter Reset Reminder (first day of new quarter)
-
+    // B. Quarter reset (new quarter started)
     if (yesterdayResult && yesterdayResult.daysLeft === 0) {
-        notification = await getCMPNotification(
-            NotificationType.CMP_QUARTER_RESET
-        );
+      type = NotificationType.CMP_QUARTER_RESET;
     }
 
-
-    if (!notification) {
-        return NextResponse.json({ ok: true, skipped: true });
+    if (!type) {
+      return NextResponse.json({ ok: true, skipped: true });
     }
 
+    /* ----------------------------------------------------
+       2️⃣ Fetch users (single query)
+    ---------------------------------------------------- */
     const users = await prisma.userProgramState.findMany({
-        where: { onboarded: true },
-        select: { userId: true },
+      where: { onboarded: true ,programId:program?.id},
+      select: { userId: true },
     });
 
-    const userIds = users.map((u) => u.userId);
+    if (!users.length) {
+      return NextResponse.json({ ok: true, skipped: true });
+    }
 
-    await sendPushNotificationMultipleUsers(userIds, notification.title, notification.description, { url: notification.url },);
+    const userIds = [...new Set(users.map((u) => u.userId))];
+
+    /* ----------------------------------------------------
+       3️⃣ ✅ DB-driven bulk notification
+    ---------------------------------------------------- */
+    await sendDbPushNotificationMultipleUsers({
+      type,
+      userIds,
+      context: {
+        daysLeft, 
+      },
+    });
 
     return NextResponse.json({
-        ok: true,
-        type: notification.title,
-        notifiedUsers: userIds.length,
+      ok: true,
+      type,
+      notifiedUsers: userIds.length,
     });
+  } catch (error) {
+    console.error("🔥 QUARTER REMINDER ERROR:", error);
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }

@@ -1,18 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import {
+  sendPushNotificationFromDBToUser,
+} from "@/lib/utils/pushNotifications";
 
 export async function GET() {
- 
-
   try {
-    // Step 1: Get notification template
-    const template = await prisma.notificationSettings.findUnique({
-      where: { notification_type: "DAILY_BLOOM_PUSH_NOTIFICATION" },
-    });
-
-    const title = template?.title ?? "Daily Blooms Reminder";
-    const message = template?.message ?? "Don't forget to check your daily blooms!";
 
     // Define time window
     const yesterday = new Date();
@@ -27,7 +20,6 @@ export async function GET() {
       select: { userId: true },
       distinct: ["userId"],
     });
-
 
     if (subscribedUsers.length === 0) {
       return NextResponse.json({
@@ -51,12 +43,11 @@ export async function GET() {
         });
 
         const count = todos.length;
-       
 
         if (count > 0) {
           eligibleUsersWithCounts.push({ userId, count });
         }
-      })
+      }),
     );
 
     console.log("Eligible users with counts:", eligibleUsersWithCounts.length);
@@ -72,18 +63,15 @@ export async function GET() {
 
     // Step 4: Send notifications
     const results = await Promise.allSettled(
-      eligibleUsersWithCounts.map(({ userId }) => {
-        // Optional: interpolate {{count}} in message if needed
-        // const interpolatedTitle = title.replace("{{count}}", count.toString());
-        // const interpolatedMessage = message.replace("{{count}}", count.toString());
-
-        return sendPushNotificationToUser(
+      eligibleUsersWithCounts.map(({ userId, count }) => {
+        return sendPushNotificationFromDBToUser({
+          type: "DAILY_BLOOM_PUSH_NOTIFICATION",
           userId,
-          title,
-          message,
-          { url: "/dashboard/daily-bloom" }
-        );
-      })
+          context: {
+            count,
+          },
+        });
+      }),
     );
 
     const success = results.filter((r) => r.status === "fulfilled").length;
@@ -101,7 +89,7 @@ export async function GET() {
     console.error("Daily Bloom cron error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

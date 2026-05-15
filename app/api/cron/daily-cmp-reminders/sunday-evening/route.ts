@@ -1,60 +1,100 @@
-// /api/cron/daily-cmp-reminders/sunday-evening with get
+// /api/cron/daily-cmp-reminders/sunday-evening
+
 import { prisma } from "@/lib/prisma";
 import { getISTEndOfWeek, getISTStartOfWeek } from "@/lib/utils/dateUtils";
-import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { sendDbPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
 import { NotificationType } from "@prisma/client";
 
 export async function GET() {
-  const weekStart = getISTStartOfWeek();
-  const weekEnd = getISTEndOfWeek();
+  try {
+    const weekStart = getISTStartOfWeek();
+    const weekEnd = getISTEndOfWeek();
+  const program = await prisma.program.findUnique({
+    where:{
+      slug:"2026-complete-makeover",
+    },
+    select:{
+      id:true,
+    }
+  })
+    /* ----------------------------------------------------
+       1️⃣ Fetch all onboarded users
+    ---------------------------------------------------- */
+    const users = await prisma.userProgramState.findMany({
+      where: { onboarded: true,programId:program?.id },
+      select: { userId: true },
+    });
 
-  const users = await prisma.userProgramState.findMany({
-    where: { onboarded: true },
-    select: { userId: true },
-  });
+    if (!users.length) {
+      return Response.json({
+        status: "ok",
+        type: "sunday-evening",
+        sent: 0,
+      });
+    }
 
-  let sent = 0;
+    const userIds = [...new Set(users.map((u) => u.userId))];
 
-  const notification = await getCMPNotification(
-    NotificationType.CMP_SUNDAY_EVENING_PENDING
-  );
-  if (!notification) return Response.json({ message: "no_notification_template for sunday evening pending" });
-  for (const { userId } of users) {
-    const completed = await prisma.sundayProgressLog.findFirst({
+    /* ----------------------------------------------------
+       2️⃣ Fetch completed users (single query)
+    ---------------------------------------------------- */
+    const completedThisWeek = await prisma.sundayProgressLog.findMany({
       where: {
-        userId,
+        userId: { in: userIds },
         date: {
           gte: weekStart,
           lt: weekEnd,
         },
         card1WeeklyWin: true,
         card2Done: true,
-        // card3Done: true, since card 3 is optional for now 
+        // card3 optional
       },
-      select: { id: true },
+      select: { userId: true },
     });
 
-    if (completed) continue;
-
-    await sendPushNotificationToUser(
-      userId,
-      notification.title,
-      notification.description,
-      {
-        url: notification.url,
-      }
+    const completedSet = new Set(
+      completedThisWeek.map((c) => c.userId)
     );
 
-    sent++;
+    /* ----------------------------------------------------
+       3️⃣ Filter eligible users
+    ---------------------------------------------------- */
+    const eligibleUserIds = userIds.filter(
+      (userId) => !completedSet.has(userId)
+    );
+
+    if (!eligibleUserIds.length) {
+      return Response.json({
+        status: "ok",
+        type: "sunday-evening",
+        sent: 0,
+      });
+    }
+
+    /* ----------------------------------------------------
+       4️⃣ ✅ DB-driven bulk notification
+    ---------------------------------------------------- */
+    await sendDbPushNotificationMultipleUsers({
+      type: NotificationType.CMP_SUNDAY_EVENING_PENDING,
+      userIds: eligibleUserIds,
+      context: {}, // optional dynamic later
+    });
+
+    console.log(
+      `[SUNDAY] Evening reminder sent to ${eligibleUserIds.length} users`
+    );
+
+    return Response.json({
+      status: "ok",
+      type: "sunday-evening",
+      sent: eligibleUserIds.length,
+    });
+  } catch (error) {
+    console.error("🔥 SUNDAY EVENING ERROR:", error);
+
+    return Response.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
-
-  console.log(`[SUNDAY] Evening reminder sent to ${sent} users`);
-
-  return Response.json({
-    status: "ok",
-    type: "sunday-evening",
-    sent,
-  });
 }
-

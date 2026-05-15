@@ -1,5 +1,5 @@
 import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
-import { PaymentOrder, PaymentStatus, Prisma, Role } from "@prisma/client";
+import { PaymentOrder, Prisma, Role } from "@prisma/client";
 
 export async function handleChallengePayment(
   tx: Prisma.TransactionClient,
@@ -43,28 +43,7 @@ export async function handleChallengePayment(
       });
     }
   }
-  await tx.challengePayment.upsert({
-    where: {
-      userId_challengeId: {
-        userId: order.userId,
-        challengeId: order.challengeId,
-      },
-    },
-    update: {
-      status: PaymentStatus.PAID,
-      amountPaid: order.totalAmount,
-      paidAt: new Date(),
-    },
-    create: {
-      userId: order.userId,
-      challengeId: order.challengeId,
-      paymentOrderId: order.id,
-      amountPaid: order.totalAmount,
-      currency: order.currency,
-      status: PaymentStatus.PAID,
-      paidAt: new Date(),
-    },
-  });
+
   const role = challenge.creator.role as Role;
 
   if (role === Role.ADMIN) {

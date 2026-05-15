@@ -295,3 +295,5 @@ export const STATE_NAME_MAP: Record<string, string> = {
   "dadra and nagar haveli and daman and diu":
     "dadra and nagar haveli and daman and diu",
 };
+
+

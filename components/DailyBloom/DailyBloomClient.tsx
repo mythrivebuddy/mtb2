@@ -79,6 +79,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Checkbox } from "../ui/checkbox";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 // FIX: Define a specific type for extendedProps
 interface CalendarEventExtendedProps {
   isBloom?: boolean;
@@ -227,22 +228,52 @@ export default function DailyBloomClient() {
     dueDate?: string; // This is the 'start' date from the calendar event
     end?: string;
   }) => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // 1. Convert naive calendar strings into exact Date objects for that timezone
+    const resolvedDueDate = payload.dueDate 
+      ? fromZonedTime(payload.dueDate, tz) 
+      : new Date();
+
+    const resolvedEndDate = payload.end 
+      ? fromZonedTime(payload.end, tz) 
+      : undefined;
+
+    // 2. Format them to purely local string representations (NO 'Z')
+    const localDueDateStr = formatInTimeZone(resolvedDueDate, tz, "yyyy-MM-dd'T'HH:mm:ss.SSS");
+    const localEndDateStr = resolvedEndDate 
+      ? formatInTimeZone(resolvedEndDate, tz, "yyyy-MM-dd'T'HH:mm:ss.SSS") 
+      : undefined;
+
+    // 3. Re-parse them as UTC Dates by appending 'Z'!
+    // This satisfies TypeScript (it's a Date) AND prevents the browser from shifting the time.
+    const finalDueDate = new Date(`${localDueDateStr}Z`);
+    const finalEndDate = localEndDateStr ? new Date(`${localEndDateStr}Z`) : undefined;
+
     createMutation.mutate({
-      // These are the fields from DailyBloomFormType
       title: payload.title,
       description: payload.description || "",
-      dueDate: payload.dueDate ? new Date(payload.dueDate) : new Date(),
+      
+      // ✅ Now passing a Date object. TypeScript is happy!
+      dueDate: finalDueDate,
+      
       isCompleted: false,
-      addToCalendar: true, // This is the crucial flag
+      addToCalendar: true, 
       frequency: undefined,
+      
       startTime: payload.dueDate
-        ? format(new Date(payload.dueDate), "HH:mm")
+        ? formatInTimeZone(resolvedDueDate, tz, "HH:mm")
         : "",
-      endTime: payload.end ? format(new Date(payload.end), "HH:mm") : undefined,
-      endDate: payload.end ? new Date(payload.end) : undefined,
+      endTime: resolvedEndDate 
+        ? formatInTimeZone(resolvedEndDate, tz, "HH:mm") 
+        : undefined,
+        
+      // ✅ Now passing a Date object. TypeScript is happy!
+      endDate: finalEndDate,
+        
       taskAddJP: false,
       taskCompleteJP: false,
-      isFromEvent: true, // Mark this bloom as created from an even
+      isFromEvent: true,
     });
   };
 

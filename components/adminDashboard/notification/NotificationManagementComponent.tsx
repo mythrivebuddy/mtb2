@@ -51,6 +51,7 @@ const placeholderValue = "__placeholder__";
 // Schema
 const formSchema = z.object({
   type: z.string().min(1, "Please select a type"),
+  name: z.string().min(1, "Name is required"),
   title: z.string().min(1, "Title is required"),
   message: z.string().min(1, "Message is required"),
   url: z
@@ -58,21 +59,34 @@ const formSchema = z.object({
     .startsWith("/", "URL must start with /")
     .optional()
     .or(z.literal("")),
+  audiences: z
+    .array(z.enum(["USER", "ADMIN", "COACH"]))
+    .min(1, "Select at least one audience"),
 });
+const audienceLabels = {
+  USER: "All Users (Non-Admin)", // ✅ FIX
+  ADMIN: "Admins",
+  COACH: "Coaches",
+};
 
 type FormValues = {
   type: string;
   title: string;
+  name: string;
   message: string;
   url?: string;
+  audiences: ("USER" | "ADMIN" | "COACH")[];
 };
 type ApiResponse = { message: string };
+type Audience = "USER" | "ADMIN" | "COACH";
 interface NotificationTemplate {
   notification_type: string;
+  name: string;
   title: string;
   message: string;
   url?: string;
   isDynamic?: boolean;
+  audiences?: Audience[];
 }
 
 const extractPlaceholders = (text: string): string[] => {
@@ -95,9 +109,11 @@ export const NotificationManagementComponent = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: placeholderValue,
+      name: "",
       title: "",
       message: "",
       url: "",
+      audiences: ["USER"],
     },
   });
   const selectedType = useWatch({
@@ -143,7 +159,12 @@ export const NotificationManagementComponent = () => {
     //  Exit early if no selection
     if (!selectedType || selectedType === placeholderValue) {
       // Only reset if not already empty to avoid unnecessary triggers
-      if (form.getValues("title") !== "") {
+      if (
+        form.getValues("name") !== "" ||
+        form.getValues("title") !== "" ||
+        form.getValues("message") !== ""
+      ) {
+        form.resetField("name", { defaultValue: "" });
         form.resetField("title", { defaultValue: "" });
         form.resetField("message", { defaultValue: "" });
         form.resetField("url", { defaultValue: "" });
@@ -160,15 +181,18 @@ export const NotificationManagementComponent = () => {
     const newTitle = template?.title || "";
     const newMessage = template?.message || "";
     const newUrl = template?.url || "";
+    const newName = template?.name || "";
 
     // 3. IMPORTANT: Only update if the values are different
     // This prevents the infinite loop
     const currentValues = form.getValues();
     if (
+      currentValues.name !== newName ||
       currentValues.title !== newTitle ||
       currentValues.message !== newMessage ||
       currentValues.url !== newUrl
     ) {
+      form.setValue("name", newName);
       form.setValue("title", newTitle);
       form.setValue("message", newMessage);
       form.setValue("url", newUrl);
@@ -202,9 +226,11 @@ export const NotificationManagementComponent = () => {
       setIsEditOpen(false);
       form.reset({
         type: placeholderValue,
+        name: "",
         title: "",
         message: "",
         url: "",
+        audiences: ["USER"],
       });
       setDynamicVariables([]);
     },
@@ -241,9 +267,11 @@ export const NotificationManagementComponent = () => {
 
     form.reset({
       type: template.notification_type,
+      name: template.name,
       title: template.title,
       message: template.message,
       url: template.url || "",
+      audiences: template.audiences || ["USER"],
     });
 
     if (template.isDynamic) {
@@ -259,6 +287,7 @@ export const NotificationManagementComponent = () => {
     setIsEditOpen(true);
   };
   const isLoading = mutation.status === "pending";
+  const AUDIENCES: Audience[] = ["USER", "ADMIN", "COACH"];
 
   return (
     <div className=" mx-auto mt-10 px-4">
@@ -314,10 +343,11 @@ export const NotificationManagementComponent = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Type</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Message</TableHead>
               <TableHead>URL</TableHead>
+              <TableHead>Audience</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -325,22 +355,20 @@ export const NotificationManagementComponent = () => {
           <TableBody>
             {templatesLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-6">
+                <TableCell colSpan={6} className="text-center py-6">
                   Loading templates...
                 </TableCell>
               </TableRow>
             ) : allTemplates.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-6">
+                <TableCell colSpan={6} className="text-center py-6">
                   No templates found
                 </TableCell>
               </TableRow>
             ) : (
               allTemplates.map((template) => (
                 <TableRow key={template.notification_type}>
-                  <TableCell>
-                    {template.notification_type.replaceAll("_", " ")}
-                  </TableCell>
+                  <TableCell>{template.name}</TableCell>
 
                   <TableCell className="max-w-[200px] truncate">
                     {template.title}
@@ -351,6 +379,15 @@ export const NotificationManagementComponent = () => {
                   </TableCell>
 
                   <TableCell>{template.url || "-"}</TableCell>
+
+                  <TableCell>
+                    {template.audiences
+                      ?.map(
+                        (aud) =>
+                          audienceLabels[aud as keyof typeof audienceLabels],
+                      )
+                      .join(", ") || "-"}
+                  </TableCell>
 
                   <TableCell className="text-right">
                     <Button
@@ -366,7 +403,7 @@ export const NotificationManagementComponent = () => {
             )}
           </TableBody>
           <TableRow>
-            <TableCell colSpan={5}>
+            <TableCell colSpan={6}>
               {/* 🔥 THIS IS YOUR LABEL */}
               <span className="text-xs text-muted-foreground mt-1">
                 Showing {start}–{end} of {total} templates
@@ -398,15 +435,24 @@ export const NotificationManagementComponent = () => {
                   <FormItem>
                     <FormLabel>Notification Type</FormLabel>
                     <FormControl>
-                      <Input
-                        value={field.value.replaceAll("_", " ")}
-                        disabled
-                      />
+                      <Input value={field.value} disabled />
                     </FormControl>
                   </FormItem>
                 )}
               />
-
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name (Admin Label)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter display name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               {/* Title */}
               <FormField
                 control={form.control}
@@ -452,25 +498,24 @@ export const NotificationManagementComponent = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex flex-col gap-1">
-                      <div className="flex gap-4 items-center">
-                        <span>Message</span>
-                        {/* Variables UI repeated for Message */}
+                      <span>Message</span>
+                      {/* Variables UI repeated for Message */}
 
-                        {dynamicVariables.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {dynamicVariables.map((v) => (
-                              <button
-                                key={v}
-                                type="button"
-                                onClick={() => insertPlaceholder("message", v)}
-                                className="rounded bg-slate-100 px-1 py-0.5 text-[10px] text-slate-800 hover:bg-blue-200 transition-colors border border-slate-200"
-                              >
-                                {`{{${v}}}`}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      {dynamicVariables.length > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          Available variables (click to insert):{" "}
+                          {dynamicVariables.map((v) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => insertPlaceholder("message", v)}
+                              className="rounded bg-slate-100 px-1 py-0.5 text-[10px] text-slate-800 hover:bg-blue-200 transition-colors border border-slate-200"
+                            >
+                              {`{{${v}}}`}
+                            </button>
+                          ))}
+                        </span>
+                      )}
                     </FormLabel>
                     <FormControl>
                       <Textarea
@@ -497,7 +542,43 @@ export const NotificationManagementComponent = () => {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="audiences"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Audience
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (USER = all non-admin users)
+                      </span>
+                    </FormLabel>
 
+                    <div className="flex gap-4">
+                      {AUDIENCES.map((aud) => (
+                        <label key={aud} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={field.value?.includes(aud)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                field.onChange([...field.value, aud]);
+                              } else {
+                                field.onChange(
+                                  field.value.filter((v) => v !== aud),
+                                );
+                              }
+                            }}
+                          />
+                          <span>{audienceLabels[aud]}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               {/* Submit */}
               <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? "Loading..." : "Save Template"}

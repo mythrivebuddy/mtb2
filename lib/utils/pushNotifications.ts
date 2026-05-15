@@ -152,6 +152,7 @@ export async function sendPushNotificationMultipleUsers(
       userId: { in: userIds },
     },
     select: {
+      userId: true,
       endpoint: true,
       p256dh: true,
       auth: true,
@@ -217,7 +218,7 @@ export async function sendDbPushNotificationMultipleUsers({
           typeof value === "string" || typeof value === "number"
             ? value
             : String(value ?? ""),
-        ])
+        ]),
       );
 
       Object.entries(safeContext).forEach(([key, value]) => {
@@ -227,10 +228,13 @@ export async function sendDbPushNotificationMultipleUsers({
         url = url.replace(regex, String(value));
       });
     }
+    const allowedUserIds = await getAllowedUserIds(userIds, type);
+
+    if (!allowedUserIds.length) return;
 
     // ✅ create DB notifications (bulk)
     await prisma.notification.createMany({
-      data: userIds.map((userId) => ({
+      data: allowedUserIds.map((userId) => ({
         userId,
         type,
         title,
@@ -240,8 +244,9 @@ export async function sendDbPushNotificationMultipleUsers({
     });
 
     // ✅ push (reuse your existing function)
-    await sendPushNotificationMultipleUsers(userIds, title, message, { url });
-
+    await sendPushNotificationMultipleUsers(allowedUserIds, title, message, {
+      url,
+    });
   } catch (error) {
     console.error("❌ Failed to send bulk DB notification:", {
       type,
@@ -270,20 +275,17 @@ export async function sendPushNotificationFromDBToUser({
   context?: Record<string, unknown>;
 }) {
   try {
+    /* ---------------- TEMPLATE ---------------- */
     const setting = await prisma.notificationSettings.findUnique({
       where: { notification_type: type },
     });
 
-    if (!setting) {
-      console.warn(`⚠️ Notification setting not found for type: ${type}`);
-      return;
-    }
+    if (!setting) return;
 
     let title = setting.title;
     let message = setting.message;
     let url = setting.url || "/dashboard";
 
-    // Handle dynamic templates only when needed
     if (setting.isDynamic) {
       const safeContext = Object.fromEntries(
         Object.entries(context).map(([key, value]) => [
@@ -299,10 +301,20 @@ export async function sendPushNotificationFromDBToUser({
       url = replaceDynamicNotificationTemplate(url, safeContext);
     }
 
-    // Create in-app notification (DB)
+    /* ==================================================
+       🧠 PERMISSION CHECK
+    ================================================== */
+
+    const allowedUserIds = await getAllowedUserIds([userId], type);
+
+    if (!allowedUserIds.length) return;
+
+    /* ==================================================
+       ✅ EXECUTE
+    ================================================== */
+
     await createNotification(userId, type, title, message, { url });
 
-    // Send push notification
     await sendPushNotificationToUser(userId, title, message, { url });
   } catch (error) {
     console.error("❌ Failed to send DB notification:", {
@@ -312,4 +324,39 @@ export async function sendPushNotificationFromDBToUser({
       error,
     });
   }
+}
+
+async function getAllowedUserIds(
+  userIds: string[],
+  type: NotificationType,
+): Promise<string[]> {
+  if (!userIds.length) return [];
+
+  const [users, prefs] = await Promise.all([
+    prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, notificationMode: true },
+    }),
+
+    prisma.userNotificationPreference.findMany({
+      where: {
+        userId: { in: userIds },
+        type,
+      },
+    }),
+  ]);
+
+  const prefMap = new Map(prefs.map((p) => [p.userId, p.enabled]));
+
+  return users
+    .filter((user) => {
+      const override = prefMap.get(user.id);
+
+      if (user.notificationMode === "ALL_ON") {
+        return override ?? true;
+      } else {
+        return override ?? false;
+      }
+    })
+    .map((u) => u.id);
 }

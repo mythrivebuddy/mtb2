@@ -1,5 +1,5 @@
 import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
-import { PaymentOrder, PaymentStatus, Prisma, Role } from "@prisma/client";
+import { PaymentOrder, Prisma, Role } from "@prisma/client";
 
 export async function handleProgramPayment(
   tx: Prisma.TransactionClient,
@@ -25,28 +25,10 @@ export async function handleProgramPayment(
   if (!program) {
     throw new Error("Program not found");
   }
-  // ! Prevent duplicate webhook processing
-  const existingPayment = await tx.miniMasteryProgramPayment.findUnique({
-    where: {
-      paymentOrderId: order.id,
-    },
-  });
+ 
 
-  if (!existingPayment) {
     // 3️⃣ Insert payment record
-    await tx.miniMasteryProgramPayment.create({
-      data: {
-        userId: order.userId,
-        programId: program.id,
-        paymentOrderId: order.id,
-
-        amountPaid: order.totalAmount,
-        currency: order.currency,
-
-        status: PaymentStatus.PAID,
-        paidAt: new Date(),
-      },
-    });
+  
     await tx.userProgramState.upsert({
       where: {
         userId_programId: {
@@ -83,7 +65,7 @@ export async function handleProgramPayment(
         });
       }
     }
-  }
+  
 
   // ─────────────────────────────────────────────
   // 2. Skip platform products (ADMIN)

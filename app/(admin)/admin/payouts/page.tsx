@@ -60,48 +60,48 @@ import { getInitials } from "@/utils/getInitials";
 
 // ================= TYPES =================
 
-type ApiCreator = {
-  creatorId: string;
+type AnalyticsResponse = {
   creator: {
-    name: string;
-    email: string;
-    image?: string;
+    totalPayable: number;
+    totalHolding: number;
+    totalCommission: number;
   };
-  currency: string;
-  baseAmount: number;
-  discountAmount: number;
-  netAmount: number;
-  commissionAmount: number;
-  payableAmount: number;
-  holdingAmount: number;
+  affiliate: {
+    totalPayable: number;
+    totalHolding: number;
+  };
+};
+type ApiResponse = {
+  payouts: PayoutItem[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  analytics: AnalyticsResponse;
 };
 
 type PayoutItem = {
-  creatorId: string;
-  creatorName: string;
-  creatorEmail: string;
-  creatorImage?: string;
-  baseAmount: number;
-  netAmount: number;
-  discountAmount: number;
-  commissionAmount: number;
-  pendingBalance: number;
-  currency: string;
-  holdingAmount: number;
-};
+  id: string;
+  name: string;
+  email: string;
+  image?: string;
 
-type PaginationData = {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-};
-type Analytics = {
-  totalPayableINR: number;
-  totalPayableUSD: number;
-  totalHoldingINR: number;
-  totalHoldingUSD: number;
-  totalCommission: number;
+  type: "CREATOR" | "AFFILIATE";
+  creatorId?: string; // Added
+  affiliateId?: string; // Added
+  creator?: { name: string; email: string; image: string | null };
+  affiliate?: { name: string; email: string; image: string | null };
+
+  baseAmount: number;
+  discountAmount: number;
+  netAmount: number;
+  commissionAmount: number;
+
+  payableAmount: number;
+  holdingAmount: number;
+  currency: string;
 };
 
 type DatePreset = "ALL" | "TODAY" | "THIS_MONTH" | "CUSTOM";
@@ -116,8 +116,12 @@ function CurrencyIcon({ currency }: { currency: string }) {
   return <DollarSign className="w-3.5 h-3.5 inline-block mr-0.5 opacity-70" />;
 }
 
-function fmt(amount: number, decimals = 2) {
-  return amount.toLocaleString("en-IN", {
+function fmt(amount: number | undefined | null, decimals = 2) {
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    return "0.00";
+  }
+
+  return Number(amount).toLocaleString("en-IN", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
@@ -159,7 +163,7 @@ export default function AdminPayoutsPage() {
   // Sort state
   const { sortBy, sortOrder, handleSort } = useServerSort("payableAmount");
   // ✅ Fetch payouts
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useQuery<ApiResponse>({
     queryKey: [
       "admin-payouts",
       debouncedSearch,
@@ -186,29 +190,13 @@ export default function AdminPayoutsPage() {
 
       const res = await axios.get(`/api/admin/payouts?${params.toString()}`);
 
-      return {
-        creators: res.data.creators.map((c: ApiCreator) => ({
-          creatorId: c.creatorId,
-          creatorName: c.creator?.name || "Unknown",
-          creatorEmail: c.creator?.email || "-",
-          creatorImage: c.creator?.image || "",
-          baseAmount: Number(c.baseAmount || 0),
-          discountAmount: Number(c.discountAmount || 0),
-          netAmount: Number(c.netAmount || 0),
-          commissionAmount: Number(c.commissionAmount || 0),
-          pendingBalance: Number(c.payableAmount || 0),
-          holdingAmount: Number(c.holdingAmount || 0),
-          currency: c.currency,
-        })) as PayoutItem[],
-        pagination: res.data.pagination as PaginationData,
-        analytics: res.data.analytics,
-      };
+      return res.data;
     },
     staleTime: 5 * 60 * 1000,
     placeholderData: (prev) => prev,
   });
+  const payouts = data?.payouts || [];
 
-  const payouts = data?.creators || [];
   const pagination = data?.pagination || {
     total: 0,
     page: 1,
@@ -219,7 +207,8 @@ export default function AdminPayoutsPage() {
   // ✅ Process payout
   const processPayoutMutation = useMutation({
     mutationFn: async (payload: {
-      creatorId: string;
+      userId: string;
+      type: "CREATOR" | "AFFILIATE";
       currency: string;
       referenceId: string;
       notes: string;
@@ -237,26 +226,38 @@ export default function AdminPayoutsPage() {
 
   // ================= DERIVED DATA =================
   const filtered = payouts;
+  const rows = payouts;
   const handleSortWithReset = (field: string) => {
     setPage(1);
     handleSort(field);
   };
 
-  const analyticsRef = useRef<Analytics | null>(null);
+  const analyticsRef = useRef<AnalyticsResponse | null>(null);
 
   // After the query
   if (data?.analytics) {
     analyticsRef.current = data.analytics;
   }
 
-  const stats = analyticsRef.current ||
-    data?.analytics || {
-      totalPayableINR: 0,
-      totalPayableUSD: 0,
-      totalHoldingINR: 0,
-      totalHoldingUSD: 0,
-      totalCommission: 0,
-    };
+  const analytics = data?.analytics;
+
+  const stats = {
+    totalPayable:
+      (analytics?.creator?.totalPayable || 0) +
+      (analytics?.affiliate?.totalPayable || 0),
+
+    totalHolding:
+      (analytics?.creator?.totalHolding || 0) +
+      (analytics?.affiliate?.totalHolding || 0),
+
+    totalCommission: analytics?.creator?.totalCommission || 0,
+
+    creatorPayable: analytics?.creator?.totalPayable || 0,
+    affiliatePayable: analytics?.affiliate?.totalPayable || 0,
+
+    creatorHolding: analytics?.creator?.totalHolding || 0,
+    affiliateHolding: analytics?.affiliate?.totalHolding || 0,
+  };
 
   const handleOpenModal = (payout: PayoutItem) => {
     setSelectedPayout(payout);
@@ -312,11 +313,12 @@ export default function AdminPayoutsPage() {
   const handleConfirmPayout = () => {
     if (!selectedPayout) return;
     processPayoutMutation.mutate({
-      creatorId: selectedPayout.creatorId,
+      userId: selectedPayout.id,
+      type: selectedPayout.type,
       currency: selectedPayout.currency,
       referenceId,
       notes,
-      amount: selectedPayout.pendingBalance,
+      amount: selectedPayout.payableAmount,
     });
   };
 
@@ -349,37 +351,34 @@ export default function AdminPayoutsPage() {
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <SummaryCard
-            icon={<Users className="w-4 h-4" />}
-            label="Total Creators" // Real total matching current filters
-            value={pagination.total.toString()}
-          />
-          <SummaryCard
-            icon={<IndianRupee className="w-4 h-4" />}
-            label={"Total Pending (INR)"}
-            value={`₹${fmt(stats.totalPayableINR)}`}
+            icon={<Wallet className="w-4 h-4" />}
+            label="Total Payable"
+            value={`₹${fmt(stats.totalPayable)}`}
             highlight
-          />
-          <SummaryCard
-            icon={<DollarSign className="w-4 h-4" />}
-            label={"Total Pending (USD)"}
-            value={`$${fmt(stats.totalPayableUSD)}`}
-            highlight
-          />
-          <SummaryCard
-            icon={<TrendingUp className="w-4 h-4" />}
-            label={"Total Commission"}
-            value={`₹${fmt(stats.totalCommission)}`}
-          />
-          <SummaryCard
-            icon={<IndianRupee className="w-4 h-4" />}
-            label="Total Holding (INR)"
-            value={`₹${fmt(stats.totalHoldingINR)}`}
           />
 
           <SummaryCard
-            icon={<DollarSign className="w-4 h-4" />}
-            label="Total Holding (USD)"
-            value={`$${fmt(stats.totalHoldingUSD)}`}
+            icon={<TrendingUp className="w-4 h-4" />}
+            label="Total Holding"
+            value={`₹${fmt(stats.totalHolding)}`}
+          />
+
+          <SummaryCard
+            icon={<Users className="w-4 h-4" />}
+            label="Creator Payable"
+            value={`₹${fmt(stats.creatorPayable)}`}
+          />
+
+          <SummaryCard
+            icon={<Users className="w-4 h-4" />}
+            label="Affiliate Payable"
+            value={`₹${fmt(stats.affiliatePayable)}`}
+          />
+
+          <SummaryCard
+            icon={<IndianRupee className="w-4 h-4" />}
+            label="Platform Commission"
+            value={`₹${fmt(stats.totalCommission)}`}
           />
         </div>
 
@@ -487,18 +486,19 @@ export default function AdminPayoutsPage() {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead
-                  onClick={() => handleSortWithReset("creatorName")}
+                  onClick={() => handleSortWithReset("name")}
                   className="cursor-pointer group"
                 >
                   <div className="flex items-center gap-1">
                     Creator
                     <SortIndicator
-                      field="creatorName"
+                      field="name"
                       sortBy={sortBy}
                       sortOrder={sortOrder}
                     />
                   </div>
                 </TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead
                   onClick={() => handleSortWithReset("baseAmount")}
@@ -572,7 +572,7 @@ export default function AdminPayoutsPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
+                  <TableCell colSpan={8} className="text-center py-12">
                     <Loader2 className="animate-spin mx-auto w-6 h-6 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mt-2">
                       Loading payouts…
@@ -598,124 +598,148 @@ export default function AdminPayoutsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((p) => (
-                  <TableRow
-                    key={`${p.creatorId}-${p.currency}`}
-                    className="hover:bg-muted/30 transition-colors"
-                  >
-                    {/* Creator */}
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {p.creatorImage ? (
-                          <Image
-                            height={300}
-                            width={300}
-                            className="h-8 w-8 object-cover rounded-full"
-                            src={p.creatorImage}
-                            alt={p.creatorName}
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
-                            {getInitials(p.creatorName)}
+                filtered.map((p) => {
+                  const isCreator = p.type === "CREATOR";
+                  const rowUniqueId = isCreator ? p.creatorId : p.affiliateId;
+                  const userData =
+                    p.type === "CREATOR" ? p.creator : p.affiliate;
+
+                  // 2. Get the values safely
+                  const displayName = userData?.name || "Unknown";
+                  const displayImage = userData?.image;
+
+                  return (
+                    <TableRow
+                      key={`${rowUniqueId}-${p.currency}-${p.type}`}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      {/* Creator */}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {displayImage ? (
+                            <Image
+                              height={300}
+                              width={300}
+                              className="h-8 w-8 object-cover rounded-full"
+                              src={displayImage}
+                              alt={displayName}
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                              {getInitials(displayName)}
+                            </div>
+                          )}
+
+                          <div>
+                            <p className="font-medium text-sm">{displayName}</p>
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] px-1 py-0 mt-0.5"
+                            >
+                              {p.currency}
+                            </Badge>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            p.type === "CREATOR" ? "default" : "secondary"
+                          }
+                        >
+                          {p.type}
+                        </Badge>
+                      </TableCell>
+
+                      {/* Email */}
+                      <TableCell className="text-muted-foreground text-sm">
+                        {userData?.email}
+                      </TableCell>
+
+                      {/* Base Amount */}
+                      <TableCell className="text-right text-sm">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-default">
+                              <CurrencyIcon currency={p.currency} />
+                              {fmt(p.baseAmount)}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Gross earnings before any deductions
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                      {/* ✅ Discount Amount */}
+                      <TableCell className="text-right text-sm text-red-500 whitespace-nowrap">
+                        <span className="cursor-default">
+                          {p.discountAmount > 0 ? "-" : ""}{" "}
+                          <CurrencyIcon currency={p.currency} />
+                          {fmt(p.discountAmount)}
+                        </span>
+                      </TableCell>
+
+                      {/* ✅ Net Amount */}
+                      <TableCell className="text-right text-sm font-medium whitespace-nowrap">
+                        <span className="cursor-default">
+                          <CurrencyIcon currency={p.currency} />
+                          {fmt(p.netAmount)}
+                        </span>
+                      </TableCell>
+                      {/* Commission */}
+                      <TableCell className="text-right text-sm text-orange-500">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            {p.type === "CREATOR" ? (
+                              <span>
+                                − <CurrencyIcon currency={p.currency} />
+                                {fmt(p.commissionAmount)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Platform commission deducted
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+
+                      {/* Payable */}
+                      <TableCell className="text-right font-semibold text-green-600">
+                        <CurrencyIcon currency={p.currency} />
+                        {fmt(p.payableAmount)}
+
+                        {p.holdingAmount > 0 && (
+                          <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 mt-1 w-fit ml-auto">
+                            🕐 <CurrencyIcon currency={p.currency} />
+                            {fmt(p.holdingAmount)} in holding
                           </div>
                         )}
+                      </TableCell>
 
-                        <div>
-                          <p className="font-medium text-sm">{p.creatorName}</p>
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] px-1 py-0 mt-0.5"
-                          >
-                            {p.currency}
-                          </Badge>
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    {/* Email */}
-                    <TableCell className="text-muted-foreground text-sm">
-                      {p.creatorEmail}
-                    </TableCell>
-
-                    {/* Base Amount */}
-                    <TableCell className="text-right text-sm">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-default">
-                            <CurrencyIcon currency={p.currency} />
-                            {fmt(p.baseAmount)}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Gross earnings before any deductions
-                        </TooltipContent>
-                      </Tooltip>
-                    </TableCell>
-                    {/* ✅ Discount Amount */}
-                    <TableCell className="text-right text-sm text-red-500 whitespace-nowrap">
-                      <span className="cursor-default">
-                        {p.discountAmount > 0 ? "-" : ""}{" "}
-                        <CurrencyIcon currency={p.currency} />
-                        {fmt(p.discountAmount)}
-                      </span>
-                    </TableCell>
-
-                    {/* ✅ Net Amount */}
-                    <TableCell className="text-right text-sm font-medium whitespace-nowrap">
-                      <span className="cursor-default">
-                        <CurrencyIcon currency={p.currency} />
-                        {fmt(p.netAmount)}
-                      </span>
-                    </TableCell>
-                    {/* Commission */}
-                    <TableCell className="text-right text-sm text-orange-500">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-default">
-                            − <CurrencyIcon currency={p.currency} />
-                            {fmt(p.commissionAmount)}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Platform commission deducted
-                        </TooltipContent>
-                      </Tooltip>
-                    </TableCell>
-
-                    {/* Payable */}
-                    <TableCell className="text-right font-semibold text-green-600">
-                      <CurrencyIcon currency={p.currency} />
-                      {fmt(p.pendingBalance)}
-
-                      {p.holdingAmount > 0 && (
-                        <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 mt-1 w-fit ml-auto">
-                          🕐 <CurrencyIcon currency={p.currency} />
-                          {fmt(p.holdingAmount)} in holding
-                        </div>
-                      )}
-                    </TableCell>
-
-                    {/* Action */}
-                    <TableCell className="text-right space-x-2">
-                      <Link
-                        href={`/admin/payouts/details/${p.creatorId}?currency=${p.currency}`}
-                        target="_blank"
-                      >
-                        <Button size="sm" variant="ghost">
-                          View
+                      {/* Action */}
+                      <TableCell className="text-right space-x-2">
+                        <Link
+                          href={`/admin/payouts/details/${p.id}&type=${p.type}?currency=${p.currency}`}
+                          target="_blank"
+                        >
+                          <Button size="sm" variant="ghost">
+                            View
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenModal(p)}
+                          disabled={p.payableAmount <= 0}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                          Pay
                         </Button>
-                      </Link>
-                      <Button
-                        size="sm"
-                        onClick={() => handleOpenModal(p)}
-                        disabled={p.pendingBalance <= 0}
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                        Pay
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -731,7 +755,7 @@ export default function AdminPayoutsPage() {
                 />
               )}
               <p className="text-xs text-muted-foreground">
-                Showing {filtered.length} payout
+                Showing {rows.length} payout
                 {filtered.length !== 1 ? "s" : ""} on this page (Total:{" "}
                 {pagination.total})
               </p>
@@ -749,9 +773,7 @@ export default function AdminPayoutsPage() {
               </DialogTitle>
               <DialogDescription>
                 Paying{" "}
-                <span className="font-medium">
-                  {selectedPayout?.creatorName}
-                </span>
+                <span className="font-medium">{selectedPayout?.name}</span>
               </DialogDescription>
             </DialogHeader>
 
@@ -794,7 +816,7 @@ export default function AdminPayoutsPage() {
                     <span>Payable Amount</span>
                     <span className="flex items-center">
                       <CurrencyIcon currency={selectedPayout.currency} />
-                      {fmt(selectedPayout.pendingBalance)}
+                      {fmt(selectedPayout.payableAmount)}
                     </span>
                   </div>
                 </div>

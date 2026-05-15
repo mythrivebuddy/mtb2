@@ -4,27 +4,39 @@ import { NotificationType, Prisma } from "@prisma/client";
 
 export const POST = async (req: NextRequest) => {
   try {
-    const { type, title, message, url } = await req.json();
+    const { type, name, title, message, url, audiences } = await req.json();
 
-    if (!type || !title || !message) {
+    if (!type || !name || !title || !message) {
       return NextResponse.json(
-        { error: "Type, title, and message are required" },
+        { error: "Type, name, title, and message are required" },
         { status: 400 },
       );
+    }
+    const validAudiences = ["USER", "ADMIN", "COACH"];
+
+    if (
+      !Array.isArray(audiences) ||
+      audiences.some((a) => !validAudiences.includes(a))
+    ) {
+      return NextResponse.json({ error: "Invalid audiences" }, { status: 400 });
     }
 
     const data = await prisma.notificationSettings.upsert({
       where: { notification_type: type },
       update: {
         title,
+        name,
         message,
         url: url ?? null,
+        audiences,
       },
       create: {
         notification_type: type,
+        name,
         title,
         message,
         url: url ?? null,
+        audiences,
       },
     });
 
@@ -64,6 +76,12 @@ export const GET = async (req: NextRequest) => {
               ? [{ notification_type: { in: enumMatch } }]
               : []),
 
+            {
+              name: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
             {
               title: {
                 contains: search,

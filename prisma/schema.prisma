@@ -63,6 +63,7 @@ model User {
   affiliatePercent   Float?
   affiliateCommissionType    AffiliateCommissionType?  // "MTB" | "SUBSCRIPTION"
   affiliateEnabledAt DateTime?
+  notificationMode NotificationMode @default(ALL_ON)
 
   ActivityFeedItem              ActivityFeedItem[]
   alignedActions                AlignedAction[]
@@ -155,6 +156,7 @@ model User {
  affiliatePayouts  AffiliatePayout[] @relation("AffiliatePayouts")
 //  User financial details 
  userFinancialDetails UserFinancialDetails?
+ notificationPreferences UserNotificationPreference[]
   @@index([name])
   @@index([jpEarned])
   @@index([jpBalance])
@@ -165,6 +167,11 @@ enum AffiliateCommissionType {
   MTB
   SUBSCRIPTION
 }
+enum NotificationMode {
+  ALL_ON
+  ALL_OFF
+}
+
 model Transaction {
   id         String   @id @default(uuid())
   userId     String
@@ -624,6 +631,16 @@ model UserNotification {
   link      String?
   user      User     @relation("UserNotifications", fields: [userId], references: [id])
 }
+model UserNotificationPreference {
+  id      String           @id @default(cuid())
+  userId  String
+  type    NotificationType
+  enabled Boolean          @default(true)
+
+  user    User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type])
+}
 // legacy plan model do not touch
 
 
@@ -1025,6 +1042,7 @@ model ChallengeCreatorSignature {
 model NotificationSettings {
   id                String           @id @default(uuid())
   notification_type NotificationType @unique
+  name              String?
   title             String
   message           String
   url               String?
@@ -1599,6 +1617,7 @@ enum EarningStatus {
   PENDING
   PAID
   REFUNDED
+  REVERSED
 }
 
 model CreatorPayout {
@@ -2710,6 +2729,7 @@ enum NotificationType {
   ACCOUNTABILITY_COMMENT_ON_GOAL
   ACCOUNTABILITY_COMMENT_MENTION
   ACCOUNTABILITY_COMMENT_REPLY
+  REMINDER
 }
 
 enum BreathWorkType {
