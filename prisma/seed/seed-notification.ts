@@ -414,6 +414,14 @@ const NOTIFICATION_SEEDS: {
     url: "/dashboard/challenge",
     isDynamic: false,
   },
+   {
+  type: "REMINDER",
+  name: "Reminder Notification",
+  title: "{{title}}",
+  message: "{{description}}",
+  url: "{{url}}",
+  isDynamic: true,
+},
 ];
 
 async function main() {

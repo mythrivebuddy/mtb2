@@ -2,8 +2,8 @@ import { NotificationType, SpotlightStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { format } from "date-fns";
-import { createSpotlightActiveNotification } from "./notifications";
-import { sendPushNotificationToUser } from "./pushNotifications"; // Add this import
+
+import { sendPushNotificationFromDBToUser } from "./pushNotifications"; // Add this import
 
 const SPOTLIGHT_EXPIREY_MS = 24 * 60 * 60 * 1000;
 // const SPOTLIGHT_EXPIREY_MS = 60 * 1000; //for dev seted to 1 min
@@ -32,22 +32,12 @@ export async function activateNextSpotlight() {
         expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS),
       },
     });
-    const notification = await prisma.notificationSettings.findUnique({
-      where: { notification_type: NotificationType.SPOTLIGHT_ACTIVE },
+
+    await sendPushNotificationFromDBToUser({
+      type: NotificationType.SPOTLIGHT_ACTIVE,
+      userId: nextSpotlight.userId,
+      context: {}, // add dynamic fields later if needed
     });
-    // Send both in-app and push notifications
-    await Promise.all([
-      // In-app notification
-      createSpotlightActiveNotification(nextSpotlight.userId),
-      // Push notification
-      sendPushNotificationToUser(
-        nextSpotlight.userId,
-        notification?.title ?? "Spotlight Activated",
-        notification?.message ??
-          "Your spotlight is now active and visible to other users!",
-        { url: notification?.url || "/dashboard/notifications" },
-      ),
-    ]);
 
     const user = await prisma.user.findUnique({
       where: { id: nextSpotlight.userId },
