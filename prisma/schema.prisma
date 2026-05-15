@@ -1617,6 +1617,7 @@ enum EarningStatus {
   PENDING
   PAID
   REFUNDED
+  REVERSED
 }
 
 model CreatorPayout {

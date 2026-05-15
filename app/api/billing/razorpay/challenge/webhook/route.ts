@@ -6,6 +6,7 @@ import { PaymentStatus } from "@prisma/client";
 import { processPayment } from "@/lib/payment/processPayment";
 import { inngest } from "@/lib/inngest";
 import { createAffiliateEarningForSubscription } from "@/lib/affiliate/affiliateEarning";
+import { handlePaymentReversal } from "@/lib/payment/handlePaymentReversal";
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,6 +29,16 @@ export async function POST(req: NextRequest) {
     }
 
     const event = JSON.parse(rawBody);
+    if (event.event === "refund.processed") {
+      const entity = event.payload.refund?.entity || event.payload.dispute?.entity;
+      const paymentId = entity?.payment_id;
+
+      if (paymentId) {
+       await handlePaymentReversal(paymentId);
+       return NextResponse.json({ received: true,message:"Payment refund event fires" },{status:200});
+      }
+      return new NextResponse("Payment ID not found in reversal", { status: 400 });
+    }
 
     if (event.event !== "payment.captured") {
       return new NextResponse("Event ignored", { status: 200 });
