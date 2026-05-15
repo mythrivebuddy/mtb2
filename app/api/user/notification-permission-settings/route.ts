@@ -1,8 +1,35 @@
 import { NOTIFICATION_CATEGORIES } from "@/lib/constants/notification-categories";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import { NotificationType } from "@prisma/client";
+import { NotificationAudience, NotificationType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+
+function isAudienceAllowed(
+  audiences: NotificationAudience[] | null,
+  userType: string,
+  role: string,
+) {
+  if (!audiences || audiences.length === 0) return true;
+
+  const isAdmin = role === "ADMIN";
+  const isCoach = userType === "COACH";
+
+  return audiences.some((audience) => {
+    switch (audience) {
+      case "ADMIN":
+        return isAdmin;
+
+      case "COACH":
+        return isCoach;
+
+      case "USER":
+        return !isAdmin;
+
+      default:
+        return false;
+    }
+  });
+}
 
 /* ==================================================
    🧠 SHARED ENGINE (CORE LOGIC)
@@ -142,9 +169,16 @@ export const GET = async () => {
   try {
     const session = await checkRole(["ADMIN", "USER"]);
     const userId = session.user.id;
-
+    const userType = session.user.userType;
     const [templates, prefs, user] = await Promise.all([
-      prisma.notificationSettings.findMany(),
+      prisma.notificationSettings.findMany({
+        select: {
+          id: true,
+          notification_type: true,
+          name: true,
+          audiences: true,
+        },
+      }),
       prisma.userNotificationPreference.findMany({ where: { userId } }),
       prisma.user.findUnique({
         where: { id: userId },
@@ -159,9 +193,13 @@ export const GET = async () => {
       mode === "ALL_ON"
         ? (prefMap.get(type) ?? true)
         : (prefMap.get(type) ?? false);
+    const role = session.user.role;
 
+    const filteredTemplates = templates.filter((t) =>
+      isAudienceAllowed(t.audiences, userType ?? "", role),
+    );
     const map = new Map(
-      templates.map((t) => [
+      filteredTemplates.map((t) => [
         t.notification_type,
         { ...t, enabled: resolveEnabled(t.notification_type) },
       ]),

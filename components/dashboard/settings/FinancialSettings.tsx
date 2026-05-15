@@ -30,9 +30,10 @@ import {
   userFinancialSchema,
 } from "@/schema/user-financials-details";
 import { toast } from "sonner";
+import Skeleton from "@/components/Skeleton";
 
 /* ---------------- TYPES ---------------- */
-type Country = "IN" | "US" | "UK"  | "OT";
+type Country = "IN" | "US" | "UK" | "OT";
 
 /* ---------------- COMPONENT ---------------- */
 
@@ -136,10 +137,49 @@ export default function FinancialSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center p-12 text-slate-500">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        Loading settings...
-      </div>
+      <Card className="w-full mx-auto dark:bg-slate-900 shadow-sm">
+        <CardHeader className="border-b dark:border-slate-800 pb-6 mb-6 space-y-2">
+          <Skeleton className="h-6 w-1/3" />
+          <Skeleton className="h-4 w-1/2" />
+        </CardHeader>
+
+        <CardContent className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+            {/* LEFT COLUMN */}
+            <div className="space-y-5">
+              <Skeleton className="h-5 w-40" />
+
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN */}
+            <div className="space-y-5">
+              <Skeleton className="h-5 w-48" />
+
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          </div>
+
+          {/* ADDITIONAL */}
+          <div className="space-y-4">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-10 w-1/3" />
+          </div>
+
+          {/* BUTTON */}
+          <Skeleton className="h-10 w-40" />
+        </CardContent>
+      </Card>
     );
   }
 
@@ -395,14 +435,14 @@ export default function FinancialSettings() {
                     </p>
                   )}
                 </div>
-                  <div>
-                    <Input placeholder="Bank Name" {...register("bankName")} />
-                    {errors.bankName && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {errors.bankName.message}
-                      </p>
-                    )}
-                  </div>
+                <div>
+                  <Input placeholder="Bank Name" {...register("bankName")} />
+                  {errors.bankName && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.bankName.message}
+                    </p>
+                  )}
+                </div>
                 {/* INDIA BANKING */}
                 {country === "IN" && (
                   <div className="space-y-4 animate-in fade-in">
@@ -430,7 +470,6 @@ export default function FinancialSettings() {
                 )}
 
                 <div className="space-y-4 animate-in fade-in">
-                  
                   {/* INTERNATIONAL BANKING */}
                   {country && country !== "IN" && (
                     <>
