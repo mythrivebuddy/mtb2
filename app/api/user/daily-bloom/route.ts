@@ -141,11 +141,30 @@ export async function GET(request: NextRequest) {
       });
     }
     if (status === "Pending") {
-      const now = new Date();
-      const startOfTodayUTC = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-      );
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { timezone: true },
+      });
+      const timezone = user?.timezone || "UTC";
 
+      // Get UTC equivalent of midnight in user's timezone
+      const localDateStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+
+      const midnightLocalStr = `${localDateStr}T00:00:00`;
+      const utcMidnight = new Date(
+        new Date(midnightLocalStr).getTime() -
+          (new Date(
+            new Date(midnightLocalStr).toLocaleString("en-US", {
+              timeZone: timezone,
+            }),
+          ).getTime() -
+            new Date(midnightLocalStr).getTime()),
+      );
       const whereClause: Prisma.TodoWhereInput = {
         userId: session.user.id,
         isCompleted: false,
@@ -153,12 +172,13 @@ export async function GET(request: NextRequest) {
           // ✅ Normal tasks → keep your logic
           {
             isFromEvent: false,
-            OR: [{ dueDate: null }, { dueDate: { gte: startOfTodayUTC } }],
+            OR: [{ dueDate: null }, { dueDate: { gte: utcMidnight } }],
           },
 
           // ✅ Event blooms → ALWAYS include
           {
             isFromEvent: true,
+            dueDate: { gte: utcMidnight },
           },
         ],
       };

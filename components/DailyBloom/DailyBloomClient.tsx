@@ -79,7 +79,6 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Checkbox } from "../ui/checkbox";
-import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 // FIX: Define a specific type for extendedProps
 interface CalendarEventExtendedProps {
   isBloom?: boolean;
@@ -228,52 +227,22 @@ export default function DailyBloomClient() {
     dueDate?: string; // This is the 'start' date from the calendar event
     end?: string;
   }) => {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-    // 1. Convert naive calendar strings into exact Date objects for that timezone
-    const resolvedDueDate = payload.dueDate 
-      ? fromZonedTime(payload.dueDate, tz) 
-      : new Date();
-
-    const resolvedEndDate = payload.end 
-      ? fromZonedTime(payload.end, tz) 
-      : undefined;
-
-    // 2. Format them to purely local string representations (NO 'Z')
-    const localDueDateStr = formatInTimeZone(resolvedDueDate, tz, "yyyy-MM-dd'T'HH:mm:ss.SSS");
-    const localEndDateStr = resolvedEndDate 
-      ? formatInTimeZone(resolvedEndDate, tz, "yyyy-MM-dd'T'HH:mm:ss.SSS") 
-      : undefined;
-
-    // 3. Re-parse them as UTC Dates by appending 'Z'!
-    // This satisfies TypeScript (it's a Date) AND prevents the browser from shifting the time.
-    const finalDueDate = new Date(`${localDueDateStr}Z`);
-    const finalEndDate = localEndDateStr ? new Date(`${localEndDateStr}Z`) : undefined;
-
     createMutation.mutate({
+      // These are the fields from DailyBloomFormType
       title: payload.title,
       description: payload.description || "",
-      
-      // ✅ Now passing a Date object. TypeScript is happy!
-      dueDate: finalDueDate,
-      
+      dueDate: payload.dueDate ? new Date(payload.dueDate) : new Date(),
       isCompleted: false,
-      addToCalendar: true, 
+      addToCalendar: true, // This is the crucial flag
       frequency: undefined,
-      
       startTime: payload.dueDate
-        ? formatInTimeZone(resolvedDueDate, tz, "HH:mm")
+        ? format(new Date(payload.dueDate), "HH:mm")
         : "",
-      endTime: resolvedEndDate 
-        ? formatInTimeZone(resolvedEndDate, tz, "HH:mm") 
-        : undefined,
-        
-      // ✅ Now passing a Date object. TypeScript is happy!
-      endDate: finalEndDate,
-        
+      endTime: payload.end ? format(new Date(payload.end), "HH:mm") : undefined,
+      endDate: payload.end ? new Date(payload.end) : undefined,
       taskAddJP: false,
       taskCompleteJP: false,
-      isFromEvent: true,
+      isFromEvent: true, // Mark this bloom as created from an even
     });
   };
 
@@ -373,7 +342,21 @@ export default function DailyBloomClient() {
       return res.data.data;
     },
   });
+  // Fetch overdue blooms so the calendar can see them
+  const { data: overdueBloomsData } = useQuery({
+    queryKey: ["overdueDailyBlooms"],
+    queryFn: async () => {
+      // Note: Make sure this endpoint matches exactly what you use in Overdue.tsx
+      const res = await axios.get(`/api/user/daily-bloom/overdue`);
+      console.log("res by fetching overdue bloms", res.data.data);
+      return res.data.data;
+    },
+  });
 
+
+  const overdueBlooms = useMemo(() => {
+    return Array.isArray(overdueBloomsData) ? overdueBloomsData : [];
+  }, [overdueBloomsData]);
   const completedEventList = useMemo(() => {
     return (completedEventBlooms || []).filter(
       (b: DailyBloom) => b.isFromEvent && b.dueDate,
@@ -1005,7 +988,7 @@ export default function DailyBloomClient() {
   };
 
   // Normalize bloom data and assert the correct type for the calendar component
-  const normalizedBlooms = dailyBloom.map((b) => ({
+  const normalizedBlooms = [...dailyBloom, ...overdueBlooms].map((b) => ({
     id: b.id ?? crypto.randomUUID(),
     title: b.title ?? "",
     description: b.description ?? null,
@@ -1021,7 +1004,11 @@ export default function DailyBloomClient() {
   })) as CalendarBloom[]; // This assertion forces TypeScript to accept the correct type
 
   const combinedCalendarItems = useMemo(() => {
-    const allEventBlooms = [...dailyBloom, ...completedEventList];
+    const allEventBlooms = [
+      ...dailyBloom,
+      ...completedEventList,
+      ...overdueBlooms,
+    ];
     const uniqueEventMap = new Map<string, DailyBloom>();
 
     allEventBlooms.forEach((b) => {
@@ -1100,7 +1087,7 @@ export default function DailyBloomClient() {
 
     // 3. Combine the clean lists
     return [...pureEvents, ...bloomEvents];
-  }, [dailyBloom, completedEventList, events]);
+  }, [dailyBloom, completedEventList, events, overdueBlooms]);
 
   return (
     <div className="w-full">
@@ -1112,8 +1099,8 @@ export default function DailyBloomClient() {
         message={upgradeModal.message}
         redirectToPricingUrl={`/pricing?ref=daily-blooms`}
       />
-      <div className="p-3 ">
-        <Card className="mb-8 dark:bg-gray-800">
+      <div className="p-3">
+        <Card className="mb-8">
           <CardHeader>
             <div className="space-y-3">
               <CardTitle>Daily Blooms</CardTitle>
@@ -1152,7 +1139,7 @@ export default function DailyBloomClient() {
         {isLoading ? (
           <PageSkeleton type="leaderboard" />
         ) : (
-          <Card className="dark:bg-slate-900">
+          <Card>
             <CardHeader>
               <CardTitle>Your Daily Blooms</CardTitle>
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mt-2">
@@ -1362,7 +1349,7 @@ export default function DailyBloomClient() {
                     // --- DESKTOP: Table View ---
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-muted dark:bg-slate-950">
+                        <TableRow className="bg-muted">
                           <TableHead className="w-[80px] text-center"></TableHead>
                           <TableHead>Title</TableHead>
                           <TableHead className="w-[130px]">Due Date</TableHead>
@@ -1482,9 +1469,9 @@ export default function DailyBloomClient() {
           </Card>
         )}
         <Dialog open={addData} onOpenChange={setAddData}>
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold light:text-gray-800">
+              <DialogTitle className="text-xl font-semibold text-gray-800">
                 Add Your Bloom
               </DialogTitle>
             </DialogHeader>
@@ -1501,7 +1488,7 @@ export default function DailyBloomClient() {
                 </div>
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="desc-add">Description</Label>
-                  <Textarea className="dark:bg-black dark:border-none" id="desc-add" {...register("description")} />
+                  <Textarea id="desc-add" {...register("description")} />
                   {errors.description && (
                     <p className="text-red-500 text-sm">
                       {errors.description.message}
@@ -1802,9 +1789,9 @@ export default function DailyBloomClient() {
         </Dialog>
 
         <Dialog open={!!viewData} onOpenChange={() => setViewData(null)}>
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-800 dark:text-gray-300">
+              <DialogTitle className="text-xl font-semibold text-gray-800">
                 Bloom Details
               </DialogTitle>
             </DialogHeader>
@@ -1827,7 +1814,7 @@ export default function DailyBloomClient() {
                     <p className="text-sm font-medium text-muted-foreground">
                       Description
                     </p>
-                    <p className="text-base light:text-gray-700 break-all">
+                    <p className="text-base text-gray-700 break-all">
                       {viewData.description || (
                         <span className="text-gray-400">Not provided</span>
                       )}
@@ -1883,9 +1870,9 @@ export default function DailyBloomClient() {
           open={!!editData}
           onOpenChange={(isOpen) => !isOpen && handleCloseEditModal()}
         >
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-800 dark:text-gray-300">
+              <DialogTitle className="text-xl font-semibold text-gray-800">
                 Edit Daily Bloom
               </DialogTitle>
               <DialogDescription>
@@ -1905,7 +1892,7 @@ export default function DailyBloomClient() {
                 </div>
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="desc-edit">Description</Label>
-                  <Textarea className="dark:bg-black dark:border-none" id="desc-edit" {...register("description")} />
+                  <Textarea id="desc-edit" {...register("description")} />
                   {errors.description && (
                     <p className="text-red-500 text-sm">
                       {errors.description.message}
@@ -2000,15 +1987,15 @@ export default function DailyBloomClient() {
         </Dialog>
 
         <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
             <DialogHeader className="text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
-              <DialogTitle className="mt-4 text-xl font-semibold light:text-gray-800 ">
+              <DialogTitle className="mt-4 text-xl font-semibold text-gray-800">
                 Confirm Deletion
               </DialogTitle>
-              <DialogDescription className="mt-2 text-sm light:text-gray-500">
+              <DialogDescription className="mt-2 text-sm text-gray-500">
                 Are you sure you want to delete this bloom? This action cannot
                 be undone.
               </DialogDescription>
@@ -2043,7 +2030,7 @@ export default function DailyBloomClient() {
             if (!open) setInitialEventId(null); // <--- Reset when closing
           }}
         >
-          <DialogContent className="w-[90vw] max-w-4xl rounded-2xl light:bg-white  p-2 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-4xl rounded-2xl bg-white p-2 shadow-xl border">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold text-gray-800">
                 My Calendar
