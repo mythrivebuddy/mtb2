@@ -422,6 +422,15 @@ const NOTIFICATION_SEEDS: {
   url: "{{url}}",
   isDynamic: true,
 },
+ {
+    type: "AFFILIATE_PAYOUT_SUCCESS",
+    name: "Affiliate Payout Processed",
+    title: "💸 Payout of {{amount}} {{currency}} processed",
+    message:
+      "Your affiliate earnings have been credited successfully. Ref: {{referenceId}}",
+    url: "/dashboard/transactions-history",
+    isDynamic: true,
+  },
 ];
 
 async function main() {

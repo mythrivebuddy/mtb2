@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import { Prisma } from "@prisma/client";
+import { PlanUserType, Prisma } from "@prisma/client";
 import { HOLDING_PERIOD_DAYS } from "@/lib/constant";
 
 // ─────────────────────────────────────────────
@@ -27,13 +27,14 @@ type AffiliateMapItem = {
 };
 
 type CreatorPayout = {
-  type: "CREATOR"; // 👈 differentiation
+  type: "CREATOR"; //  differentiation
   creatorId: string;
   creator: {
     id: string;
     name: string;
     email: string;
     image: string | null;
+    userType: PlanUserType;
   };
   currency: string;
   baseAmount: number;
@@ -45,13 +46,14 @@ type CreatorPayout = {
 };
 
 type AffiliatePayout = {
-  type: "AFFILIATE"; // 👈 differentiation
+  type: "AFFILIATE"; //  differentiation
   affiliateId: string;
   affiliate: {
     id: string;
     name: string;
     email: string;
     image: string | null;
+    userType: PlanUserType;
   };
   currency: string;
   baseAmount: number;
@@ -79,7 +81,7 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
     const sortBy = searchParams.get("sortBy") || "payableAmount";
     const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
-
+    const userRole = searchParams.get("userRole"); //"COACH" | "AFFILIATE"
     const holdingCutoff = new Date(
       Date.now() - HOLDING_PERIOD_DAYS * 24 * 60 * 60 * 1000,
     );
@@ -199,6 +201,7 @@ export async function GET(req: NextRequest) {
         name: true,
         email: true,
         image: true,
+        userType: true,
       },
     });
 
@@ -293,7 +296,10 @@ export async function GET(req: NextRequest) {
       .map((item) => {
         const user = userMap.get(item.creatorId);
         if (!user) return null;
+        const netAmount = item.baseAmount - item.discountAmount;
 
+        if (netAmount <= 0 && item.earned <= 0 && item.holding <= 0)
+          return null;
         return {
           type: "CREATOR",
           creatorId: item.creatorId,
@@ -313,7 +319,10 @@ export async function GET(req: NextRequest) {
       .map((item) => {
         const user = userMap.get(item.affiliateId);
         if (!user) return null;
+        const netAmount = item.baseAmount - item.discountAmount;
 
+        if (netAmount <= 0 && item.earned <= 0 && item.holding <= 0)
+          return null;
         return {
           type: "AFFILIATE",
           affiliateId: item.affiliateId,
@@ -328,10 +337,22 @@ export async function GET(req: NextRequest) {
       })
       .filter((r): r is AffiliatePayout => r !== null);
 
+    let filteredCreators = creators;
+    let filteredAffiliates = affiliates;
+
+    if (userRole === "COACH") {
+      // Coach = CREATOR
+      filteredAffiliates = [];
+    }
+
+    if (userRole === "AFFILIATE") {
+      filteredCreators = [];
+    }
+
     // ─────────────────────────────────────────────
     // SORT (CREATORS ONLY)
     // ─────────────────────────────────────────────
-    const combined = [...creators, ...affiliates];
+    const combined = [...filteredCreators, ...filteredAffiliates];
     combined.sort((a, b) => {
       let valA: number | string;
       let valB: number | string;
@@ -390,7 +411,7 @@ export async function GET(req: NextRequest) {
     });
 
     const total = combined.length;
-const paginated = combined.slice(skip, skip + limit);
+    const paginated = combined.slice(skip, skip + limit);
 
     // ─────────────────────────────────────────────
     // ANALYTICS
@@ -424,7 +445,7 @@ const paginated = combined.slice(skip, skip + limit);
     // ─────────────────────────────────────────────
 
     return NextResponse.json({
-      payouts: paginated, 
+      payouts: paginated,
       pagination: {
         total,
         page,

@@ -87,12 +87,22 @@ type PayoutItem = {
   name: string;
   email: string;
   image?: string;
-
+  userType: string;
   type: "CREATOR" | "AFFILIATE";
   creatorId?: string; // Added
   affiliateId?: string; // Added
-  creator?: { name: string; email: string; image: string | null };
-  affiliate?: { name: string; email: string; image: string | null };
+  creator?: {
+    name: string;
+    email: string;
+    image: string | null;
+    userType: string;
+  };
+  affiliate?: {
+    name: string;
+    email: string;
+    image: string | null;
+    userType: string;
+  };
 
   baseAmount: number;
   discountAmount: number;
@@ -154,6 +164,9 @@ export default function AdminPayoutsPage() {
   // Pagination state
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState<number>(10);
+  const [roleFilter, setRoleFilter] = useState<"ALL" | "COACH" | "AFFILIATE">(
+    "ALL",
+  );
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -174,6 +187,7 @@ export default function AdminPayoutsPage() {
       limit,
       sortBy,
       sortOrder,
+      roleFilter,
     ],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -187,6 +201,9 @@ export default function AdminPayoutsPage() {
       if (currencyFilter !== "ALL") params.append("currency", currencyFilter);
       if (fromDate) params.append("fromDate", fromDate);
       if (toDate) params.append("toDate", toDate);
+      if (roleFilter !== "ALL") {
+        params.append("userRole", roleFilter);
+      }
 
       const res = await axios.get(`/api/admin/payouts?${params.toString()}`);
 
@@ -313,7 +330,10 @@ export default function AdminPayoutsPage() {
   const handleConfirmPayout = () => {
     if (!selectedPayout) return;
     processPayoutMutation.mutate({
-      userId: selectedPayout.id,
+      userId:
+        selectedPayout.type === "AFFILIATE"
+          ? selectedPayout.affiliateId!
+          : selectedPayout.creatorId!,
       type: selectedPayout.type,
       currency: selectedPayout.currency,
       referenceId,
@@ -339,9 +359,7 @@ export default function AdminPayoutsPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Creator Payouts
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">Payouts</h1>
             <p className="text-muted-foreground mt-1">
               Review earnings breakdown and process pending payouts
             </p>
@@ -365,7 +383,7 @@ export default function AdminPayoutsPage() {
 
           <SummaryCard
             icon={<Users className="w-4 h-4" />}
-            label="Creator Payable"
+            label="Coach Payable"
             value={`₹${fmt(stats.creatorPayable)}`}
           />
 
@@ -377,7 +395,7 @@ export default function AdminPayoutsPage() {
 
           <SummaryCard
             icon={<IndianRupee className="w-4 h-4" />}
-            label="Platform Commission"
+            label="MTB Commission"
             value={`₹${fmt(stats.totalCommission)}`}
           />
         </div>
@@ -465,6 +483,21 @@ export default function AdminPayoutsPage() {
                 </div>
               </>
             )}
+            <Select
+              value={roleFilter}
+              onValueChange={(v) =>
+                setRoleFilter(v as "ALL" | "COACH" | "AFFILIATE")
+              }
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="User Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Users</SelectItem>
+                <SelectItem value="COACH">Coach</SelectItem>
+                <SelectItem value="AFFILIATE">Affiliate</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* ✅ Clear Filter Button */}
             {hasActiveFilters && (
@@ -505,7 +538,8 @@ export default function AdminPayoutsPage() {
                   className="cursor-pointer group text-center"
                 >
                   <div className="flex items-center justify-center gap-1">
-                    Base Amount
+                    {/* Base Amount */}
+                    Total Business Referred
                     <SortIndicator
                       field="baseAmount"
                       sortBy={sortBy}
@@ -515,7 +549,7 @@ export default function AdminPayoutsPage() {
                 </TableHead>
                 <TableHead
                   onClick={() => handleSortWithReset("discountAmount")}
-                  className="cursor-pointer group text-right text-red-500"
+                  className="cursor-pointer group text-center text-red-500"
                 >
                   <div className="flex items-center justify-end gap-1">
                     Discount
@@ -528,10 +562,11 @@ export default function AdminPayoutsPage() {
                 </TableHead>
                 <TableHead
                   onClick={() => handleSortWithReset("netAmount")}
-                  className="cursor-pointer group text-right"
+                  className="cursor-pointer group text-center"
                 >
                   <div className="flex items-center justify-end gap-1">
-                    Net
+                    {/* Net Amount */}
+                    Net Business Referred
                     <SortIndicator
                       field="netAmount"
                       sortBy={sortBy}
@@ -542,10 +577,10 @@ export default function AdminPayoutsPage() {
 
                 <TableHead
                   onClick={() => handleSortWithReset("commissionAmount")}
-                  className="cursor-pointer group text-right text-orange-500"
+                  className="cursor-pointer group text-center text-orange-500"
                 >
                   <div className="flex items-center justify-end gap-1">
-                    Commission
+                    MTB Commission
                     <SortIndicator
                       field="commissionAmount"
                       sortBy={sortBy}
@@ -555,7 +590,7 @@ export default function AdminPayoutsPage() {
                 </TableHead>
                 <TableHead
                   onClick={() => handleSortWithReset("payableAmount")}
-                  className="cursor-pointer group text-right"
+                  className="cursor-pointer group text-center"
                 >
                   <div className="flex items-center justify-end gap-1">
                     Payable
@@ -566,14 +601,13 @@ export default function AdminPayoutsPage() {
                     />
                   </div>
                 </TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-12">
-                    <Loader2 className="animate-spin mx-auto w-6 h-6 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mt-2">
                       Loading payouts…
                     </p>
@@ -631,7 +665,13 @@ export default function AdminPayoutsPage() {
                           )}
 
                           <div>
-                            <p className="font-medium text-sm">{displayName}</p>
+                            <Link
+                              href={`/profile/${rowUniqueId}`}
+                              target="_blank"
+                              className="font-medium text-sm hover:underline"
+                            >
+                              {displayName}
+                            </Link>
                             <Badge
                               variant="outline"
                               className="text-[10px] px-1 py-0 mt-0.5"
@@ -642,13 +682,46 @@ export default function AdminPayoutsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            p.type === "CREATOR" ? "default" : "secondary"
-                          }
-                        >
-                          {p.type}
-                        </Badge>
+                        <div className="flex flex-col items-center gap-1 flex-wrap">
+                          {/* ===== AFFILIATE ===== */}
+                          {p.type === "AFFILIATE" && (
+                            <>
+                              <Badge variant="secondary">AFFILIATE</Badge>
+
+                              {userData?.userType && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] px-1 py-0"
+                                >
+                                  {userData.userType}
+                                </Badge>
+                              )}
+                            </>
+                          )}
+
+                          {/* ===== CREATOR ===== */}
+                          {p.type === "CREATOR" && (
+                            <>
+                              {userData?.userType === "COACH" ? (
+                                // 👉 ONLY show COACH (no CREATOR)
+                                <Badge variant="default">COACH</Badge>
+                              ) : (
+                                // 👉 fallback: show CREATOR
+                                <>
+                                  <Badge variant="default">CREATOR</Badge>
+                                  {userData?.userType && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] px-1 py-0"
+                                    >
+                                      {userData.userType}
+                                    </Badge>
+                                  )}
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </TableCell>
 
                       {/* Email */}
@@ -657,10 +730,10 @@ export default function AdminPayoutsPage() {
                       </TableCell>
 
                       {/* Base Amount */}
-                      <TableCell className="text-right text-sm">
+                      <TableCell className="text-center text-sm">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="cursor-default">
+                            <span className="cursor-default whitespace-nowrap">
                               <CurrencyIcon currency={p.currency} />
                               {fmt(p.baseAmount)}
                             </span>
@@ -671,7 +744,7 @@ export default function AdminPayoutsPage() {
                         </Tooltip>
                       </TableCell>
                       {/* ✅ Discount Amount */}
-                      <TableCell className="text-right text-sm text-red-500 whitespace-nowrap">
+                      <TableCell className="text-center text-sm text-red-500 whitespace-nowrap">
                         <span className="cursor-default">
                           {p.discountAmount > 0 ? "-" : ""}{" "}
                           <CurrencyIcon currency={p.currency} />
@@ -680,14 +753,14 @@ export default function AdminPayoutsPage() {
                       </TableCell>
 
                       {/* ✅ Net Amount */}
-                      <TableCell className="text-right text-sm font-medium whitespace-nowrap">
+                      <TableCell className="text-center text-sm font-medium whitespace-nowrap">
                         <span className="cursor-default">
                           <CurrencyIcon currency={p.currency} />
                           {fmt(p.netAmount)}
                         </span>
                       </TableCell>
                       {/* Commission */}
-                      <TableCell className="text-right text-sm text-orange-500">
+                      <TableCell className="text-center text-sm text-orange-500">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             {p.type === "CREATOR" ? (
@@ -706,7 +779,7 @@ export default function AdminPayoutsPage() {
                       </TableCell>
 
                       {/* Payable */}
-                      <TableCell className="text-right font-semibold text-green-600">
+                      <TableCell className="text-center font-semibold text-green-600">
                         <CurrencyIcon currency={p.currency} />
                         {fmt(p.payableAmount)}
 
@@ -719,9 +792,9 @@ export default function AdminPayoutsPage() {
                       </TableCell>
 
                       {/* Action */}
-                      <TableCell className="text-right space-x-2">
+                      <TableCell className="text-center space-x-2">
                         <Link
-                          href={`/admin/payouts/details/${p.id}&type=${p.type}?currency=${p.currency}`}
+                          href={`/admin/payouts/details/${p.affiliateId || p.creatorId}?type=${p.type}&currency=${p.currency}`}
                           target="_blank"
                         >
                           <Button size="sm" variant="ghost">

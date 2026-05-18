@@ -3,36 +3,37 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { HOLDING_PERIOD_DAYS } from "@/lib/constant";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
-import {
-  replaceDynamicNotificationTemplate,
-  sendPushNotificationToUser,
-} from "@/lib/utils/pushNotifications";
-
-type PayoutNotificationTemplateData = {
-  amount: string;
-  currency: string;
-  referenceId: string;
-};
+import { sendPushNotificationFromDBToUser } from "@/lib/utils/pushNotifications";
 
 export async function POST(req: Request) {
   await checkRole("ADMIN");
 
   try {
-    const { creatorId, currency, referenceId, notes } = await req.json();
-
+    const { userId, currency, referenceId, notes, type } = await req.json();
+    const isAffiliate = type === "AFFILIATE";
     const holdingCutoff = new Date(
       Date.now() - HOLDING_PERIOD_DAYS * 24 * 60 * 60 * 1000,
     );
     // 1️ get ONLY matured earnings
-    const earnings = await prisma.creatorEarningLedger.findMany({
-      where: {
-        creatorId,
-        currency,
-        status: "PENDING",
-        createdAt: { lte: holdingCutoff },
-      },
-      orderBy: { createdAt: "asc" }, // FIFO
-    });
+    const earnings = isAffiliate
+      ? await prisma.affiliateEarningLedger.findMany({
+          where: {
+            affiliateId: userId,
+            currency,
+            status: "PENDING",
+            createdAt: { lte: holdingCutoff },
+          },
+          orderBy: { createdAt: "asc" },
+        })
+      : await prisma.creatorEarningLedger.findMany({
+          where: {
+            creatorId: userId,
+            currency,
+            status: "PENDING",
+            createdAt: { lte: holdingCutoff },
+          },
+          orderBy: { createdAt: "asc" },
+        });
 
     if (!earnings.length) {
       return NextResponse.json(
@@ -46,61 +47,67 @@ export async function POST(req: Request) {
 
     // 3️ create payout
     const payout = await prisma.$transaction(async (tx) => {
-      const payout = await tx.creatorPayout.create({
-        data: {
-          creatorId,
-          amount: total,
-          currency,
-          referenceId,
-          notes,
-          status: "PAID",
-          paidAt: new Date(),
-        },
-      });
+      const payout = isAffiliate
+        ? await tx.affiliatePayout.create({
+            data: {
+              affiliateId: userId,
+              amount: total,
+              currency,
+              referenceId,
+              notes,
+              status: "PAID",
+              paidAt: new Date(),
+            },
+          })
+        : await tx.creatorPayout.create({
+            data: {
+              creatorId: userId,
+              amount: total,
+              currency,
+              referenceId,
+              notes,
+              status: "PAID",
+              paidAt: new Date(),
+            },
+          });
 
-      await tx.creatorEarningLedger.updateMany({
-        where: {
-          id: { in: earnings.map((e) => e.id) },
-        },
-        data: {
-          status: "PAID",
-          payoutId: payout.id,
-        },
-      });
+      if (isAffiliate) {
+        await tx.affiliateEarningLedger.updateMany({
+          where: {
+            id: { in: earnings.map((e) => e.id) },
+          },
+          data: {
+            status: "PAID",
+            payoutId: payout.id,
+          },
+        });
+      } else {
+        await tx.creatorEarningLedger.updateMany({
+          where: {
+            id: { in: earnings.map((e) => e.id) },
+          },
+          data: {
+            status: "PAID",
+            payoutId: payout.id,
+          },
+        });
+      }
 
       return payout;
     });
     // Fetch creator
     const creator = await prisma.user.findUnique({
-      where: { id: creatorId },
+      where: { id: userId },
       select: { id: true, name: true, email: true },
     });
 
     if (creator?.email) {
       const formattedAmount = total.toFixed(2);
-      const notifSetting = await prisma.notificationSettings.findUnique({
-        where: { notification_type: "CREATOR_PAYOUT_SUCCESS" },
-      });
+      const notifType = isAffiliate
+        ? "AFFILIATE_PAYOUT_SUCCESS"
+        : "CREATOR_PAYOUT_SUCCESS";
 
-      const notificationTemplateData: PayoutNotificationTemplateData = {
-        amount: formattedAmount,
-        currency,
-        referenceId: referenceId || payout.id,
-      };
-
-      const title = replaceDynamicNotificationTemplate(
-        notifSetting?.title || "💸 Payout processed",
-        notificationTemplateData,
-      );
-
-      const message = replaceDynamicNotificationTemplate(
-        notifSetting?.message || "Your payout has been processed successfully.",
-        notificationTemplateData,
-      );
-
-      const url: string =
-        notifSetting?.url || "/dashboard/transactions-history";
-      const results = await Promise.allSettled([
+      await Promise.allSettled([
         sendEmailUsingTemplate({
           toEmail: creator.email,
           toName: creator.name || "Creator",
@@ -118,29 +125,16 @@ export async function POST(req: Request) {
             dashboardUrl: `${process.env.NEXT_URL}/dashboard/transactions-history`,
           },
         }),
-
-        sendPushNotificationToUser(creator.id, title, message, { url }),
-        prisma.notification.create({
-          data: {
-            userId: creator.id,
-            type: "CREATOR_PAYOUT_SUCCESS",
-            title,
-            message,
-            metadata: {
-              url,
-            },
+        sendPushNotificationFromDBToUser({
+          type: notifType,
+          userId: creator.id,
+          context: {
+            amount: formattedAmount,
+            currency,
+            referenceId: referenceId || payout.id,
           },
         }),
       ]);
-
-      results.forEach((r) => {
-        if (r.status === "rejected") {
-          console.error("Payout notification failed", {
-            creatorId,
-            error: r.reason,
-          });
-        }
-      });
     }
     return NextResponse.json({
       success: true,
