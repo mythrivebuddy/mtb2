@@ -319,8 +319,8 @@ const EventForm = ({
   const isCompleted = currentEvent.extendedProps?.isCompleted;
   const isDisabled = isSubmitting || isCompleted;
   return (
-    <div className="grid gap-4 py-4">
-      <div className="grid gap-2">
+    <div className="grid gap-4 py-4 w-full max-w-full">
+      <div className="grid gap-2 ">
         <Label htmlFor="title">Title</Label>
         <Input
           id="title"
@@ -330,10 +330,10 @@ const EventForm = ({
           }
           disabled={isDisabled}
           placeholder="Event Title"
-          className="text-sm"
+          className="w-full"
         />
       </div>
-      <div className="grid gap-2">
+      <div className="grid gap-2 w-full">
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
@@ -349,13 +349,13 @@ const EventForm = ({
           }
           disabled={isDisabled}
           placeholder="Optional details..."
-          className="text-sm"
+          className="w-full resize-none"
         />
       </div>
-      <div className="grid gap-2">
+      <div className="grid gap-2 min-w-0">
         <Label>Due Date</Label>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 min-w-0">
           {/* DATE */}
           <Input
             type="date"
@@ -388,6 +388,7 @@ const EventForm = ({
               );
               setTimeError(result.message);
             }}
+        className="flex-grow min-w-0"
             disabled={isDisabled}
           />
 
@@ -414,7 +415,7 @@ const EventForm = ({
               setTimeError(result.message);
             }}
           >
-            <SelectTrigger className="w-[110px]" disabled={isDisabled}>
+            <SelectTrigger className="w-[110px] shrink-0" disabled={isDisabled}>
               <SelectValue placeholder="Time" />
             </SelectTrigger>
 
@@ -1647,7 +1648,7 @@ const initialScrollTime = React.useMemo(() => {
                   : "View or manage your event details."}
               </DrawerDescription>
             </DrawerHeader>
-            <div className="px-4 overflow-y-auto pb-24">
+            <div className="flex-1 px-4 overflow-y-auto min-w-0 ">
               {currentEvent && (
                 <EventForm
                   currentEvent={currentEvent}
@@ -1658,7 +1659,7 @@ const initialScrollTime = React.useMemo(() => {
                 />
               )}
             </div>
-            <DrawerFooter className="pt-4">
+            <DrawerFooter className="pt-4 ">
               <FormButtons />
               <Button variant="outline" onClick={handleCloseModal}>Cancel</Button>
             </DrawerFooter>

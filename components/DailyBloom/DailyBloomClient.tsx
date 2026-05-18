@@ -1543,7 +1543,7 @@ export default function DailyBloomClient() {
                   <div className="grid gap-4">
                     <div className="grid gap-2">
                       <Label>Due Date</Label>
-                      <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                         {/* DATE */}
                         <Controller
                           name="dueDate"
@@ -1583,7 +1583,7 @@ export default function DailyBloomClient() {
                                   setValue("endTime", addOneHour(time));
                                 }}
                               >
-                                <SelectTrigger className="w-[110px]">
+                                <SelectTrigger className="w-full sm:w-[110px]">
                                   <SelectValue placeholder="Time" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-60 overflow-y-auto">
@@ -1614,7 +1614,7 @@ export default function DailyBloomClient() {
                       <>
                         {/* END DATE / END TIME (Hidden if All Day is checked) */}
                         {!!watch("endTime") && (
-                          <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             {/* Disabled End Date - Automatically Synced to Due Date */}
                             <Controller
                               name="endDate"
@@ -1649,7 +1649,7 @@ export default function DailyBloomClient() {
                                   value={field.value || ""}
                                   onValueChange={field.onChange}
                                 >
-                                  <SelectTrigger className="w-[110px]">
+                                  <SelectTrigger className="w-full sm:w-[110px]">
                                     <SelectValue placeholder="End Time" />
                                   </SelectTrigger>
                                   <SelectContent className="max-h-60 overflow-y-auto">
@@ -1870,7 +1870,7 @@ export default function DailyBloomClient() {
           open={!!editData}
           onOpenChange={(isOpen) => !isOpen && handleCloseEditModal()}
         >
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+         <DialogContent className="w-[95vw] sm:w-[90vw] max-w-md rounded-2xl bg-white p-4 sm:p-6 shadow-xl border max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold text-gray-800">
                 Edit Daily Bloom
