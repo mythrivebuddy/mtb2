@@ -3,6 +3,45 @@ import { prisma } from "@/lib/prisma";
 import { activityDisplayMap } from "../constants/activityNames";
 
 // Helper function to create a notification
+
+export async function cleanupNotifications(userId: string) {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  console.log("Cleanup running ")
+   await prisma.$executeRaw`
+    DELETE FROM "Notification"
+    WHERE "userId" = ${userId}
+    AND "id" NOT IN (
+      SELECT "id"
+      FROM "Notification"
+      WHERE "userId" = ${userId}
+      ORDER BY "createdAt" DESC
+      LIMIT 7
+    )
+  `;
+}
+export const createBulkNotifications = async (
+  userIds: string[],
+  type: NotificationType,
+  title: string,
+  message: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  metadata?: any,
+) => {
+  await prisma.notification.createMany({
+    data: userIds.map((userId) => ({
+      userId,
+      type,
+      title,
+      message,
+      metadata,
+    })),
+  });
+  Promise.allSettled(
+    userIds.map((userId) => cleanupNotifications(userId).catch(console.error)),
+  );
+  return;
+};
 export async function createNotification(
   userId: string,
   type: NotificationType,
@@ -11,9 +50,13 @@ export async function createNotification(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: any,
 ) {
-  return await prisma.notification.create({
+  // 🔥 async cleanup (non-blocking)
+
+  const notification = await prisma.notification.create({
     data: { userId, type, title, message, metadata },
   });
+  cleanupNotifications(userId).catch(console.error);
+  return notification;
 }
 
 // Returns notification data for JP earned
