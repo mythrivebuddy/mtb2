@@ -1,7 +1,7 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 import { NotificationType } from "@prisma/client";
-import { createNotification } from "./notifications";
+import { createBulkNotifications, createNotification } from "./notifications";
 
 webpush.setVapidDetails(
   `mailto:${process.env.ADMIN_EMAIL || "developer.deepak25@gmail.com"}`,
@@ -228,20 +228,12 @@ export async function sendDbPushNotificationMultipleUsers({
         url = url.replace(regex, String(value));
       });
     }
+    // ✅ create DB notifications (bulk)
+   await  createBulkNotifications(userIds, type, title, message, { url });
     const allowedUserIds = await getAllowedUserIds(userIds, type);
 
     if (!allowedUserIds.length) return;
 
-    // ✅ create DB notifications (bulk)
-    await prisma.notification.createMany({
-      data: allowedUserIds.map((userId) => ({
-        userId,
-        type,
-        title,
-        message,
-        metadata: { url },
-      })),
-    });
 
     // ✅ push (reuse your existing function)
     await sendPushNotificationMultipleUsers(allowedUserIds, title, message, {
@@ -300,7 +292,7 @@ export async function sendPushNotificationFromDBToUser({
       message = replaceDynamicNotificationTemplate(message, safeContext);
       url = replaceDynamicNotificationTemplate(url, safeContext);
     }
-
+        await createNotification(userId, type, title, message, { url });
     /* ==================================================
        🧠 PERMISSION CHECK
     ================================================== */
@@ -312,8 +304,6 @@ export async function sendPushNotificationFromDBToUser({
     /* ==================================================
        ✅ EXECUTE
     ================================================== */
-
-    await createNotification(userId, type, title, message, { url });
 
     await sendPushNotificationToUser(userId, title, message, { url });
   } catch (error) {

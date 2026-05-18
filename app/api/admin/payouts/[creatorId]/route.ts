@@ -1,5 +1,3 @@
-// /api/admin/payouts/[creatorId]/route.ts
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
@@ -10,16 +8,63 @@ export async function GET(
   { params }: { params: { creatorId: string } },
 ) {
   await checkRole("ADMIN");
-  const contextParams = await params;
-  const creatorId = contextParams.creatorId;
+  const paramsContext = await params
+  const creatorId =  paramsContext.creatorId;
+
   const { searchParams } = new URL(req.url);
-  const currency = searchParams.get("currency");
+  const type = searchParams.get("type"); // CREATOR | AFFILIATE
+  const currency = searchParams.get("currency"); // INR | USD | ALL | null
+  const statusParam = searchParams.get("status"); // PAID | MATURED | HOLDING | ALL | null
+  const page = Math.max(1, Number(searchParams.get("page") || 1));
+  const limit = Math.max(1, Number(searchParams.get("limit") || 10));
+  const skip = (page - 1) * limit;
+
+  const fromDate = searchParams.get("fromDate");
+  const toDate = searchParams.get("toDate");
 
   const holdingCutoff = new Date(
     Date.now() - HOLDING_PERIOD_DAYS * 24 * 60 * 60 * 1000,
   );
 
-  // 1️⃣ Fetch the creator details ONCE
+  // ─── Status filter ────────────────────────────────────────────────────────
+  // MATURED / HOLDING are derived from PENDING + createdAt, not a DB column.
+  // PAID maps directly to status === "PAID".
+  const statusWhere: Record<string, unknown> =
+    statusParam === "PAID"
+      ? { status: "PAID" }
+      : statusParam === "MATURED"
+        ? { status: "PENDING", createdAt: { lte: holdingCutoff } }
+        : statusParam === "HOLDING"
+          ? { status: "PENDING", createdAt: { gt: holdingCutoff } }
+          : {}; // ALL — no status filter
+
+  // ─── Date range filter ────────────────────────────────────────────────────
+  const dateWhere =
+    fromDate || toDate
+      ? {
+          createdAt: {
+            ...(fromDate ? { gte: new Date(fromDate) } : {}),
+            ...(toDate
+              ? {
+                  lte: new Date(new Date(toDate).setHours(23, 59, 59, 999)),
+                }
+              : {}),
+          },
+        }
+      : {};
+
+  // ─── Currency filter ──────────────────────────────────────────────────────
+  // Ignore "ALL" or null — don't pass it into Prisma as a literal value.
+  const currencyWhere =
+    currency && currency !== "ALL" ? { currency } : {};
+
+  const baseWhere = {
+    ...currencyWhere,
+    ...statusWhere,
+    ...dateWhere,
+  };
+
+  // ─── Fetch creator ────────────────────────────────────────────────────────
   const creator = await prisma.user.findUnique({
     where: { id: creatorId },
     select: { name: true, email: true },
@@ -29,77 +74,156 @@ export async function GET(
     return NextResponse.json({ error: "Creator not found" }, { status: 404 });
   }
 
-  // 2️⃣ Fetch earnings and include ONLY the PaymentOrder -> User (Buyer)
-  const earnings = await prisma.creatorEarningLedger.findMany({
-    where: {
-      creatorId,
-      ...(currency && { currency }),
-    },
-    orderBy: { createdAt: "desc" },
+  const isAffiliate = type === "AFFILIATE";
+
+  // ─── Shared paymentOrder include ──────────────────────────────────────────
+  const paymentOrderInclude = {
     include: {
-      paymentOrder: {
+      user: { select: { name: true, email: true } },
+      plan: { select: { name: true } },
+      challenge: { select: { title: true } },
+   
+      storeOrder: {
         include: {
-          user: {
-            select: { name: true, email: true }, // 👤 Gets the Buyer Details
+          items: {
+            include: { item: { select: { name: true } } },
           },
         },
       },
     },
-  });
+  };
 
-  // 3️⃣ Extract the context IDs to fetch the actual Product Names
-  const challengeIds = earnings
-    .filter((e) => e.contextType === "CHALLENGE")
-    .map((e) => e.contextId);
-  const mmpIds = earnings
-    .filter((e) => e.contextType === "MMP_PROGRAM")
-    .map((e) => e.contextId);
-  const storeIds = earnings
-    .filter((e) => e.contextType === "STORE_PRODUCT")
-    .map((e) => e.contextId);
+  // ─── Fetch earnings ───────────────────────────────────────────────────────
+  const earnings = isAffiliate
+    ? await prisma.affiliateEarningLedger.findMany({
+        where: { affiliateId: creatorId, ...baseWhere },
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: { paymentOrder: paymentOrderInclude },
+      })
+    : await prisma.creatorEarningLedger.findMany({
+        where: { creatorId, ...baseWhere },
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: { paymentOrder: paymentOrderInclude },
+      });
 
-  // 4️⃣ Fetch the titles from their respective tables
-  const [challenges, mmps, storeProducts] = await Promise.all([
-    prisma.challenge.findMany({
-      where: { id: { in: challengeIds } },
-      select: { id: true, title: true },
-    }),
-    prisma.program.findMany({
-      where: { id: { in: mmpIds } },
+  // ─── Total count (same where, no skip/take) ───────────────────────────────
+  const totalCount = isAffiliate
+    ? await prisma.affiliateEarningLedger.count({
+        where: { affiliateId: creatorId, ...baseWhere },
+      })
+    : await prisma.creatorEarningLedger.count({
+        where: { creatorId, ...baseWhere },
+      });
+
+  const totalPages = Math.ceil(totalCount / limit);
+  const allEarnings = isAffiliate
+  ? await prisma.affiliateEarningLedger.findMany({
+      where: { affiliateId: creatorId, ...baseWhere },
+      select: {
+        earnedAmount: true,
+        status: true,
+        createdAt: true,
+      },
+    })
+  : await prisma.creatorEarningLedger.findMany({
+      where: { creatorId, ...baseWhere },
+      select: {
+        earnedAmount: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    const analytics = allEarnings.reduce(
+  (acc, e) => {
+    const amount = Number(e.earnedAmount || 0);
+
+    if (e.status === "PAID") {
+      acc.paid += amount;
+    } else if (e.status === "PENDING") {
+      if (e.createdAt <= holdingCutoff) {
+        acc.matured += amount;
+      } else {
+        acc.holding += amount;
+      }
+    }
+
+    acc.total += amount;
+
+    return acc;
+  },
+  {
+    total: 0,
+    paid: 0,
+    matured: 0,
+    holding: 0,
+  },
+);
+
+  // ─── Resolve program names ────────────────────────────────────────────────
+  const programIds = earnings
+    .map((e) => e.paymentOrder?.programId)
+    .filter((id): id is string => Boolean(id));
+
+  const programMap = new Map<string, string>();
+
+  if (programIds.length) {
+    const programs = await prisma.program.findMany({
+      where: { id: { in: programIds } },
       select: { id: true, name: true },
-    }),
-    prisma.item.findMany({
-      where: { id: { in: storeIds } },
-      select: { id: true, name: true },
-    }),
-  ]);
+    });
+    programs.forEach((p) => programMap.set(p.id, p.name));
+  }
 
-  // 5️⃣ Map the IDs to their Titles for quick lookup
-  const itemNameMap = new Map<string, string>();
-  challenges.forEach((c) => itemNameMap.set(c.id, c.title));
-  mmps.forEach((m) => itemNameMap.set(m.id, m.name));
-  storeProducts.forEach((s) => itemNameMap.set(s.id, s.name));
-
-  // 6️⃣ Format the final output
+  // ─── Format output ────────────────────────────────────────────────────────
   const formatted = earnings.map((e) => {
-    const discountAmount = Number(e.paymentOrder?.discountApplied || 0);
+    const discountApplied = Number(e.paymentOrder?.discountApplied ?? 0);
+    const baseAmount = Number(e.baseAmount ?? 0);
+    const netAmount = Math.max(baseAmount - discountApplied, 0);
+
+    const isHolding = e.status === "PENDING" && e.createdAt > holdingCutoff;
+    const isMatured = e.status === "PENDING" && e.createdAt <= holdingCutoff;
+
+    const platformFee = isAffiliate
+      ? 0
+      : Number(("platformFee" in e ? e.platformFee : null) ?? 0);
+
+    const itemName =
+      e.paymentOrder?.plan?.name ||
+      e.paymentOrder?.challenge?.title ||
+      (e.paymentOrder?.programId
+        ? programMap.get(e.paymentOrder.programId)
+        : undefined) ||
+      e.paymentOrder?.storeOrder?.items?.[0]?.item?.name ||
+      "Unknown Item";
 
     return {
       ...e,
-      isHolding: e.status === "PENDING" && e.createdAt > holdingCutoff,
-      isMatured: e.status === "PENDING" && e.createdAt <= holdingCutoff,
-
-      discountApplied: discountAmount,
-
-      // Attach Buyer Data from PaymentOrder
+      baseAmount,
+      netAmount,
+      discountApplied,
+      platformFee,
+      isHolding,
+      isMatured,
       buyerName: e.paymentOrder?.user?.name || "Unknown Buyer",
       buyerEmail: e.paymentOrder?.user?.email || "N/A",
-
-      // Attach the actual Product Name
-      itemName: itemNameMap.get(e.contextId) || "Unknown Item",
+      itemName,
     };
   });
 
-  //  Return the single creator object alongside the earnings array
-  return NextResponse.json({ creator, earnings: formatted });
+  return NextResponse.json({
+    creator,
+    earnings: formatted,
+    analytics,
+    pagination: {
+      page,
+      limit,
+      totalPages,
+      totalCount,
+    },
+  });
 }
