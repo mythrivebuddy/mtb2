@@ -1701,6 +1701,114 @@ async function main() {
 </div>
   `.trim(),
     },
+    {
+      templateId: "affiliate-payout-success",
+      subject: "💸 Your payout of {{currency}} {{amount}} has been processed!",
+      description: "Sent when a affiliate payout is successfully completed",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+
+  <!-- HEADER -->
+  <div style="padding:30px;text-align:center;background:linear-gradient(90deg,#16a34a,#059669);">
+    <h1 style="margin:0;color:#ffffff;font-size:26px;">Creator Payout 💸</h1>
+    <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">
+      Your affiliate earnings have been successfully paid
+    </p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:30px;">
+
+    <p style="font-size:16px;color:#374151;margin-top:0;">
+      Hi <strong>{{name}}</strong>,
+    </p>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;">
+      Your affiliate earnings from MTB products have been successfully processed.
+    </p>
+
+    <!-- AMOUNT -->
+    <div style="text-align:center;margin:24px 0;">
+      <span style="
+        background:#ecfdf5;
+        color:#065f46;
+        padding:14px 28px;
+        border-radius:10px;
+        font-size:22px;
+        font-weight:700;
+        border:1px solid #bbf7d0;
+        display:inline-block;
+      ">
+        {{currency}} {{amount}}
+      </span>
+    </div>
+
+    <!-- DETAILS -->
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:18px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:8px 0;color:#6b7280;font-size:14px;">
+            Payout Reference ID
+          </td>
+          <td style="padding:8px 0;text-align:right;color:#111827;font-weight:600;font-size:14px;">
+            {{referenceId}}
+          </td>
+        </tr>
+
+        <tr style="border-top:1px solid #e5e7eb;">
+          <td style="padding:8px 0;color:#6b7280;font-size:14px;">
+            Date
+          </td>
+          <td style="padding:8px 0;text-align:right;color:#111827;font-weight:600;font-size:14px;">
+            {{paidAt}}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- INFO -->
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-top:20px;">
+      <p style="margin:0;color:#1d4ed8;font-size:13px;">
+        💡 This includes earnings after platform fees and completed holding period.
+      </p>
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{dashboardUrl}}" style="
+        background:#16a34a;
+        color:white;
+        padding:14px 28px;
+        border-radius:8px;
+        text-decoration:none;
+        font-weight:600;
+        font-size:15px;
+        display:inline-block;
+      ">
+        View Earnings →
+      </a>
+    </div>
+
+    <p style="color:#9ca3af;font-size:13px;">
+      Funds have been transferred to your registered payout method.
+    </p>
+
+    <p style="color:#9ca3af;font-size:13px;">
+      Keep building. Keep earning 🚀
+    </p>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">
+      © My Thrive Buddy. All rights reserved.
+    </p>
+  </div>
+
+</div>
+  `.trim(),
+    },
   ];
 
   let createdCount = 0;

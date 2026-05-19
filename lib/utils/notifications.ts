@@ -7,20 +7,30 @@ import { activityDisplayMap } from "../constants/activityNames";
 export async function cleanupNotifications(userId: string) {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  console.log("Cleanup running ")
-   await prisma.$executeRaw`
+
+  console.log("Cleanup running");
+
+  await prisma.$executeRaw`
     DELETE FROM "Notification"
     WHERE "userId" = ${userId}
-    AND "id" NOT IN (
-      SELECT "id"
-      FROM "Notification"
-      WHERE "userId" = ${userId}
-      ORDER BY "createdAt" DESC
-      LIMIT 7
+    AND (
+      -- Case 1: unread notifications older than 7 days → delete
+      ("isRead" = false AND "createdAt" < ${sevenDaysAgo})
+
+      OR
+
+      -- Case 2: read notifications except latest 7 → delete
+      ("isRead" = true AND "id" NOT IN (
+        SELECT "id"
+        FROM "Notification"
+        WHERE "userId" = ${userId}
+        AND "isRead" = true
+        ORDER BY "createdAt" DESC
+        LIMIT 7
+      ))
     )
   `;
-}
-export const createBulkNotifications = async (
+}export const createBulkNotifications = async (
   userIds: string[],
   type: NotificationType,
   title: string,

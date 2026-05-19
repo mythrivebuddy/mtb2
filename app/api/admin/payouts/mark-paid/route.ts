@@ -111,9 +111,9 @@ export async function POST(req: Request) {
         sendEmailUsingTemplate({
           toEmail: creator.email,
           toName: creator.name || "Creator",
-          templateId: "creator-payout-success",
+          templateId: isAffiliate ? "affiliate-payout-success":"creator-payout-success",
           templateData: {
-            name: creator.name || "Creator",
+            name: creator.name,
             amount: formattedAmount,
             currency,
             referenceId: referenceId || payout.id,
