@@ -450,6 +450,15 @@ const NOTIFICATION_SEEDS: {
     url: "/admin/spotlight",
     audiences:["ADMIN"]
   },
+{
+  type: NotificationType.CHALLENGE_CREATED_ADMIN,
+  name: "New Challenge Created (Admin)",
+  title: "📢 New Challenge Created",
+  message: "{{userName}} created a new {{challengeType}} challenge : {{challengeTitle}} {{amountSection}}.",
+  isDynamic: true,
+  url: "/dashboard/challenge/upcoming-challenges/{{challengeId}}",
+  audiences: ["ADMIN"]
+}
 ];
 
 

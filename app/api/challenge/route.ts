@@ -9,10 +9,11 @@ import { LimitType } from "@/lib/access-control/featureConfig";
 import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 import { deductJp } from "@/lib/utils/jp";
 import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 import { challengeSchema } from "@/schema/zodSchema";
-import { ActivityType } from "@prisma/client";
+import { ActivityType, NotificationType } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 // Helper: create URL-friendly slug
@@ -244,6 +245,27 @@ export async function POST(request: Request) {
       { maxWait: 10000, timeout: 20000 },
     );
 
+    await safeInngestSend({
+      name: "notification/send",
+      data: {
+        types: [NotificationType.CHALLENGE_CREATED_ADMIN],
+        actorId: userId,
+        sendToUser: false,
+        sendToAdmin: true,
+        sendToCoach: false,
+
+        context: {
+          userName: user.name,
+          challengeTitle: newChallenge.title,
+          challengeId: newChallenge.id,
+          challengeType, // FREE / PAID
+          amountSection:
+            challengeType === "PAID"
+              ? ` for ${challengeJoiningFee} ${challengeJoiningFeeCurrency}`
+              : "",
+        },
+      },
+    });
     return NextResponse.json(
       {
         message: "Challenge created and you have been enrolled!",
