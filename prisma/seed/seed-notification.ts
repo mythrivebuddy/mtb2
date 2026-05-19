@@ -458,6 +458,15 @@ const NOTIFICATION_SEEDS: {
   isDynamic: true,
   url: "/dashboard/challenge/upcoming-challenges/{{challengeId}}",
   audiences: ["ADMIN"]
+},
+{
+  type: NotificationType.MMP_PROGRAM_CREATED_ADMIN,
+  name: "New Mini Mastery Program Created (Admin)",
+  title: "📘 New Mini Mastery Program Created",
+  message: "{{userName}} created a new {{programType}} program : {{programName}} {{amountSection}}.",
+  isDynamic: true,
+  url: "/admin/manage-mini-mastery-program",
+  audiences: ["ADMIN"]
 }
 ];
 

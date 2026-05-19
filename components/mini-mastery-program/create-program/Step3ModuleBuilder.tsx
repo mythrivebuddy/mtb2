@@ -506,7 +506,7 @@ export default function Step3ModuleBuilder({
                                 }),
                             })}
                             placeholder="YouTube or Vimeo link"
-                            className={`w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 border text-sm ${
+                            className={`w-full p-4 dark:bg-slate-900 text-gray-800 dark:text-slate-200 rounded-xl outline-none focus:ring-2 border text-sm ${
                               modErrors?.videoUrl
                                 ? "border-red-400 bg-red-50/30 focus:ring-red-400"
                                 : "border-transparent focus:ring-blue-400"

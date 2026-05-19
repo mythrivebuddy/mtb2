@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { NotificationType, Prisma } from "@prisma/client";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 // ─── Request body validation schema ──────────────────────────────────────────
 
@@ -232,7 +233,6 @@ export async function GET(req: NextRequest) {
 
 // ─── PATCH /api/mini-mastery-programs  →  Partial update / Submit for Review ─
 export async function PATCH(req: NextRequest) {
-  console.log("****************************");
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
@@ -310,8 +310,36 @@ export async function PATCH(req: NextRequest) {
         ? { modules: updateFields.modules as Prisma.InputJsonValue }
         : {}),
     },
-    select: { id: true, name: true, status: true },
+    select: { id: true, name: true, status: true, price: true, currency: true },
   });
 
+  if (
+    program.status !== "UNDER_REVIEW" && // old status
+    updated.status === "UNDER_REVIEW" // new status
+  ) {
+    await safeInngestSend({
+      name: "notification/send",
+      data: {
+        types: [NotificationType.MMP_PROGRAM_CREATED_ADMIN],
+        actorId: userId,
+
+        sendToUser: false,
+        sendToAdmin: true,
+        sendToCoach: false,
+
+        context: {
+          userName: session.user.name ?? "A user",
+          programName: updated.name,
+          programId: updated.id,
+          programType: updated.price && updated.price > 0 ? "Paid" : "Free",
+          // ✅ dynamic price
+          amountSection:
+            updated.price && updated.price > 0
+              ? ` for ${updated.price} ${updated.currency}`
+              : "",
+        },
+      },
+    });
+  }
   return NextResponse.json({ message: "Program updated.", program: updated });
 }

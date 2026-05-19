@@ -20,7 +20,7 @@ export default function AppearanceSettings() {
   const isDarkMode = mounted && resolvedTheme === "dark";
 
   return (
-    <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <CardHeader>
         <CardTitle className="text-lg text-slate-950 dark:text-slate-50">
           Appearance

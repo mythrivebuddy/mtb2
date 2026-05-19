@@ -248,7 +248,7 @@ export default function NotificationPermissionsSettings() {
   return (
     <div className=" mx-auto  space-y-6">
       {/* GLOBAL */}
-      <Card className="relative overflow-hidden border border-border/40 bg-card shadow-none">
+      <Card className="relative dark:bg-slate-900 overflow-hidden border border-border/40  shadow-none">
         <div className="absolute left-0 top-0 h-full w-[3px] rounded-l bg-gradient-to-b from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700" />
 
         <CardHeader className="flex flex-row items-center justify-between gap-4 py-5 pl-6 pr-5">
@@ -266,7 +266,7 @@ export default function NotificationPermissionsSettings() {
                   className={cn(
                     "rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors",
                     isGlobalEnabled
-                      ? "border-blue-300 bg-blue-100 text-blue-700 dark:border-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                      ? "border-blue-300 bg-blue-100 text-blue-700 dark:border-blue-700 dark:bg-slate-900 dark:text-blue-300"
                       : "border-border/40 bg-muted text-muted-foreground",
                   )}
                 >
@@ -289,7 +289,7 @@ export default function NotificationPermissionsSettings() {
       </Card>
 
       {/* SYSTEM */}
-      <Card>
+      <Card className="dark:bg-slate-900">
         <CardHeader className="flex flex-row items-center justify-between bg-muted/30">
           <CardTitle className="text-base">System Notifications</CardTitle>
           <Switch
@@ -304,7 +304,7 @@ export default function NotificationPermissionsSettings() {
       </Card>
 
       {/* FEATURE */}
-      <Card>
+      <Card className="dark:bg-slate-900">
         <CardHeader className="flex flex-row items-center justify-between bg-muted/30">
           <CardTitle className="text-base">Feature Notifications</CardTitle>
           <Switch
@@ -329,7 +329,7 @@ export default function NotificationPermissionsSettings() {
       </Card>
 
       {/* OTHERS */}
-      <Card>
+      <Card className="dark:bg-slate-900">
         <CardHeader className="flex flex-row items-center justify-between bg-muted/30">
           <CardTitle className="text-base">Other Notifications</CardTitle>
           <Switch

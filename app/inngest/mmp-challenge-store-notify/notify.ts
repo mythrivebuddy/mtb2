@@ -953,7 +953,9 @@ export const notifyStakeholders = inngest.createFunction(
               type: NotificationType.CHALLENGE_NEW_PARTICIPANT,
               title,
               message,
-              url,
+              metadata: {
+                url,
+              },
             }));
 
             await prisma.notification.createMany({

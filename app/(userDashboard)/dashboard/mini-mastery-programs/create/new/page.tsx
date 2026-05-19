@@ -324,10 +324,10 @@ useEffect(()=>{
       <div className="w-full max-w-8xl mb-10">
         <div className="flex justify-between items-end mb-3">
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+            <span className="text-[10px] font-bold text-gray-400 dark:text-gray-200 uppercase tracking-[0.2em]">
               STEP {currentStep} OF {TOTAL_STEPS}
             </span>
-            <h3 className="text-gray-900 font-bold text-sm mt-1">
+            <h3 className="text-gray-900 dark:text-gray-200 font-bold text-sm mt-1">
               {STEP_INFO[currentStep - 1]?.label}
             </h3>
           </div>
@@ -341,7 +341,7 @@ useEffect(()=>{
           </div>
         </div>
 
-        <div className="w-full h-[6px] bg-gray-200 rounded-full">
+        <div className="w-full h-[6px]  rounded-full">
           <div
             className="h-full bg-blue-600 rounded-full transition-all duration-700 ease-in-out"
             style={{ width: `${progress}%` }}
@@ -360,7 +360,7 @@ useEffect(()=>{
       )}
 
       {/* Form Card */}
-      <div className="w-full max-w-8xl bg-white rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 p-10 md:p-16 min-h-[500px]">
+      <div className="w-full max-w-8xl bg-white dark:bg-slate-900 rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 p-10 md:p-16 min-h-[500px]">
         {currentStep === 1 && (
           <Step1ProgramBasics
             onNext={handleStep1Next}
