@@ -2,10 +2,72 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 
+// =========================
+// ✅ Types
+// =========================
+type FeatureName =
+  | "PLAN_THE_DAY"
+  | "CHALLENGES"
+  | "STORE"
+  | "SET_TODAYS_FOCUS"
+  | "REMINDERS"
+  | "PROGRESS_VAULT"
+  | "MIRACLE_LOG"
+  | "MINI_MASTERY"
+  | "ACCOUNTABILITY_HUB"
+  | "2026_COMPLETE_MAKEOVER_PROGRAM"
+  | "SPOTLIGHT"
+  | "PROSPERITY"
+  | "BUDDY_LENS";
+
+type FeatureUsage = {
+  feature: FeatureName;
+  usage: number;
+};
+
+type MostActiveUser = {
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  activityCount: number;
+};
+
+type AnalyticsResponse = {
+  success: true;
+  data: {
+    mostUsedFeature: FeatureUsage;
+    mostActiveUser: MostActiveUser | null;
+  };
+};
+
+// =========================
+// ✅ In-memory cache
+// =========================
+let cachedData: AnalyticsResponse | null = null;
+let lastFetchTime = 0;
+
+const CACHE_DURATION = 1000 * 60 * 60 * 24; // 24h
+
+// =========================
+// ✅ API
+// =========================
 export async function GET() {
   try {
+    const now = Date.now();
+
+    // ✅ Serve from cache
+    if (cachedData && now - lastFetchTime < CACHE_DURATION) {
+      console.log("From cache response is returned")
+      return NextResponse.json(cachedData);
+    }
+
+    // ✅ Auth
     await checkRole("ADMIN", "You are not authorized for this action!");
 
+    // =========================
+    // 🔥 DB QUERIES
+    // =========================
     const [
       todoCount,
       eventCount,
@@ -20,8 +82,7 @@ export async function GET() {
       miniMasteryCount,
       activityFeedCount,
       groupMemberCount,
-
-      // ✅ NEW
+      groupCount,
       makeoverProgressCount,
       spotlightCount,
       prosperityCount,
@@ -41,8 +102,7 @@ export async function GET() {
       prisma.miniMasteryProgressLog.count(),
       prisma.activityFeedItem.count(),
       prisma.groupMember.count(),
-
-      // ✅ NEW
+      prisma.group.count(),
       prisma.makeoverProgressLog.count(),
       prisma.spotlight.count(),
       prisma.prosperityDrop.count(),
@@ -50,123 +110,88 @@ export async function GET() {
       prisma.buddyLensReview.count(),
     ]);
 
-    // ✅ Aggregate Features
-    const featureUsage = [
+    // =========================
+    // ✅ Feature Usage
+    // =========================
+    const featureUsage: FeatureUsage[] = [
+      { feature: "PLAN_THE_DAY", usage: todoCount + eventCount },
+      { feature: "CHALLENGES", usage: challengeEnrollCount + challengeMsgCount },
+      { feature: "STORE", usage: orderCount + cartCount },
+      { feature: "SET_TODAYS_FOCUS", usage: alignedActionCount },
+      { feature: "REMINDERS", usage: reminderCount },
+      { feature: "PROGRESS_VAULT", usage: progressVaultCount },
+      { feature: "MIRACLE_LOG", usage: miracleLogCount },
+      { feature: "MINI_MASTERY", usage: miniMasteryCount },
+
+      // ✅ Accountability Hub (correct mapping)
       {
-        feature: "PLAN_THE_DAY",
-        usage: todoCount + eventCount,
-      },
-      {
-        feature: "CHALLENGES",
-        usage: challengeEnrollCount + challengeMsgCount,
-      },
-      {
-        feature: "STORE",
-        usage: orderCount + cartCount,
-      },
-      {
-        feature: "SET_TODAYS_FOCUS",
-        usage: alignedActionCount,
-      },
-      {
-        feature: "REMINDERS",
-        usage: reminderCount,
-      },
-      {
-        feature: "PROGRESS_VAULT",
-        usage: progressVaultCount,
-      },
-      {
-        feature: "MIRACLE_LOG",
-        usage: miracleLogCount,
-      },
-      {
-        feature: "MINI_MASTERY",
-        usage: miniMasteryCount,
-      },
-      {
-        feature: "GROUPS",
-        usage: activityFeedCount + groupMemberCount,
+        feature: "ACCOUNTABILITY_HUB",
+        usage: groupCount + groupMemberCount + activityFeedCount,
       },
 
-      // ✅ NEW FEATURES
-      {
-        feature: "2026_COMPLETE_MAKEOVER_PROGRAM",
-        usage: makeoverProgressCount,
-      },
-      {
-        feature: "SPOTLIGHT",
-        usage: spotlightCount,
-      },
-      {
-        feature: "PROSPERITY",
-        usage: prosperityCount,
-      },
+      { feature: "2026_COMPLETE_MAKEOVER_PROGRAM", usage: makeoverProgressCount },
+      { feature: "SPOTLIGHT", usage: spotlightCount },
+      { feature: "PROSPERITY", usage: prosperityCount },
       {
         feature: "BUDDY_LENS",
         usage: buddyLensRequestCount + buddyLensReviewCount,
       },
     ];
 
-    // ✅ Find most used feature
-    const mostUsedFeature = featureUsage.sort(
-      (a, b) => b.usage - a.usage
-    )[0];
+    const mostUsedFeature =
+      featureUsage.sort((a, b) => b.usage - a.usage)[0];
 
     // =========================
     // ✅ Most Active User
     // =========================
+    const mostActiveUserAgg = await prisma.transaction.groupBy({
+      by: ["userId"],
+      _count: { userId: true },
+      orderBy: { _count: { userId: "desc" } },
+      take: 1,
+    });
 
-  // =========================
-// ✅ Most Active User
-// =========================
+    let mostActiveUser: MostActiveUser | null = null;
 
-const mostActiveUserAgg = await prisma.transaction.groupBy({
-  by: ["userId"],
-  _count: {
-    userId: true,
-  },
-  orderBy: {
-    _count: {
-      userId: "desc",
-    },
-  },
-  take: 1,
-});
+    if (mostActiveUserAgg.length > 0) {
+      const userId = mostActiveUserAgg[0].userId;
 
-let mostActiveUser = null;
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+        },
+      });
 
-if (mostActiveUserAgg.length > 0) {
-  const userId = mostActiveUserAgg[0].userId;
+      if (user) {
+        mostActiveUser = {
+          userId: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          activityCount: mostActiveUserAgg[0]._count.userId,
+        };
+      }
+    }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-    },
-  });
-
-  if (user) {
-    mostActiveUser = {
-      userId: user.id,
-      name: user.name,
-      email: user.email,
-      image: user.image,
-      activityCount: mostActiveUserAgg[0]._count.userId,
-    };
-  }
-}
-
-    return NextResponse.json({
+    const response: AnalyticsResponse = {
       success: true,
       data: {
         mostUsedFeature,
         mostActiveUser,
       },
-    });
+    };
+
+    // =========================
+    // ✅ Cache result
+    // =========================
+    cachedData = response;
+    lastFetchTime = now;
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Analytics API Error:", error);
 
