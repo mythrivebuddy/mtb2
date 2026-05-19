@@ -448,37 +448,85 @@ const NOTIFICATION_SEEDS: {
       "{{userName}} has applied for Spotlight. Review the application and take action.",
     isDynamic: true,
     url: "/admin/spotlight",
-    audiences:["ADMIN"]
+    audiences: ["ADMIN"],
   },
-{
-  type: NotificationType.CHALLENGE_CREATED_ADMIN,
-  name: "New Challenge Created (Admin)",
-  title: "📢 New Challenge Created",
-  message: "{{userName}} created a new {{challengeType}} challenge : {{challengeTitle}} {{amountSection}}.",
-  isDynamic: true,
-  url: "/dashboard/challenge/upcoming-challenges/{{challengeId}}",
-  audiences: ["ADMIN"]
-},
-{
-  type: NotificationType.MMP_PROGRAM_CREATED_ADMIN,
-  name: "New Mini Mastery Program Created (Admin)",
-  title: "📘 New Mini Mastery Program Created",
-  message: "{{userName}} created a new {{programType}} program : {{programName}} {{amountSection}}.",
-  isDynamic: true,
-  url: "/admin/manage-mini-mastery-program",
-  audiences: ["ADMIN"]
-},
-{
-  type: NotificationType.STORE_ITEM_CREATED_ADMIN,
-  name: "New Store Item Created (Admin)",
-  title: "🛒 New Store Item Created",
-  message: "{{userName}} added a new item {{itemName}} {{amountSection}}.",
-  isDynamic: true,
-  url: "/admin/manage-store-product/{{itemId}}",
-  audiences: ["ADMIN"]
-}
+  {
+    type: NotificationType.CHALLENGE_CREATED_ADMIN,
+    name: "New Challenge Created (Admin)",
+    title: "📢 New Challenge Created",
+    message:
+      "{{userName}} created a new {{challengeType}} challenge : {{challengeTitle}} {{amountSection}}.",
+    isDynamic: true,
+    url: "/dashboard/challenge/upcoming-challenges/{{challengeId}}",
+    audiences: ["ADMIN"],
+  },
+  {
+    type: NotificationType.MMP_PROGRAM_CREATED_ADMIN,
+    name: "New Mini Mastery Program Created (Admin)",
+    title: "📘 New Mini Mastery Program Created",
+    message:
+      "{{userName}} created a new {{programType}} program : {{programName}} {{amountSection}}.",
+    isDynamic: true,
+    url: "/admin/manage-mini-mastery-program",
+    audiences: ["ADMIN"],
+  },
+  {
+    type: NotificationType.STORE_ITEM_CREATED_ADMIN,
+    name: "New Store Item Created (Admin)",
+    title: "🛒 New Store Item Created",
+    message: "{{userName}} added a new item {{itemName}} {{amountSection}}.",
+    isDynamic: true,
+    url: "/admin/manage-store-product/{{itemId}}",
+    audiences: ["ADMIN"],
+  },
+  {
+    type: NotificationType.SUBSCRIPTION_ACTIVATED_USER,
+    name: "Subscription Activated",
+    title: "🎉 Your Subscription is Active!",
+    message:
+      "Your {{planName}} subscription is now active{{amountSection}}. Enjoy premium features 🚀",
+    isDynamic: true,
+    url: "/dashboard/subscription",
+    audiences: ["USER"],
+  },
+  {
+    type: NotificationType.SUBSCRIPTION_RENEWED_USER,
+    name: "Subscription Renewed",
+    title: "🔁 Subscription Renewed",
+    message:
+      "Your {{planName}} subscription has been renewed{{amountSection}}. Keep growing 🚀",
+    isDynamic: true,
+    url: "/dashboard/subscription",
+    audiences: ["USER"],
+  },
+  {
+    type: NotificationType.SUBSCRIPTION_PURCHASED_ADMIN,
+    name: "New Subscription Purchase",
+    title: "💰 New Subscription Purchase",
+    message: "{{userName}} purchased {{planName}}{{amountSection}}.",
+    isDynamic: true,
+    url: "/admin/dashboard",
+    audiences: ["ADMIN"],
+  },
+  {
+    type: NotificationType.SUBSCRIPTION_PURCHASED_ADMIN,
+    name: "New Subscription Purchase",
+    title: "💰 New Subscription Purchase",
+    message: "{{userName}} purchased {{planName}}{{amountSection}}.",
+    isDynamic: true,
+    url: "/admin/dashboard",
+    audiences: ["ADMIN"],
+  },
+  {
+    type: NotificationType.SUBSCRIPTION_RENEWED_ADMIN,
+    name: "Subscription Renewed",
+    title: "🔁 Subscription Renewed",
+    message: "{{userName}} renewed {{planName}}{{amountSection}}.",
+    isDynamic: true,
+    url: "/admin/dashboard",
+    audiences: ["ADMIN"],
+  },
 ];
-
 
 async function main() {
   for (const seed of NOTIFICATION_SEEDS) {

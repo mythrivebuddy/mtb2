@@ -30,14 +30,20 @@ export async function POST(req: NextRequest) {
 
     const event = JSON.parse(rawBody);
     if (event.event === "refund.processed") {
-      const entity = event.payload.refund?.entity || event.payload.dispute?.entity;
+      const entity =
+        event.payload.refund?.entity || event.payload.dispute?.entity;
       const paymentId = entity?.payment_id;
 
       if (paymentId) {
-       await handlePaymentReversal(paymentId);
-       return NextResponse.json({ received: true,message:"Payment refund event fires" },{status:200});
+        await handlePaymentReversal(paymentId);
+        return NextResponse.json(
+          { received: true, message: "Payment refund event fires" },
+          { status: 200 },
+        );
       }
-      return new NextResponse("Payment ID not found in reversal", { status: 400 });
+      return new NextResponse("Payment ID not found in reversal", {
+        status: 400,
+      });
     }
 
     if (event.event !== "payment.captured") {
@@ -49,7 +55,11 @@ export async function POST(req: NextRequest) {
     if (!payment) {
       return new NextResponse("Invalid payload", { status: 400 });
     }
-
+    if (payment.subscription_id) {
+      return new NextResponse("Subscription payment - ignored here", {
+        status: 200,
+      });
+    }
     const razorpayOrderId = payment.order_id;
     const paymentId = payment.id;
 
@@ -64,25 +74,33 @@ export async function POST(req: NextRequest) {
     if (existingOrder.status === PaymentStatus.PAID) {
       return new NextResponse("Already processed", { status: 200 });
     }
+    if (existingOrder.contextType === "SUBSCRIPTION") {
+      return new NextResponse("Subscription payment - ignored here", {
+        status: 200,
+      });
+    }
     let paymentMeta: {
       isAdmin?: boolean;
       allItemIds?: string[];
       adminItemIds?: string[];
     } = {};
 
-    const updatedOrder = await prisma.$transaction(async (tx) => {
-      const updated = await tx.paymentOrder.update({
-        where: { id: existingOrder.id },
-        data: {
-          status: PaymentStatus.PAID,
-          paymentId,
-          paidAt: new Date(),
-        },
-      });
+    const updatedOrder = await prisma.$transaction(
+      async (tx) => {
+        const updated = await tx.paymentOrder.update({
+          where: { id: existingOrder.id },
+          data: {
+            status: PaymentStatus.PAID,
+            paymentId,
+            paidAt: new Date(),
+          },
+        });
 
-      paymentMeta = await processPayment(tx, updated);
-      return updated;
-    },{timeout: 60000}); // 60 seconds timeout for the entire transaction
+        paymentMeta = await processPayment(tx, updated);
+        return updated;
+      },
+      { timeout: 60000 },
+    ); // 60 seconds timeout for the entire transaction
     try {
       await createAffiliateEarningForSubscription({
         tx: prisma,
@@ -97,7 +115,7 @@ export async function POST(req: NextRequest) {
           contextType: updatedOrder.contextType,
         },
         isAdmin: paymentMeta.isAdmin,
-        adminItemIds: paymentMeta.adminItemIds || [], 
+        adminItemIds: paymentMeta.adminItemIds || [],
       });
     } catch (err) {
       console.error("Affiliate creation failed (ignored):", err);
@@ -106,13 +124,16 @@ export async function POST(req: NextRequest) {
       try {
         if (inngest && typeof inngest.send === "function") {
           await new Promise((res) => setTimeout(res, 500));
-
+          const isStorePurchase = existingOrder.contextType === "STORE_PRODUCT";
           await inngest.send({
             name: "invoice/send",
             id: `invoice-${existingOrder.id}`,
             data: {
               orderId: existingOrder.id,
-              itemIds: paymentMeta.allItemIds || undefined, // optional
+              ...(isStorePurchase &&
+                paymentMeta.allItemIds?.length && {
+                  itemIds: paymentMeta.allItemIds,
+                }),
             },
           });
 
