@@ -65,7 +65,7 @@ export async function createNotification(
   const notification = await prisma.notification.create({
     data: { userId, type, title, message, metadata },
   });
-  cleanupNotifications(userId).catch(console.error);
+ await cleanupNotifications(userId);
   return notification;
 }
 

@@ -4,7 +4,7 @@ import { checkRole } from "@/lib/utils/auth";
 // GET: Get unread notifications count for the user
 export async function GET() {
   try {
-    const session = await checkRole("USER");
+    const session = await checkRole(["USER", "ADMIN"]);;
     const userId = session.user.id;
 
     const count = await prisma.notification.count({

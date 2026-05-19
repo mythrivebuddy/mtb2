@@ -341,7 +341,7 @@ const NOTIFICATION_SEEDS: {
     message:
       "You missed your daily tasks in one or more challenges.\n\n{{total}} GP has been deducted.\n\nDetails: {{breakdown}}\n\nStay consistent tomorrow to avoid penalties 💪",
     url: "/dashboard/challenge",
-    isDynamic: true, 
+    isDynamic: true,
     audiences: ["USER"],
   },
   // 22. New Challenge Participant Broadcast
@@ -351,8 +351,8 @@ const NOTIFICATION_SEEDS: {
     title: "New challenger alert 🚀",
     message: '{{userName}} joined "{{challengeTitle}}"!',
     url: "/dashboard/challenge/my-challenges/{{challengeId}}",
-    isDynamic: true, 
-    audiences: ["USER", "COACH"], 
+    isDynamic: true,
+    audiences: ["USER", "COACH"],
   },
   // 23. Accountability Hub - Group Notes
   {
@@ -414,15 +414,15 @@ const NOTIFICATION_SEEDS: {
     url: "/dashboard/challenge",
     isDynamic: false,
   },
-   {
-  type: "REMINDER",
-  name: "Reminder Notification",
-  title: "{{title}}",
-  message: "{{description}}",
-  url: "{{url}}",
-  isDynamic: true,
-},
- {
+  {
+    type: "REMINDER",
+    name: "Reminder Notification",
+    title: "{{title}}",
+    message: "{{description}}",
+    url: "{{url}}",
+    isDynamic: true,
+  },
+  {
     type: "AFFILIATE_PAYOUT_SUCCESS",
     name: "Affiliate Payout Processed",
     title: "💸 Payout of {{amount}} {{currency}} processed",
@@ -431,7 +431,27 @@ const NOTIFICATION_SEEDS: {
     url: "/dashboard/transactions-history",
     isDynamic: true,
   },
+  {
+    type: NotificationType.SPOTLIGHT_APPLIED,
+    name: "Spotlight Application",
+    title: "Spotlight Application Submitted",
+    message:
+      "Your Spotlight application has been successfully submitted and is currently under review.",
+    isDynamic: false,
+    url: "/dashboard",
+  },
+  {
+    type: NotificationType.SPOTLIGHT_APPLIED_ADMIN,
+    name: "New Spotlight Application (Admin)",
+    title: "📩 New Spotlight Application",
+    message:
+      "{{userName}} has applied for Spotlight. Review the application and take action.",
+    isDynamic: true,
+    url: "/admin/spotlight",
+    audiences:["ADMIN"]
+  },
 ];
+
 
 async function main() {
   for (const seed of NOTIFICATION_SEEDS) {
@@ -445,7 +465,7 @@ async function main() {
       await prisma.notificationSettings.update({
         where: { notification_type: seed.type },
         data: {
-          name:seed.name,
+          name: seed.name,
           audiences: {
             set: seed.audiences ?? ["USER"],
           },
