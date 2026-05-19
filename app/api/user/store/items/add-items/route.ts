@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
 import { prisma } from "@/lib/prisma";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
+import { NotificationType } from "@prisma/client";
 
 // POST /api/user/store/items/add-items
 export async function POST(request: NextRequest) {
@@ -84,6 +86,30 @@ export async function POST(request: NextRequest) {
         downloadUrl: true,
         isApproved: true,
         createdAt: true,
+      },
+    });
+
+    await safeInngestSend({
+      name: "notification/send",
+      data: {
+        types: [NotificationType.STORE_ITEM_CREATED_ADMIN],
+        actorId: session.user.id,
+
+        // ✅ ONLY ADMIN
+        sendToUser: false,
+        sendToAdmin: true,
+        sendToCoach: false,
+
+        context: {
+          userName: session.user.name ?? "A user",
+          itemName: item.name,
+          itemId: item.id,
+
+          amountSection:
+            currency === "GP"
+              ? ` for ${basePrice} GP`
+              : ` for ${basePrice} ${currency}`,
+        },
       },
     });
 

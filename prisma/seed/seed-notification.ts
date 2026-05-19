@@ -467,6 +467,15 @@ const NOTIFICATION_SEEDS: {
   isDynamic: true,
   url: "/admin/manage-mini-mastery-program",
   audiences: ["ADMIN"]
+},
+{
+  type: NotificationType.STORE_ITEM_CREATED_ADMIN,
+  name: "New Store Item Created (Admin)",
+  title: "🛒 New Store Item Created",
+  message: "{{userName}} added a new item {{itemName}} {{amountSection}}.",
+  isDynamic: true,
+  url: "/admin/manage-store-product/{{itemId}}",
+  audiences: ["ADMIN"]
 }
 ];
 

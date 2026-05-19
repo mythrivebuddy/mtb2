@@ -380,7 +380,7 @@ export default function Dashboard() {
                       />
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-center">Actions</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -469,7 +469,7 @@ export default function Dashboard() {
 
                         <td className="px-6 py-4">
                           <span
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${cfg.color}`}
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap uppercase ${cfg.color}`}
                           >
                             {cfg.label}
                           </span>
@@ -535,7 +535,7 @@ export default function Dashboard() {
                               program.status === "PUBLISHED") && (
                               <Link
                                 href={`/dashboard/mini-mastery-programs/create/edit/${program.id}`}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                                className="flex whitespace-nowrap items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
                               >
                                 <Pencil size={13} />
                                 {program.isComplete ? null : "Complete Me"}
@@ -548,7 +548,7 @@ export default function Dashboard() {
                               href={`/dashboard/mini-mastery-programs/program-preview/${program.id}`}
                             >
                               <button
-                                className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                className="p-1.5  text-center text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
                                 title="View"
                               >
                                 <Eye size={15} />
