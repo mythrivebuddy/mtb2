@@ -2,15 +2,19 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { PaymentStatus, SubscriptionStatus } from "@prisma/client";
+import {
+  NotificationType,
+  PaymentStatus,
+  SubscriptionStatus,
+} from "@prisma/client";
 import {
   getRazorpayConfig,
   verifyRazorpaySignature,
 } from "@/lib/razorpay/razorpay";
-import { inngest } from "@/lib/inngest";
 import Razorpay from "razorpay";
 import { createAffiliateEarningForSubscription } from "@/lib/affiliate/affiliateEarning";
 import { handlePaymentReversal } from "@/lib/payment/handlePaymentReversal";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -49,7 +53,7 @@ export const POST = async (req: NextRequest) => {
       if (payment.status !== "captured")
         return NextResponse.json({ received: true });
       // ✅ Ignore subscription payments
-
+      
       if (!payment.order_id) return NextResponse.json({ received: true });
       if (payment.subscription_id) {
         const order = await prisma.paymentOrder.findFirst({
@@ -114,6 +118,18 @@ export const POST = async (req: NextRequest) => {
       // 🔎 Use Razorpay order_id to find our paymentOrder
       const order = await prisma.paymentOrder.findFirst({
         where: { razorpayOrderId: payment.order_id },
+        include: {
+          user: {
+            select: {
+              name: true,
+            },
+          },
+          plan: {
+            select: {
+              name: true,
+            },
+          },
+        },
       });
 
       if (!order || order.status === PaymentStatus.PAID)
@@ -221,10 +237,37 @@ export const POST = async (req: NextRequest) => {
         },
         isAdmin: true,
       });
-      await inngest.send({
+      await safeInngestSend({
         name: "invoice/send",
         data: { orderId: order.id },
         id: `invoice-${order.id}`,
+      });
+      const amountSection =
+        order.totalAmount && order.totalAmount > 0
+          ? ` for ${order.totalAmount} ${order.currency}`
+          : "";
+
+      await safeInngestSend({
+        id: `notif-payment-${order.id}`,
+        name: "notification/send",
+        data: {
+          types: [
+            NotificationType.SUBSCRIPTION_ACTIVATED_USER,
+            NotificationType.SUBSCRIPTION_PURCHASED_ADMIN,
+          ],
+          actorId: order.userId,
+
+          sendToUser: true,
+          sendToAdmin: true,
+          sendToCoach: false,
+
+          context: {
+            userName: order.user?.name ?? "A user",
+            planName: order.plan?.name ?? "your plan",
+            orderId: order.id,
+            amountSection,
+          },
+        },
       });
       return NextResponse.json({ received: true });
     }
@@ -241,6 +284,11 @@ export const POST = async (req: NextRequest) => {
       const order = await prisma.paymentOrder.findFirst({
         where: { razorpaySubscriptionId: subscription.id },
         include: {
+          user: {
+            select: {
+              name: true,
+            },
+          },
           plan: true,
         },
       });
@@ -464,10 +512,37 @@ export const POST = async (req: NextRequest) => {
         },
         isAdmin: true,
       });
-      await inngest.send({
+      await safeInngestSend({
         name: "invoice/send",
         data: { orderId: order.id },
         id: `invoice-${order.id}`,
+      });
+      const amountSection =
+        order.totalAmount && order.totalAmount > 0
+          ? ` for ${order.totalAmount} ${order.currency}`
+          : "";
+
+      await safeInngestSend({
+        id: `notif-payment-${order.id}`,
+        name: "notification/send",
+        data: {
+          types: [
+            NotificationType.SUBSCRIPTION_ACTIVATED_USER,
+            NotificationType.SUBSCRIPTION_PURCHASED_ADMIN,
+          ],
+          actorId: order.userId,
+
+          sendToUser: true,
+          sendToAdmin: true,
+          sendToCoach: false,
+
+          context: {
+            userName: order.user?.name ?? "A user",
+            planName: order.plan.name,
+            orderId: order.id,
+            amountSection,
+          },
+        },
       });
       return NextResponse.json({ received: true });
     }
@@ -480,6 +555,10 @@ export const POST = async (req: NextRequest) => {
 
       const subscription = await prisma.subscription.findFirst({
         where: { razorpaySubscriptionId: invoice.subscription_id },
+        include: {
+          user: { select: { name: true } },
+          plan: { select: { name: true } },
+        },
       });
 
       if (!subscription) return NextResponse.json({ received: true });
@@ -510,6 +589,39 @@ export const POST = async (req: NextRequest) => {
             });
           }
         }
+      });
+      const amountSection =
+        invoice.amount_paid && invoice.amount_paid > 0
+          ? ` for ${invoice.amount_paid / 100} ${invoice.currency}`
+          : "";
+      const isFirstCycle = !subscription.renewedAt;
+
+      if (isFirstCycle) {
+        console.log("⛔ Skipping renewal notification (first payment)");
+        return NextResponse.json({ received: true });
+      }
+
+      await safeInngestSend({
+        id: `notif-payment-${invoice.id}`,
+        name: "notification/send",
+        data: {
+          types: [
+            NotificationType.SUBSCRIPTION_RENEWED_USER,
+            NotificationType.SUBSCRIPTION_RENEWED_ADMIN,
+          ],
+          actorId: subscription.userId,
+
+          sendToUser: true,
+          sendToAdmin: true,
+          sendToCoach: false,
+
+          context: {
+            userName: subscription.user?.name ?? "A user",
+            planName: subscription.plan?.name ?? "your plan",
+            orderId: subscription.paymentOrderId,
+            amountSection,
+          },
+        },
       });
       return NextResponse.json({ received: true });
     }
@@ -563,14 +675,15 @@ export const POST = async (req: NextRequest) => {
     /* ========================================================= */
     /* 💸 BANK REVERSAL / REFUND */
     /* ========================================================= */
-    if (
-      event.event === "refund.processed" 
-    ) {
+    if (event.event === "refund.processed") {
       const refund = event.payload.refund.entity;
 
       await handlePaymentReversal(refund.payment_id);
 
-      return NextResponse.json({ received: true,message:"Payment refund event fires" },{status:200});
+      return NextResponse.json(
+        { received: true, message: "Payment refund event fires" },
+        { status: 200 },
+      );
     }
 
     console.log("⚠️ Unhandled event:", event.event);

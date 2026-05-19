@@ -255,16 +255,13 @@ export default function SpotlightPage() {
           </div>
         </Card>
         <Dialog open={isDialogBoxOpen} onOpenChange={setIsDialogBoxOpen}>
-          <DialogContent className="bg-white text-black rounded-3xl sm:rounded-3xl">
+          <DialogContent className=" rounded-3xl sm:rounded-3xl">
             <DialogHeader className="text-center">
-              <DialogTitle
-                className="text-2xl font-semibold"
-                style={{ color: "#151E46" }}
-              >
+              <DialogTitle className="text-2xl font-semibold">
                 Business Profile Required
               </DialogTitle>
             </DialogHeader>
-            <p className="text-gray-600 ">
+            <p className="text-gray-600 dark:text-gray-300 ">
               You need to create a business profile before applying for
               Spotlight.
             </p>
@@ -282,6 +279,7 @@ export default function SpotlightPage() {
                   setIsDialogBoxOpen(false);
                   router.push("/dashboard/business-profile");
                 }}
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 Create Business Profile
               </Button>
