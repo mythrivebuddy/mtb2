@@ -1,11 +1,37 @@
 // /* eslint-disable @typescript-eslint/no-unused-vars */
 
-
 "use client";
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { CoinsIcon, FileQuestion, LogInIcon, User } from "lucide-react";
+import {
+  BarChart3,
+  Check,
+  CoinsIcon,
+  Copy,
+  FileQuestion,
+  LogInIcon,
+  Trophy,
+  User,
+} from "lucide-react";
+import { getAvatarColor, getInitials } from "@/utils/getInitials";
+
+type AnalyticsResponse = {
+  success: boolean;
+  data: {
+    mostUsedFeature: {
+      feature: string;
+      usage: number;
+    };
+    mostActiveUser: {
+      userId: string;
+      name: string;
+      email: string;
+      image: string | null;
+      activityCount: number;
+    };
+  };
+};
 
 const fetchJpActivity = async (fromDate: string, toDate: string) => {
   const res = await axios.get("/api/admin/dashboard/centrepart/getJpActivity", {
@@ -20,10 +46,24 @@ const fetchUserStats = async (fromDate: string, toDate: string) => {
   });
   return res.data;
 };
+const fetchMostActiveUserMostUsedFeature = async () => {
+  const res = await axios.get(
+    "/api/admin/dashboard/centrepart/analytics/user-and-feature-activity",
+  );
+  return res.data;
+};
+const formatFeature = (feature: string) => {
+  return feature
+    .toLowerCase()
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+};
 
 export default function DashboardCentrePart() {
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
+  const [copied, setCopied] = useState(false);
 
   const { data: jpActivityData, refetch: refetchJpActivity } = useQuery({
     queryKey: ["getJpActivity", fromDate, toDate],
@@ -34,7 +74,12 @@ export default function DashboardCentrePart() {
     queryKey: ["userStats", fromDate, toDate],
     queryFn: () => fetchUserStats(fromDate, toDate),
   });
-
+  const { data, isLoading } = useQuery<AnalyticsResponse>({
+    queryKey: ["user-and-feature-activity"],
+    queryFn: () => fetchMostActiveUserMostUsedFeature(),
+    staleTime: 1000 * 60 * 60 * 24, // ✅ 24 hours
+    gcTime: 1000 * 60 * 60 * 24, // ✅ keep cache
+  });
   useEffect(() => {
     refetchJpActivity();
     refetchUserStats();
@@ -124,6 +169,128 @@ export default function DashboardCentrePart() {
             label="Blocked Users"
             bgColor="white"
           />
+        </div>
+      </div>
+      {/* ================= Activity Insights ================= */}
+      <div>
+        <h2 className="text-lg font-medium mb-4">Activity Insights</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* ================= Most Used Feature ================= */}
+          {isLoading ? (
+            <div className="p-4 rounded-xl shadow bg-white space-y-3 animate-pulse">
+              <div className="h-3 w-32 bg-gray-200 rounded" />
+              <div className="h-5 w-40 bg-gray-300 rounded" />
+              <div className="h-3 w-24 bg-gray-200 rounded" />
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl shadow bg-gradient-to-br from-blue-50 to-white flex items-center justify-between">
+              <div>
+                {/* Label */}
+                <div className="text-xs font-medium text-blue-600 mb-1">
+                  Most Used Feature
+                </div>
+
+                {/* Feature Name */}
+                <div className="text-xl font-bold text-gray-900">
+                  {formatFeature(data?.data?.mostUsedFeature?.feature || "")}
+                </div>
+
+                {/* Usage */}
+                {/* <div className="text-sm text-gray-500 mt-1">
+            Usage: {data?.data?.mostUsedFeature?.usage}
+          </div> */}
+              </div>
+
+              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <BarChart3 className="text-blue-600" />
+              </div>
+            </div>
+          )}
+
+          {/* ================= Most Active User ================= */}
+          {isLoading ? (
+            <div className="p-4 rounded-xl shadow bg-white space-y-3 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-gray-300" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-32 bg-gray-200 rounded" />
+                  <div className="h-3 w-24 bg-gray-200 rounded" />
+                </div>
+              </div>
+              <div className="h-3 w-28 bg-gray-200 rounded" />
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl shadow bg-gradient-to-br from-green-50 to-white flex items-center justify-between">
+              {(() => {
+                const user = data?.data?.mostActiveUser;
+
+                return (
+                  <>
+                    <div>
+                      {/* Label */}
+                      <div className="text-xs font-medium text-green-600 mb-2">
+                        Most Active User
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {/* Avatar */}
+                        {user?.image ? (
+                          <img
+                            src={user.image}
+                            className="h-12 w-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div
+                            className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-semibold ${getAvatarColor(
+                              user?.name || "",
+                            )}`}
+                          >
+                            {getInitials(user?.name || "")}
+                          </div>
+                        )}
+
+                        {/* Info */}
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {user?.name}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span>{user?.email}</span>
+
+                            <button
+                              onClick={() => {
+                                if (!user?.email) return;
+
+                                navigator.clipboard.writeText(user.email);
+                                setCopied(true);
+
+                                setTimeout(() => setCopied(false), 2000);
+                              }}
+                              className="p-1 rounded hover:bg-gray-100 transition"
+                            >
+                              {copied ? (
+                                <Check className="h-3.5 w-3.5 text-green-600" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5 text-gray-500" />
+                              )}
+                            </button>
+                          </div>
+                          {/* <div className="text-xs text-gray-400 mt-1">
+                      Activity: {user?.activityCount}
+                    </div> */}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <Trophy className="text-green-600" />
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
         </div>
       </div>
     </div>
