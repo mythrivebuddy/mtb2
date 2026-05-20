@@ -123,7 +123,7 @@ const GlobalProgress = async ({
   );
 
   return (
-    <section className="bg-white dark:bg-[#1a2630] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+    <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
       <GoaProgressClientEvaluator programId={programId} />
 
       <StaticDataBadge
@@ -193,7 +193,7 @@ const GlobalProgress = async ({
             <LevelIcon className={levelColor} size={26} />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide mb-1">
+            <p className="text-xs text-slate-500 dark:text-slate-200 uppercase font-semibold tracking-wide mb-1">
               Current Level
             </p>
             <p className="text-lg font-bold text-slate-900 dark:text-white">
@@ -207,7 +207,7 @@ const GlobalProgress = async ({
           </div>
         </div>
         <div className="flex flex-col gap-2 max-w-[560px] w-full">
-          <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide text-center">
+          <p className="text-xs text-slate-500 dark:text-slate-200 uppercase font-semibold tracking-wide text-center">
             Badges Unlocked
           </p>
 
@@ -229,7 +229,7 @@ const GlobalProgress = async ({
                   className="group relative flex flex-col items-center gap-2"
                 >
                   <div
-                    className={`size-12 rounded-full flex items-center justify-center mb-1 ${bgClass} ${colorClass} ${ringClass}`}
+                    className={`size-12 rounded-full flex items-center justify-center mb-1 ${bgClass} ${colorClass} ${ringClass} `}
                   >
                     <BadgeIcon size={24} />
                   </div>

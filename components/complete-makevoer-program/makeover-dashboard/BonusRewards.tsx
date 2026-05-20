@@ -135,7 +135,7 @@ useEffect(() => {
   /* ---------------- UI ---------------- */
   if (isLoading) {
     return (
-      <section className="bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative h-[320px]">
+      <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative h-[320px]">
         <StaticDataBadge
           label="Your rewards"
           className="w-fit absolute -top-1.5 -left-3"

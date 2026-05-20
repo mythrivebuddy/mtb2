@@ -75,7 +75,7 @@ export default function ShareDialog({
       name: "X",
       href: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
       icon: TwitterIcon,
-      className: "hover:bg-zinc-500/10 text-zinc-900",
+      className: "hover:bg-zinc-500/10 text-zinc-900 dark:text-gray-300",
     },
     {
       name: "LinkedIn",
