@@ -326,9 +326,11 @@ export async function PATCH(req: NextRequest) {
         sendToUser: false,
         sendToAdmin: true,
         sendToCoach: false,
-
+        sendEmailAdmin: true,
+         adminEntityType: "MMP",
         context: {
           userName: session.user.name ?? "A user",
+          userId: userId,
           programName: updated.name,
           programId: updated.id,
           programType: updated.price && updated.price > 0 ? "Paid" : "Free",

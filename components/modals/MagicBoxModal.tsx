@@ -168,7 +168,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
       return (
         <div className="flex flex-col items-center justify-center p-8">
           <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-4" />
-          <p className="text-gray-600">Loading your magic box...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading your magic box...</p>
         </div>
       );
     }
@@ -230,7 +230,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
         <div className="flex flex-col items-center justify-center p-8">
           <Gift className="h-16 w-16 text-yellow-500 mb-4" />
           <p className="text-xl font-semibold mb-2">Magic Box</p>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             Open your magic box to get GP rewards!
           </p>
           <Button
@@ -257,7 +257,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
           <p className="text-xl font-semibold mb-1">
             You found {magicBox.jpAmount} GP!
           </p>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             Choose a user to share half with (
             {Math.floor((magicBox.jpAmount || 0) / 2)} GP each)
           </p>

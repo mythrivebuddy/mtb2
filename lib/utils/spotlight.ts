@@ -2,8 +2,7 @@ import { NotificationType, SpotlightStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { format } from "date-fns";
-
-import { sendPushNotificationFromDBToUser } from "./pushNotifications"; // Add this import
+import { safeInngestSend } from "./inngest/utils";
 
 const SPOTLIGHT_EXPIREY_MS = 24 * 60 * 60 * 1000;
 // const SPOTLIGHT_EXPIREY_MS = 60 * 1000; //for dev seted to 1 min
@@ -32,15 +31,24 @@ export async function activateNextSpotlight() {
         expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS),
       },
     });
-
-    await sendPushNotificationFromDBToUser({
-      type: NotificationType.SPOTLIGHT_ACTIVE,
-      userId: nextSpotlight.userId,
-      context: {}, // add dynamic fields later if needed
-    });
-
     const user = await prisma.user.findUnique({
       where: { id: nextSpotlight.userId },
+    });
+    await safeInngestSend({
+      name: "notification/send",
+      data: {
+        types: [NotificationType.SPOTLIGHT_ACTIVE],
+        actorId: nextSpotlight.userId,
+
+        context: {
+          spotlightId: nextSpotlight.id,
+          userName: user?.name || "User",
+        },
+
+        sendToUser: true,
+        sendToAdmin: true,
+        sendToCoach: false,
+      },
     });
 
     if (user?.email && user.name && updatedSpotlight.activatedAt) {

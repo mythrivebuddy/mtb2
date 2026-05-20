@@ -166,6 +166,15 @@ const NOTIFICATION_SEEDS: {
     url: "/dashboard/notifications",
     isDynamic: false,
   },
+  {
+    type: "SPOTLIGHT_ACTIVE_ADMIN",
+    name: "Spotlight Activation (Admin)",
+    title: "New Spotlight Activated",
+    message: "{{username}}'s spotlight is now active.",
+    url: "/admin/spotlight",
+    isDynamic: true,
+    audiences: ["ADMIN"],
+  },
 
   // 12. Store purchase
   {
@@ -467,7 +476,17 @@ const NOTIFICATION_SEEDS: {
     message:
       "{{userName}} created a new {{programType}} program : {{programName}} {{amountSection}}.",
     isDynamic: true,
-    url: "/admin/manage-mini-mastery-program",
+    url: "/admin/manage-mini-mastery-program?search={{programName}}",
+    audiences: ["ADMIN"],
+  },
+  {
+    type: NotificationType.MMP_PROGRAM_UPDATED_ADMIN,
+    name: " Mini Mastery Program Updated (Admin)",
+    title: "📘 Mini Mastery Program Updated",
+    message:
+      "{{userName}} updated a  {{programType}} program : {{programName}} {{amountSection}}.",
+    isDynamic: true,
+    url: "/admin/manage-mini-mastery-program?search={{programName}}",
     audiences: ["ADMIN"],
   },
   {
@@ -524,6 +543,16 @@ const NOTIFICATION_SEEDS: {
     message: "{{userName}} renewed {{planName}}{{amountSection}}.",
     isDynamic: true,
     url: "/admin/dashboard",
+    audiences: ["ADMIN"],
+  },
+  {
+    type: NotificationType.STORE_ITEM_UPDATED_ADMIN,
+    name: "Store Item Updated (Admin)",
+    title: "🛒 Store Item Updated",
+    message:
+      "{{userName}} updated a {{itemType}} item: {{itemName}} {{amount}}.",
+    isDynamic: true,
+    url: "/admin/manage-store-product?search={{itemName}}",
     audiences: ["ADMIN"],
   },
 ];

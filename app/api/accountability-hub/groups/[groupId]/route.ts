@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import {
-  sendDbPushNotificationMultipleUsers,
-} from "@/lib/utils/pushNotifications";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 // PATCH /api/groups/:groupId/notes
 export async function PATCH(
@@ -88,13 +86,20 @@ export async function PATCH(
       userIdsToNotify = allMemberIds;
     }
     userIdsToNotify = [...new Set(userIdsToNotify)];
-    void sendDbPushNotificationMultipleUsers({
-      type: "ACCOUNTABILITY_NOTES_UPDATED",
-      userIds: userIdsToNotify,
-      context: {
-        userName: session.user.name,
-        groupName: group.name,
-        groupId,
+    await safeInngestSend({
+      name: "notification/send",
+      data: {
+        types: ["ACCOUNTABILITY_NOTES_UPDATED"],
+        actorId: session.user.id,
+        context: {
+          targetUserIds: userIdsToNotify,
+          userName: session.user.name,
+          groupName: group.name,
+          groupId,
+        },
+        sendToUser: true,
+        sendToAdmin: false,
+        sendToCoach: false,
       },
     });
     void (async () => {

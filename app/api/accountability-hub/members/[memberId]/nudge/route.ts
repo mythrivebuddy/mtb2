@@ -5,11 +5,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
-import { Role } from "@prisma/client";
-import {
-  sendPushNotificationFromDBToUser,
-} from "@/lib/utils/pushNotifications";
+import { NotificationType, Role } from "@prisma/client";
 import { sendEmail } from "@/utils/sendEmail";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 export async function POST(
   req: Request,
@@ -80,13 +78,24 @@ export async function POST(
 
     // 3. Send the nudge notification
     if (pushNotificationSent) {
-      await sendPushNotificationFromDBToUser({
-        type: "ACCOUNTABILITY_NUDGE",
-        userId: recipientMember.user.id,
-        context: {
-          senderName: session.user.name,
-          description,
-          url,
+      await safeInngestSend({
+        name: "notification/send",
+        data: {
+          types: [NotificationType.ACCOUNTABILITY_NUDGE],
+
+          actorId: session.user.id, // sender (admin)
+
+          context: {
+            senderName: session.user.name,
+            description,
+            url,
+            targetUserId: recipientMember.user.id, 
+            groupId,
+          },
+
+          sendToUser: true,
+          sendToAdmin: false,
+          sendToCoach: false,
         },
       });
     } else {

@@ -221,19 +221,35 @@ export async function POST() {
         },
       }),
     ]);
-    await safeInngestSend({
-      name: "notification/send",
-      data: {
-        types: [
-          NotificationType.SPOTLIGHT_APPLIED,
-          NotificationType.SPOTLIGHT_APPLIED_ADMIN,
-        ],
-        actorId: userId,
-        context: {
-          userName: user.name,
-        },
-      },
-    });
+  await safeInngestSend({
+  name: "notification/send",
+  data: {
+    types: [
+      NotificationType.SPOTLIGHT_APPLIED,
+      NotificationType.SPOTLIGHT_APPLIED_ADMIN,
+    ],
+    actorId: userId,
+
+    sendToUser: true,
+    sendToAdmin: true,
+    sendToCoach: false,
+
+    // ✅ THIS ENABLES EMAIL
+    sendEmailAdmin: true,
+    adminEntityType: "SPOTLIGHT",
+
+    context: {
+      userName: user.name,
+      userId: userId,
+
+      // ✅ IMPORTANT FOR TEMPLATE
+      spotlightTitle: `${user.name}'s Spotlight`,
+      spotlightId: "N/A", // or actual id if you want
+
+      actionType: "created", // or "applied" (see below)
+    },
+  },
+});
     // send email to user
     await sendEmailUsingTemplate({
       toEmail: user.email,

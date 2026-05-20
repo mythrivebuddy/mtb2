@@ -94,14 +94,16 @@ export async function POST(request: NextRequest) {
       data: {
         types: [NotificationType.STORE_ITEM_CREATED_ADMIN],
         actorId: session.user.id,
-
+        
         // ✅ ONLY ADMIN
         sendToUser: false,
         sendToAdmin: true,
         sendToCoach: false,
-
+         sendEmailAdmin: true,
+         adminEntityType: "STORE",
         context: {
           userName: session.user.name ?? "A user",
+          userId: session.user.id, 
           itemName: item.name,
           itemId: item.id,
 
@@ -109,6 +111,8 @@ export async function POST(request: NextRequest) {
             currency === "GP"
               ? ` for ${basePrice} GP`
               : ` for ${basePrice} ${currency}`,
+              itemType: currency === "GP" ? "GP Item" : "Paid Item",
+                actionType: "created",
         },
       },
     });
