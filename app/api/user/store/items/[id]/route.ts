@@ -5,6 +5,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import { safeInngestSend } from '@/lib/utils/inngest/utils';
+import { NotificationType } from '@prisma/client';
 
 // Helper: extract storage path from Supabase public URL
 // e.g. "https://xxx.supabase.co/storage/v1/object/public/store-images/store-images/file.png"
@@ -121,6 +123,42 @@ export async function PUT(
       },
     });
 
+await safeInngestSend({
+  name: "notification/send",
+  data: {
+    types: [NotificationType.STORE_ITEM_UPDATED_ADMIN],
+    actorId: session.user.id,
+
+    // audience
+    sendToUser: false,
+    sendToAdmin: true,
+    sendToCoach: false,
+
+    // email trigger
+    sendEmailAdmin: true,
+    adminEntityType: "STORE",
+
+    context: {
+      userName: session.user.name ?? "A user",
+      userId: session.user.id,
+
+      itemName: updatedItem.name,
+      itemId: updatedItem.id,
+
+      // ✅ CLEAN amount
+      amountSection:
+        currency === "GP"
+          ? `${basePrice} GP`
+          : `${basePrice} ${currency}`,
+
+      itemType:
+        currency === "GP" ? "GP Item" : "Paid Item",
+
+      // ✅ IMPORTANT
+      actionType: "updated",
+    },
+  },
+});
     return NextResponse.json(
       { message: "Item updated successfully", item: updatedItem },
       { status: 200 }

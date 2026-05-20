@@ -3,9 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
-import {
-  sendDbPushNotificationMultipleUsers,
-} from "@/lib/utils/pushNotifications";
+
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 // GET handler to fetch all comments for a goal
 export async function GET(
@@ -254,45 +253,66 @@ export async function POST(
       });
 
       // --- Send notifications ---
-      
-
+      // 🔥 Reply notifications
       if (replyUsers.size > 0) {
-        await sendDbPushNotificationMultipleUsers({
-          type: "ACCOUNTABILITY_COMMENT_REPLY",
-          userIds: Array.from(replyUsers),
-          context: {
-            userName: session.user.name,
-            goalId,
-            url: goalUrl,
+        await safeInngestSend({
+          name: "notification/send",
+          data: {
+            types: ["ACCOUNTABILITY_COMMENT_REPLY"],
+            actorId: session.user.id,
+            targetUserIds: Array.from(replyUsers),
+            context: {
+              userName: session.user.name,
+              goalId,
+              url: goalUrl,
+            },
+            sendToUser: true,
+            sendToAdmin: false,
+            sendToCoach: false,
           },
         });
       }
 
+      // 🔥 Mention notifications
       if (mentionUsers.size > 0) {
-        await await sendDbPushNotificationMultipleUsers({
-          type: "ACCOUNTABILITY_COMMENT_MENTION",
-          userIds: Array.from(mentionUsers),
-          context: {
-            userName: session.user.name,
-            goalId,
-            url: goalUrl,
+        await safeInngestSend({
+          name: "notification/send",
+          data: {
+            types: ["ACCOUNTABILITY_COMMENT_MENTION"],
+            actorId: session.user.id,
+            targetUserIds: Array.from(mentionUsers),
+            context: {
+              userName: session.user.name,
+              goalId,
+              url: goalUrl,
+            },
+            sendToUser: true,
+            sendToAdmin: false,
+            sendToCoach: false,
           },
         });
       }
 
+      // 🔥 Goal owner notifications
       if (goalUsers.size > 0) {
-        await sendDbPushNotificationMultipleUsers({
-          type: "ACCOUNTABILITY_COMMENT_ON_GOAL",
-          userIds: Array.from(goalUsers),
-          context: {
-            userName: session.user.name,
-            goalId,
-            url: goalUrl,
+        await safeInngestSend({
+          name: "notification/send",
+          data: {
+            types: ["ACCOUNTABILITY_COMMENT_ON_GOAL"],
+            actorId: session.user.id,
+            targetUserIds: Array.from(goalUsers),
+            context: {
+              userName: session.user.name,
+              goalId,
+              url: goalUrl,
+            },
+            sendToUser: true,
+            sendToAdmin: false,
+            sendToCoach: false,
           },
         });
       }
     }
-
     return NextResponse.json(newComment, { status: 201 });
   } catch (error) {
     console.error(`[POST_COMMENT]`, error);

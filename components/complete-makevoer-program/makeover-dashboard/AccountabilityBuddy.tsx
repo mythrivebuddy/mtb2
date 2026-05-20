@@ -8,7 +8,7 @@ import StaticDataBadge from "@/components/complete-makevoer-program/makeover-das
 
 const AccountabilityPod = () => {
   return (
-    <section className="bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative">
+    <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative">
       <StaticDataBadge
         label="Your buddies"
         className="w-fit absolute -top-1.5 -left-4"

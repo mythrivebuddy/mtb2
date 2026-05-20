@@ -1,14 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { awardLevelBadge } from "./awardLevelBadge";
-import { CMP_NOTIFICATIONS } from "@/lib/constant";
-import { sendPushNotificationToUser } from "../../pushNotifications";
 import { NotificationType } from "@prisma/client";
-import { getCMPNotification } from "../getNotificationTemplate";
+import { safeInngestSend } from "../../inngest/utils";
 
 export async function evaluateLevel(
   userId: string,
   programId: string,
-  globalPoints: number
+  globalPoints: number,
 ) {
   // Find eligible level
   const targetLevel = await prisma.makeoverLevel.findFirst({
@@ -39,14 +37,21 @@ export async function evaluateLevel(
   // Award level badge
   await awardLevelBadge(userId, programId, targetLevel.name);
 
+  safeInngestSend({
+    name: "notification/send",
+    data: {
+      types: [NotificationType.CMP_LEVEL_UP],
+      actorId: userId,
 
-  const notification = await getCMPNotification(
-    NotificationType.CMP_LEVEL_UP
-  );
-  const { title, description, url } = notification || CMP_NOTIFICATIONS.LEVEL_UP;
+      context: {
+        levelNumber: targetLevel.id,
+        levelName: targetLevel.name,
+        programId,
+      },
 
-  const dynamicTitle = title
-    .replace("{{levelNumber}}", String(targetLevel.id))
-    .replace("{{levelName}}", targetLevel.name);
-  void sendPushNotificationToUser(userId, dynamicTitle, description, { url });
+      sendToUser: true,
+      sendToAdmin: false,
+      sendToCoach: false,
+    },
+  });
 }

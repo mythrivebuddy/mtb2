@@ -1305,13 +1305,17 @@ export default function ManageCertificatePageComponent() {
             queryClient.setQueryData<SignatureResponse>(
               ["coach-signature"],
               (oldData) => {
-                if (!oldData) return oldData;
+                const userId =
+                  oldData?.signature?.userId ?? session.data?.user?.id ?? "";
+
+                if (!userId) return oldData;
 
                 return {
                   signature: {
-                    id: oldData.signature.id,
-                    userId: oldData.signature.userId,
-                    createdAt: oldData.signature.createdAt,
+                    id: oldData?.signature?.id ?? crypto.randomUUID(),
+                    userId,
+                    createdAt:
+                      oldData?.signature?.createdAt ?? new Date().toISOString(),
                     type: "DRAWN",
                     imageUrl: imageUrl,
                     text: null,

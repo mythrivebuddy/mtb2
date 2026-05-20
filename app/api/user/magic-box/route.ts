@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import { ActivityType } from "@prisma/client";
+import { ActivityType, NotificationType } from "@prisma/client";
 import {
 
 } from "@/lib/utils/notifications";
-import { sendPushNotificationFromDBToUser } from "@/lib/utils/pushNotifications";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 type MagicBoxPlanConfig = {
   minJp: number;
@@ -456,24 +456,37 @@ export async function PUT(request: NextRequest) {
     ]);
 
     // Send notification to the selected user
-    await sendPushNotificationFromDBToUser({
-      type: "MAGIC_BOX_SHARED",
-      userId: selectedUserId,
-      context: {
-        sharedJpAmount,
-        senderName: session?.user?.name || "Someone",
-      },
-    });
+  await safeInngestSend({
+  name: "notification/send",
+  data: {
+    types: [NotificationType.MAGIC_BOX_SHARED],
+    actorId: userId, // sender
+    context: {
+      targetUserId: selectedUserId, // ✅ receiver
+      sharedJpAmount,
+      senderName: session.user.name,
+    },
+    sendToUser: true,
+    sendToAdmin: false,
+    sendToCoach: false,
+  },
+});
 
     // ✅ 2. Send DB-Driven Notification to the SENDER
-    await sendPushNotificationFromDBToUser({
-      type: "JP_EARNED",
-      userId: userId,
-      context: {
-        jpAmount: userJpAmount,
-        source: "Magic Box",
-      },
-    });
+  await safeInngestSend({
+  name: "notification/send",
+  data: {
+    types: [NotificationType.JP_EARNED],
+    actorId: userId, // ✅ sender = receiver
+    context: {
+      jpAmount: userJpAmount,
+      source: "Magic Box",
+    },
+    sendToUser: true,
+    sendToAdmin: false,
+    sendToCoach: false,
+  },
+});
 
     // Send email to both users
     await Promise.all([

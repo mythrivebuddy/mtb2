@@ -2,6 +2,35 @@ import { inngest } from "@/lib/inngest";
 import { prisma } from "@/lib/prisma";
 import { NotificationType, Prisma, Role } from "@prisma/client";
 import { sendPushNotificationFromDBToUser } from "@/lib/utils/pushNotifications";
+import { sendEmailUsingTemplateWithConditionals } from "@/utils/sendEmail";
+
+type NotificationContext = {
+  userName?: string;
+  userId?: string;
+
+  // Challenge
+  challengeTitle?: string;
+  challengeId?: string;
+  challengeType?: string;
+
+  // MMP
+  programName?: string;
+  programId?: string;
+  programType?: string;
+
+  // Store
+  itemName?: string;
+  itemId?: string;
+  itemType?: string;
+
+  // Spotlight
+  spotlightTitle?: string;
+  spotlightId?: string;
+
+  // Common
+  amountSection?: string;
+  actionType?: "created" | "updated" | "applied";
+};
 
 // ✅ Event Type
 type NotificationEvent = {
@@ -12,8 +41,145 @@ type NotificationEvent = {
   sendToUser?: boolean;
   sendToAdmin?: boolean;
   sendToCoach?: boolean;
+  sendEmailAdmin?: boolean;
+  adminEntityType?: "CHALLENGE" | "SPOTLIGHT" | "MMP" | "STORE";
 };
+function getActionMeta(actionType: string, entityType: string) {
+  if (actionType === "updated") {
+    return {
+      actionLabel: `${entityType} Updated`,
+      actionSentence: "has updated the",
+    };
+  }
+  if (actionType === "applied") {
+    return {
+      actionLabel: `${entityType} Application Submitted 📝`,
+      actionSentence: "has applied for a",
+    };
+  }
 
+  // default → created
+  return {
+    actionLabel: `New ${entityType} Created`,
+    actionSentence: "has created a new",
+  };
+}
+
+function buildAdminEmailContext(
+  entityType: string,
+  context: NotificationContext,
+) {
+  const actionType = context.actionType || "created";
+
+  switch (entityType) {
+    case "CHALLENGE": {
+      const entityLabel = "Challenge";
+      const { actionLabel, actionSentence } = getActionMeta(
+        actionType,
+        entityLabel,
+      );
+
+      return {
+        username: context.userName,
+        userProfileUrl: `${process.env.NEXT_URL}/profile/${context.userId}`,
+
+        entityType: entityLabel,
+        entityTitle: context.challengeTitle,
+
+        actionLabel,
+        actionSentence,
+
+        challengeType: context.challengeType,
+
+        amount: context.amountSection
+          ? context.amountSection.replace(/^\s*for\s*/i, "")
+          : "Free",
+
+        ctaUrl: `${process.env.NEXT_URL}/dashboard/challenge/upcoming-challenges/${context.challengeId}`,
+      };
+    }
+
+    case "MMP": {
+      const entityLabel = "Mini Mastery Program";
+      const { actionLabel, actionSentence } = getActionMeta(
+        actionType,
+        entityLabel,
+      );
+
+      return {
+        username: context.userName,
+        userProfileUrl: `${process.env.NEXT_URL}/profile/${context.userId}`,
+
+        entityType: entityLabel,
+        entityTitle: context.programName,
+
+        actionLabel,
+        actionSentence,
+
+        challengeType: context.programType,
+
+        amount: context.amountSection
+          ? context.amountSection.replace(/^\s*for\s*/i, "")
+          : "Free",
+
+        ctaUrl: `${process.env.NEXT_URL}/admin/manage-mini-mastery-program?search=${context.programName}`,
+      };
+    }
+    case "STORE":
+      const entityLabel = "Store Item";
+      const { actionLabel, actionSentence } = getActionMeta(
+        actionType,
+        entityLabel,
+      );
+      return {
+        username: context.userName,
+        userProfileUrl: `${process.env.NEXT_URL}/profile/${context.userId}`,
+
+        entityType: "Store Item",
+        entityTitle: context.itemName,
+
+        // unified template fields
+        challengeType: context.itemType || "Item",
+
+        amount: context.amountSection?.replace(/^\s*for\s*/i, ""),
+
+        actionLabel,
+
+        actionSentence,
+
+        ctaUrl: `${process.env.NEXT_URL}/admin/manage-store-product?search=${encodeURIComponent(context.itemName ?? "")}`,
+      };
+
+    case "SPOTLIGHT": {
+      const entityLabel = "Spotlight";
+      const { actionLabel, actionSentence } = getActionMeta(
+        context.actionType || "applied",
+        entityLabel,
+      );
+
+      return {
+        username: context.userName,
+        userProfileUrl: `${process.env.NEXT_URL}/profile/${context.userId}`,
+
+        entityType: entityLabel,
+        entityTitle: context.spotlightTitle || "Spotlight Application",
+
+        actionLabel,
+        actionSentence,
+
+        // optional fields (template safe)
+        challengeType: "Application",
+
+        // Spotlight has no amount
+        amount: undefined,
+
+        ctaUrl: `${process.env.NEXT_URL}/admin/spotlight`,
+      };
+    }
+    default:
+      return context;
+  }
+}
 export const sendNotifications = inngest.createFunction(
   {
     id: "send-notification",
@@ -27,8 +193,17 @@ export const sendNotifications = inngest.createFunction(
       sendToUser = true,
       sendToAdmin = true,
       sendToCoach = true,
-    } = event.data as NotificationEvent;
 
+      sendEmailAdmin = false,
+      adminEntityType,
+    } = event.data as NotificationEvent;
+    const targetUserId = context?.targetUserId as string | undefined;
+    const targetUserIds = context?.targetUserIds as string[] | undefined;
+    const finalUserIds = targetUserIds?.length
+      ? targetUserIds
+      : targetUserId
+        ? [targetUserId]
+        : [actorId];
     // 1️⃣ Fetch ALL templates
     const settings = await step.run("get-templates", async () => {
       return prisma.notificationSettings.findMany({
@@ -52,11 +227,11 @@ export const sendNotifications = inngest.createFunction(
       const orConditions: Prisma.UserWhereInput[] = [];
 
       if (sendToUser && allAudiences.has("USER")) {
-        orConditions.push({ id: actorId });
+        orConditions.push({ id: { in: finalUserIds } });
       }
 
       if (sendToAdmin && allAudiences.has("ADMIN")) {
-        orConditions.push({ role: Role.ADMIN, email:process.env.ADMIN_EMAIL });
+        orConditions.push({ role: Role.ADMIN, email: process.env.ADMIN_EMAIL });
       }
 
       if (sendToCoach && allAudiences.has("COACH")) {
@@ -73,16 +248,43 @@ export const sendNotifications = inngest.createFunction(
           userType: true,
         },
       });
+      console.log("users", users);
+      const uniqueUsers = Array.from(
+        new Map(users.map((u) => [u.id, u])).values(),
+      );
 
-      return users;
+      return uniqueUsers;
     });
 
     if (!recipients.length) {
       console.log("⚠️ No recipients resolved:", types);
       return;
     }
+    await step.run("send-admin-email", async () => {
+      if (!sendEmailAdmin || !adminEntityType) return;
 
-    
+      const admin = await prisma.user.findFirst({
+        where: {
+          role: Role.ADMIN,
+          email: process.env.ADMIN_EMAIL,
+        },
+        select: {
+          email: true,
+          name: true,
+        },
+      });
+
+      if (!admin?.email) return;
+
+      const emailContext = buildAdminEmailContext(adminEntityType, context);
+
+      await sendEmailUsingTemplateWithConditionals({
+        toEmail: admin.email,
+        toName: admin.name || "Admin",
+        templateId: "admin-entity-created",
+        templateData: emailContext,
+      });
+    });
 
     // 4️⃣ Send notifications
     await step.run("send-to-all", async () => {
@@ -97,7 +299,7 @@ export const sendNotifications = inngest.createFunction(
             if (
               audiences.includes("USER") &&
               sendToUser &&
-              user.id === actorId
+              finalUserIds.includes(user.id)
             ) {
               shouldSend = true;
             }

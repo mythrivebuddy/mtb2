@@ -1809,6 +1809,112 @@ async function main() {
 </div>
   `.trim(),
     },
+    {
+      templateId: "admin-entity-created",
+      subject: "🚀 {{actionLabel}}",
+      description:
+        "Common admin email for any entity creation (spotlight, challenge, MMP, store)",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+
+  <!-- HEADER -->
+  <div style="padding:24px;text-align:center;background:#f1f5f9;">
+    <h2 style="margin:0;color:#111827;font-size:22px;">
+      {{actionLabel}}
+    </h2>
+    <p style="margin:6px 0 0;color:#6b7280;font-size:13px;">
+      Platform Activity Notification
+    </p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:24px;">
+
+   <p style="font-size:14px;color:#374151;">
+  <strong>
+    <a href="{{userProfileUrl}}" style="color:#2563eb;text-decoration:underline;">
+      {{username}}
+    </a>
+  </strong>
+    {{actionSentence}} 
+  <strong>{{entityType}}</strong>.
+</p>
+
+    <!-- ENTITY DETAILS -->
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-top:16px;">
+      
+      <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">
+        Entity Type
+      </p>
+      <p style="margin:0 0 12px;font-size:14px;color:#111827;font-weight:600;">
+        {{entityType}}
+      </p>
+
+      <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">
+        Title
+      </p>
+      <p style="margin:0 0 12px;font-size:14px;color:#111827;font-weight:600;">
+        {{entityTitle}}
+      </p>
+
+      {{#if email}}
+      <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">
+        Created By (Email)
+      </p>
+      <p style="margin:0;font-size:14px;color:#111827;font-weight:600;">
+        {{email}}
+      </p>
+      {{/if}}
+
+    </div>
+
+    <!-- OPTIONAL META -->
+    {{#if challengeType}}
+    <div style="background:#f1f5f9;border-radius:8px;padding:12px;margin-top:16px;">
+      <p style="margin:0;font-size:13px;color:#475569;">
+        Type: {{challengeType}}
+      </p>
+    </div>
+    {{/if}}
+
+    {{#if amount}}
+    <div style="background:#f1f5f9;border-radius:8px;padding:12px;margin-top:10px;">
+      <p style="margin:0;font-size:13px;color:#475569;">
+        Amount: {{amount}}
+      </p>
+    </div>
+    {{/if}}
+
+    <!-- CTA -->
+    {{#if ctaUrl}}
+    <div style="text-align:center;margin:24px 0;">
+      <a href="{{ctaUrl}}" style="
+        background:#111827;
+        color:white;
+        padding:12px 24px;
+        border-radius:6px;
+        text-decoration:none;
+        font-size:14px;
+        font-weight:600;
+        display:inline-block;
+      ">
+        View Details →
+      </a>
+    </div>
+    {{/if}}
+
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:14px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">
+      © My Thrive Buddy. Internal Admin Notification
+    </p>
+  </div>
+
+</div>
+  `.trim(),
+    },
   ];
 
   let createdCount = 0;

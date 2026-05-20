@@ -15,6 +15,7 @@ import { Badge, BadgeProps } from "@/components/ui/badge";
 import { NotificationIcon } from "@/components/icons/NotificationIcons";
 import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import UserProfileDropdown from "./UserProfileDropDown";
+import { useSession } from "next-auth/react";
 
 type TopBarProps = {
   user?: UserType;
@@ -50,15 +51,25 @@ export const fetchUsers = async (searchTerm: string): Promise<SearchUser[]> => {
 // The main TopBar component
 export default function TopBar({ user, toggleSidebar }: TopBarProps) {
   const pathname = usePathname();
-  
+  const { data: session } = useSession();
   const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(
-    user?.image || null,
+    user?.image ? `${user.image}?t=${Date.now()}` : null,
   );
 
+  // ✅ Sync with session when it updates (after profile save)
+  useEffect(() => {
+    const image = session?.user?.image || user?.image;
+    console.log("Image chagnes ");
+    
+    if (image) {
+      setLocalProfilePicture(`${image}?t=${Date.now()}`);
+    }
+  }, [session?.user?.image, user?.image]);
   // Listen for profile updates from other components to update avatar in real-time
   useEffect(() => {
     const handleProfileUpdate = (event: CustomEvent) => {
+      console.log("✅ profileUpdated received in TopBar:", event.detail);
       if (event.detail?.profilePicture) {
         setLocalProfilePicture(event.detail.profilePicture);
       }
@@ -74,7 +85,6 @@ export default function TopBar({ user, toggleSidebar }: TopBarProps) {
       );
     };
   }, []);
-
 
   // React Query hook for Magic Box status
   const { data: hasUnopenedBox } = useQuery({

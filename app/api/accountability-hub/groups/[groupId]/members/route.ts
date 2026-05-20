@@ -5,11 +5,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
-import { GroupRole } from "@prisma/client";
+import { GroupRole, NotificationType } from "@prisma/client";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
-import {
-  sendPushNotificationFromDBToUser,
-} from "@/lib/utils/pushNotifications";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 export async function GET(
   _req: Request,
@@ -149,13 +147,25 @@ export async function POST(
         userName: userToAdd.name,
       },
     });
-    await sendPushNotificationFromDBToUser({
-      type: "ACCOUNTABILITY_MEMBER_ADDED",
-      userId: userToAdd.id,
-      context: {
-        userName: userToAdd.name,
-        groupName: group.name,
-        groupUrl,
+    await safeInngestSend({
+      name: "notification/send",
+      data: {
+        types: [NotificationType.ACCOUNTABILITY_MEMBER_ADDED],
+
+        actorId: session.user.id, // admin who added
+
+        context: {
+          targetUserId: userToAdd.id, // 🔥 recipient
+          userName: userToAdd.name,
+          groupName: group.name,
+          groupUrl,
+          addedByName: session.user.name,
+          groupId,
+        },
+
+        sendToUser: true,
+        sendToAdmin: false,
+        sendToCoach: false,
       },
     });
     // logging activity
