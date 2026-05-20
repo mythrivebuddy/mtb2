@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { profileSchema } from "@/schema/zodSchema";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload";
 import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 //import { authOptions } from "@/lib/auth";
-
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
           message: "Invalid profile data",
           errors: validationResult.error.format(),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,18 +40,33 @@ export async function POST(req: NextRequest) {
 
     if (profilePicture && profilePicture.size > 0) {
       try {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: session.user.email },
+          select: { image: true },
+        });
+
+        if (existingUser?.image) {
+          try {
+            const url = new URL(existingUser.image);
+            const path = decodeURIComponent(
+              url.pathname.split("/profile-images/")[1],
+            );
+            if (path)
+              await supabaseAdmin.storage.from("profile-images").remove([path]);
+          } catch {}
+        }
         console.log("Uploading profile picture...");
         imageUrl = await handleSupabaseImageUpload(
           profilePicture,
           "profile-images",
-          session.user.email
+          session.user.email,
         );
         console.log("Uploaded image URL:", imageUrl);
       } catch (error) {
         console.error("Error uploading profile picture:", error);
         return NextResponse.json(
           { message: "Failed to upload profile picture" },
-          { status: 500 }
+          { status: 500 },
         );
       }
     }
@@ -82,7 +97,7 @@ export async function POST(req: NextRequest) {
     console.error("Error updating profile:", error);
     return NextResponse.json(
       { message: "Failed to update profile" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -122,7 +137,7 @@ export async function GET() {
     console.error("Error fetching profile:", error);
     return NextResponse.json(
       { message: "Failed to fetch profile" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

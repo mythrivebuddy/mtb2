@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
 import { mtbBusinessProfileSchema } from "@/schema/zodSchema";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET() {
   try {
@@ -64,15 +65,23 @@ export async function POST(req: Request) {
 
     let logoUrl: string | undefined;
 
+    const existing = await prisma.mtbBusinessProfile.findFirst();
     if (file && file.size > 0) {
+      if (existing?.logoUrl) {
+        try {
+          const url = new URL(existing.logoUrl);
+          const path = decodeURIComponent(url.pathname.split("/mtb-logos/")[1]);
+          if (path)
+            await supabaseAdmin.storage.from("mtb-logos").remove([path]);
+        } catch {}
+      }
+
       logoUrl = await handleSupabaseImageUpload(
         file,
         "mtb-logos",
         "business-profile",
       );
     }
-
-    const existing = await prisma.mtbBusinessProfile.findFirst();
 
     let profile;
 

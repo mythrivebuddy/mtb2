@@ -69,7 +69,7 @@ export default function AdminMtbBusinessProfilePage() {
     if (data) {
       reset(data);
       if (data.logoUrl) {
-        setPreview(data.logoUrl);
+      setPreview(`${data.logoUrl}?v=${Date.now()}`);
       }
     }
   }, [data, reset]);

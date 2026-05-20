@@ -4,7 +4,7 @@ import { supabaseAdmin } from "../supabaseAdmin";
 export default async function handleSupabaseImageUpload(
   file: File,
   bucket_name: string,
-  folder_name: string
+  folder_name: string,
 ): Promise<string> {
   if (!file || file.size === 0) {
     throw new Error("No file provided or file is empty");
@@ -19,7 +19,11 @@ export default async function handleSupabaseImageUpload(
 
   const { error } = await supabaseAdmin.storage
     .from(bucket_name)
-    .upload(filePath, buffer, { contentType: file.type });
+    .upload(filePath, buffer, {
+      contentType: "image/jpeg",
+      upsert: true, // ✅ overwrites existing
+      cacheControl: "0",
+    });
 
   if (error) {
     console.error("Supabase upload error:", error);

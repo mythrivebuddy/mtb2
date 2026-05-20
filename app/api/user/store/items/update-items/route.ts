@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
+import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload";
 import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // PUT /api/user/store/items/[id] - Update an item
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -32,7 +33,7 @@ export async function PUT(
     if (!isAdmin && !isOwner) {
       return NextResponse.json(
         { error: "You don't have permission to edit this item" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -43,7 +44,8 @@ export async function PUT(
     const basePrice = parseInt(formData.get("basePrice") as string);
     const monthlyPrice = parseInt(formData.get("monthlyPrice") as string) || 0;
     const yearlyPrice = parseInt(formData.get("yearlyPrice") as string) || 0;
-    const lifetimePrice = parseInt(formData.get("lifetimePrice") as string) || 0;
+    const lifetimePrice =
+      parseInt(formData.get("lifetimePrice") as string) || 0;
     const imageFile = formData.get("image") as File | null;
     const downloadFile = formData.get("download") as File | null;
 
@@ -51,7 +53,7 @@ export async function PUT(
     if (!name || !category || isNaN(basePrice)) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,23 +61,60 @@ export async function PUT(
     let downloadUrl = existingItem.downloadUrl;
 
     // ✅ Upload new image if provided — extract .url from the result
-   // ✅ Upload new image if provided
-if (imageFile && imageFile.size > 0) {
-  imageUrl = await handleSupabaseImageUpload(
-    imageFile,
-    "store-images",
-    "store-images"
-  );
-}
+    // ✅ Upload new image if provided
+    // ✅ Delete old image from bucket if new one is being uploaded
+    if (imageFile && imageFile.size > 0) {
+      if (existingItem.imageUrl) {
+        try {
+          const url = new URL(existingItem.imageUrl);
+          const path = decodeURIComponent(
+            url.pathname.split("/store-images/")[1],
+          );
+          if (path)
+            await supabaseAdmin.storage.from("store-images").remove([path]);
+        } catch {}
+      }
+      imageUrl = await handleSupabaseImageUpload(
+        imageFile,
+        "store-images",
+        "store-images",
+      );
+    }
 
-// ✅ Upload new download file if provided
-if (downloadFile && downloadFile.size > 0) {
-  downloadUrl = await handleSupabaseImageUpload(
-    downloadFile,
-    "store-images",
-    "store-images"
-  );
-}
+    // ✅ Delete old download file from bucket if new one is being uploaded
+    if (downloadFile && downloadFile.size > 0) {
+      if (existingItem.downloadUrl) {
+        try {
+          const url = new URL(existingItem.downloadUrl);
+          const path = decodeURIComponent(
+            url.pathname.split("/store-images/")[1],
+          );
+          if (path)
+            await supabaseAdmin.storage.from("store-images").remove([path]);
+        } catch {}
+      }
+      downloadUrl = await handleSupabaseImageUpload(
+        downloadFile,
+        "store-images",
+        "store-images",
+      );
+    }
+    if (imageFile && imageFile.size > 0) {
+      imageUrl = await handleSupabaseImageUpload(
+        imageFile,
+        "store-images",
+        "store-images",
+      );
+    }
+
+    // ✅ Upload new download file if provided
+    if (downloadFile && downloadFile.size > 0) {
+      downloadUrl = await handleSupabaseImageUpload(
+        downloadFile,
+        "store-images",
+        "store-images",
+      );
+    }
     // Update item
     const updatedItem = await prisma.item.update({
       where: { id: itemId },
@@ -117,14 +156,15 @@ if (downloadFile && downloadFile.size > 0) {
         },
         message: "Item updated successfully",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     console.error("Error updating item:", errorMessage);
     return NextResponse.json(
       { error: "Failed to update item", message: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
