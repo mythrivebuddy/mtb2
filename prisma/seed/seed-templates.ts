@@ -1915,6 +1915,71 @@ async function main() {
 </div>
   `.trim(),
     },
+    {
+  templateId: "admin-subscription-cmp",
+  subject: "💳 New {{billingType}} Purchased",
+  description:
+    "Admin notification when a user purchases a subscription or CMP plan",
+  htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+
+  <!-- HEADER -->
+  <div style="padding:24px;text-align:center;background:#f1f5f9;">
+    <h2 style="margin:0;color:#111827;font-size:22px;">
+      {{actionLabel}}
+    </h2>
+    <p style="margin:6px 0 0;color:#6b7280;font-size:13px;">
+      Billing Activity Notification
+    </p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:24px;">
+
+    <p style="font-size:14px;color:#374151;">
+      <strong>
+        <a href="{{userProfileUrl}}" style="color:#2563eb;text-decoration:underline;">
+          {{username}}
+        </a>
+      </strong>
+      {{actionSentence}} 
+      <strong>{{billingType}}</strong>.
+    </p>
+
+    <!-- PLAN DETAILS -->
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-top:16px;">
+      
+      <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">
+        Plan Name
+      </p>
+      <p style="margin:0 0 12px;font-size:14px;color:#111827;font-weight:600;">
+        {{planName}}
+      </p>
+
+      {{#if amount}}
+      <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">
+        Amount Paid
+      </p>
+      <p style="margin:0;font-size:14px;color:#111827;font-weight:600;">
+        {{amount}}
+      </p>
+      {{/if}}
+
+    </div>
+
+
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:14px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">
+      © My Thrive Buddy. Internal Admin Notification
+    </p>
+  </div>
+
+</div>
+  `.trim(),
+}
   ];
 
   let createdCount = 0;

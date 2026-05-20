@@ -53,7 +53,7 @@ export const POST = async (req: NextRequest) => {
       if (payment.status !== "captured")
         return NextResponse.json({ received: true });
       // ✅ Ignore subscription payments
-      
+
       if (!payment.order_id) return NextResponse.json({ received: true });
       if (payment.subscription_id) {
         const order = await prisma.paymentOrder.findFirst({
@@ -244,8 +244,10 @@ export const POST = async (req: NextRequest) => {
       });
       const amountSection =
         order.totalAmount && order.totalAmount > 0
-          ? ` for ${order.totalAmount} ${order.currency}`
+          ? `for ${order.totalAmount}`
           : "";
+
+      const currency = order.currency ?? "INR";
 
       await safeInngestSend({
         id: `notif-payment-${order.id}`,
@@ -260,12 +262,16 @@ export const POST = async (req: NextRequest) => {
           sendToUser: true,
           sendToAdmin: true,
           sendToCoach: false,
-
+          sendEmailAdmin: true,
+          billingType: "Subscription", // OR "CMP"
           context: {
             userName: order.user?.name ?? "A user",
+            userId: order.userId,
             planName: order.plan?.name ?? "your plan",
             orderId: order.id,
             amountSection,
+
+            currency,
           },
         },
       });
@@ -286,6 +292,7 @@ export const POST = async (req: NextRequest) => {
         include: {
           user: {
             select: {
+              id:true,
               name: true,
             },
           },
@@ -519,8 +526,10 @@ export const POST = async (req: NextRequest) => {
       });
       const amountSection =
         order.totalAmount && order.totalAmount > 0
-          ? ` for ${order.totalAmount} ${order.currency}`
+          ? `for ${order.totalAmount}`
           : "";
+
+      const currency = order.currency ?? "INR";
 
       await safeInngestSend({
         id: `notif-payment-${order.id}`,
@@ -535,12 +544,16 @@ export const POST = async (req: NextRequest) => {
           sendToUser: true,
           sendToAdmin: true,
           sendToCoach: false,
-
+          sendEmailAdmin: true,
+          billingType: "Subscription", // OR "CMP"
           context: {
             userName: order.user?.name ?? "A user",
+            userId:order.user.id,
             planName: order.plan.name,
             orderId: order.id,
             amountSection,
+
+            currency,
           },
         },
       });
@@ -558,6 +571,7 @@ export const POST = async (req: NextRequest) => {
         include: {
           user: { select: { name: true } },
           plan: { select: { name: true } },
+          mandate: { select: { currency: true } },
         },
       });
 
@@ -592,8 +606,11 @@ export const POST = async (req: NextRequest) => {
       });
       const amountSection =
         invoice.amount_paid && invoice.amount_paid > 0
-          ? ` for ${invoice.amount_paid / 100} ${invoice.currency}`
+          ? `for ${invoice.amount_paid / 100}`
           : "";
+
+      const currency = subscription?.mandate?.currency ?? "INR";
+
       const isFirstCycle = !subscription.renewedAt;
 
       if (isFirstCycle) {
@@ -614,12 +631,16 @@ export const POST = async (req: NextRequest) => {
           sendToUser: true,
           sendToAdmin: true,
           sendToCoach: false,
-
+          sendEmailAdmin: true,
+          billingType: "Subscription", // OR "CMP"
           context: {
             userName: subscription.user?.name ?? "A user",
+            userId: subscription.userId,
             planName: subscription.plan?.name ?? "your plan",
             orderId: subscription.paymentOrderId,
             amountSection,
+
+            currency,
           },
         },
       });

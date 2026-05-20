@@ -260,7 +260,7 @@ const Step3IdentitySelection = ({
                             setIdentities((p) => ({ ...p, [id]: value }))
                           }
                         >
-                          <SelectTrigger className="w-full bg-inherit border border-emerald-600 rounded-lg">
+                          <SelectTrigger className="w-full bg-inherit  dark:text-white border border-emerald-600 rounded-lg">
                             <SelectValue placeholder="Choose an identity" />
                           </SelectTrigger>
                           <SelectContent>

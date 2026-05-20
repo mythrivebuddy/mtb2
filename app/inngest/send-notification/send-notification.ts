@@ -7,7 +7,9 @@ import { sendEmailUsingTemplateWithConditionals } from "@/utils/sendEmail";
 type NotificationContext = {
   userName?: string;
   userId?: string;
-
+  // Subscription ✅
+  planName?: string;
+  subscriptionAmount?: string;
   // Challenge
   challengeTitle?: string;
   challengeId?: string;
@@ -26,7 +28,7 @@ type NotificationContext = {
   // Spotlight
   spotlightTitle?: string;
   spotlightId?: string;
-
+   currency?: string;
   // Common
   amountSection?: string;
   actionType?: "created" | "updated" | "applied";
@@ -43,6 +45,7 @@ type NotificationEvent = {
   sendToCoach?: boolean;
   sendEmailAdmin?: boolean;
   adminEntityType?: "CHALLENGE" | "SPOTLIGHT" | "MMP" | "STORE";
+  billingType?: "Subscription" | "CMP";
 };
 function getActionMeta(actionType: string, entityType: string) {
   if (actionType === "updated") {
@@ -261,7 +264,7 @@ export const sendNotifications = inngest.createFunction(
       return;
     }
     await step.run("send-admin-email", async () => {
-      if (!sendEmailAdmin || !adminEntityType) return;
+      if (!sendEmailAdmin) return;
 
       const admin = await prisma.user.findFirst({
         where: {
@@ -275,7 +278,30 @@ export const sendNotifications = inngest.createFunction(
       });
 
       if (!admin?.email) return;
+      // ✅ SUBSCRIPTION FLOW (separate)
+      const { billingType } = event.data as NotificationEvent;
+      if (billingType) {
+          const ctx = context as NotificationContext;
+        await sendEmailUsingTemplateWithConditionals({
+          toEmail: admin.email,
+          toName: admin.name || "Admin",
+          templateId: "admin-subscription-cmp", // 👈 create this
+          templateData: {
+            username: ctx.userName,
+          planName: ctx.planName?.replace(/plan/gi, "").trim(),
+            billingType,
+            amount: ctx?.amountSection?.replace(/^\s*for\s*/i, ""),
+            actionLabel: `New ${billingType} Purchased `,
+            actionSentence: "has purchased a",
+            userProfileUrl: `${process.env.NEXT_URL}/profile/${ctx.userId}`,
+          },
+        });
 
+        return;
+      }
+
+      // ✅ EXISTING FLOW
+      if (!adminEntityType) return;
       const emailContext = buildAdminEmailContext(adminEntityType, context);
 
       await sendEmailUsingTemplateWithConditionals({

@@ -239,7 +239,7 @@ export default function SuccessPage() {
               />
 
               <CountdownTimer startDate={programStart} />
-              <p className="text-sm text-slate-700 dark:text-slate-300">
+              <p className="text-sm text-slate-700  dark:text-slate-300">
                 Your subscription benefits are active immediately, and full
                 program access will unlock once the program begins.
               </p>
@@ -248,7 +248,7 @@ export default function SuccessPage() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col w-full gap-3 pt-4">
-            <Button asChild className="w-full">
+            <Button asChild className="w-full dark:text-slate-950">
               <Link href={redirectTo}>
                 Go to Dashboard
                 <ArrowRight className="ml-2 w-4 h-4" />

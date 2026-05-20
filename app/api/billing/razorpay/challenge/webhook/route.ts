@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
             id: `notify-${existingOrder.id}`,
             data: {
               orderId: existingOrder.id,
-              userId: existingOrder.userId,
+              seId: existingOrder.userId,
               isFree: false, // paid flow
             },
           });
