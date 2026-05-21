@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import { ActivityType } from "@prisma/client";
+import { ActivityType, NotificationType } from "@prisma/client";
 import {
-  getMagicBoxRewardNotificationData,
-  getMagicBoxSharedNotificationData,
+
 } from "@/lib/utils/notifications";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 type MagicBoxPlanConfig = {
   minJp: number;
@@ -416,17 +415,7 @@ export async function PUT(request: NextRequest) {
     });
 
     // get data to give notificaiton to user who has recieve the th other half
-    const reciverNotificationData = getMagicBoxSharedNotificationData(
-      userId,
-      session?.user?.name || "",
-      selectedUserId,
-      sharedJpAmount,
-    );
 
-    const senderNotificationData = getMagicBoxRewardNotificationData(
-      userId,
-      userJpAmount,
-    );
 
     const [updatedBox] = await prisma.$transaction([
       // Update magic box as redeemed
@@ -463,16 +452,41 @@ export async function PUT(request: NextRequest) {
           },
         ],
       }),
-      prisma.notification.create({ data: reciverNotificationData }),
-      prisma.notification.create({ data: senderNotificationData }),
+
     ]);
 
     // Send notification to the selected user
-    await sendPushNotificationToUser(
-      selectedUserId,
-      "Magic Box Shared",
-      `You have received ${sharedJpAmount} GP from ${session?.user?.name || ""}`,
-    );
+  await safeInngestSend({
+  name: "notification/send",
+  data: {
+    types: [NotificationType.MAGIC_BOX_SHARED],
+    actorId: userId, // sender
+    context: {
+      targetUserId: selectedUserId, // ✅ receiver
+      sharedJpAmount,
+      senderName: session.user.name,
+    },
+    sendToUser: true,
+    sendToAdmin: false,
+    sendToCoach: false,
+  },
+});
+
+    // ✅ 2. Send DB-Driven Notification to the SENDER
+  await safeInngestSend({
+  name: "notification/send",
+  data: {
+    types: [NotificationType.JP_EARNED],
+    actorId: userId, // ✅ sender = receiver
+    context: {
+      jpAmount: userJpAmount,
+      source: "Magic Box",
+    },
+    sendToUser: true,
+    sendToAdmin: false,
+    sendToCoach: false,
+  },
+});
 
     // Send email to both users
     await Promise.all([

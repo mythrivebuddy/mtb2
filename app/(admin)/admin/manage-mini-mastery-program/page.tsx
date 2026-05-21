@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Editor } from "@tinymce/tinymce-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -848,6 +849,7 @@ export default function AdminMMPPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [viewProg, setViewProg] = useState<Program | null>(null);
   const [editProg, setEditProg] = useState<Program | null>(null);
+  const searchParams = useSearchParams();
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin-mmp", page, statusFilter, search],
@@ -866,6 +868,17 @@ export default function AdminMMPPage() {
   const handleFilter = (s: ProgramStatus | "") => { setStatus(s); setPage(1); };
   const handleSearch = () => { setSearch(searchInput); setPage(1); };
   const clearSearch = () => { setSearchInput(""); setSearch(""); setPage(1); };
+useEffect(() => {
+  const searchFromUrl = searchParams.get("search");
+
+  if (searchFromUrl && search !== searchFromUrl) {
+    const decoded = decodeURIComponent(searchFromUrl);
+
+    setSearchInput(decoded);
+    setSearch(decoded);
+    setPage(1);
+  }
+}, [searchParams]);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow min-h-screen">

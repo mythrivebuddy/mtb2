@@ -4,7 +4,7 @@ import Image from "next/image";
 
 const JPCard = ({ value, label }: JPCardProps) => {
   return (
-    <Card className="p-4 flex flex-row items-center rounded-3xl bg-white shadow-md space-x-4">
+    <Card className="p-4 flex flex-row items-center rounded-3xl bg-white dark:bg-slate-900 shadow-md space-x-4">
       <div className="flex-shrink-0">
         <Image
           src="/Pearls.png"

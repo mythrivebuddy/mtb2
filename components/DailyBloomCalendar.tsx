@@ -187,7 +187,6 @@ const validateDateTime = (
 
   const isSameDay = startDateStr === todayStr;
 
-
   if (isSameDay && startDate < now) {
     return { valid: false, message: "Start time cannot be in the past" };
   }
@@ -319,8 +318,8 @@ const EventForm = ({
   const isCompleted = currentEvent.extendedProps?.isCompleted;
   const isDisabled = isSubmitting || isCompleted;
   return (
-    <div className="grid gap-4 py-4">
-      <div className="grid gap-2">
+    <div className="grid gap-4 py-4 w-full max-w-full">
+      <div className="grid gap-2 ">
         <Label htmlFor="title">Title</Label>
         <Input
           id="title"
@@ -330,10 +329,10 @@ const EventForm = ({
           }
           disabled={isDisabled}
           placeholder="Event Title"
-          className="text-sm"
+          className="w-full"
         />
       </div>
-      <div className="grid gap-2">
+      <div className="grid gap-2 w-full">
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
@@ -349,13 +348,13 @@ const EventForm = ({
           }
           disabled={isDisabled}
           placeholder="Optional details..."
-          className="text-sm"
+          className="w-full resize-none"
         />
       </div>
-      <div className="grid gap-2">
+      <div className="grid gap-2 min-w-0">
         <Label>Due Date</Label>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 min-w-0">
           {/* DATE */}
           <Input
             type="date"
@@ -388,6 +387,7 @@ const EventForm = ({
               );
               setTimeError(result.message);
             }}
+            className="flex-grow min-w-0"
             disabled={isDisabled}
           />
 
@@ -414,7 +414,7 @@ const EventForm = ({
               setTimeError(result.message);
             }}
           >
-            <SelectTrigger className="w-[110px]" disabled={isDisabled}>
+            <SelectTrigger className="w-[110px] shrink-0" disabled={isDisabled}>
               <SelectValue placeholder="Time" />
             </SelectTrigger>
 
@@ -582,6 +582,8 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const dragDebounceRef = useRef<number | null>(null);
   const resizeDebounceRef = useRef<number | null>(null);
   const resizeViewDebounceRef = useRef<number | null>(null);
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  const calendarWrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (initialEventId) {
@@ -591,9 +593,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
       );
 
       if (target) {
-       setCurrentEvent({
+        setCurrentEvent({
           ...target,
-          allDay: target.allDay || !target.end
+          allDay: target.allDay || !target.end,
         });
         setMode("view");
         setIsEditing(false);
@@ -609,7 +611,6 @@ const DailyBloomCalendar: React.FC<Props> = ({
   }, [initialEventId, events, onClearInitialEvent]);
 
   useEffect(() => {
- 
     setEvents(eventsProp);
     setIsLoading(false);
   }, [eventsProp]);
@@ -971,8 +972,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
             : currentEvent.end
               ? getTimeHHMM(currentEvent.end)
               : undefined,
-           endDate: currentEvent.allDay ? null : currentEvent.end,
-            
+          endDate: currentEvent.allDay ? null : currentEvent.end,
         },
       });
 
@@ -1129,7 +1129,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 endTime: info.event.endStr
                   ? getTimeHHMM(info.event.endStr)
                   : undefined,
-                  endDate: info.event.allDay ? null : info.event.endStr,
+                endDate: info.event.allDay ? null : info.event.endStr,
               },
             });
           } else {
@@ -1182,7 +1182,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 endTime: info.event.endStr
                   ? getTimeHHMM(info.event.endStr)
                   : undefined,
-                  endDate: info.event.allDay ? null : info.event.endStr,
+                endDate: info.event.allDay ? null : info.event.endStr,
               },
             });
           } else {
@@ -1381,7 +1381,98 @@ const DailyBloomCalendar: React.FC<Props> = ({
       return aCreated - bCreated;
     });
   }, [events]);
+  const initialScrollTime = React.useMemo(() => {
+    const now = new Date();
+    const todayY = now.getFullYear();
+    const todayM = now.getMonth();
+    const todayD = now.getDate();
 
+    const todayEvents = sortedEvents.filter((e) => {
+      if (!e.start) return false;
+      const eventDate = new Date(e.start);
+      return (
+        eventDate.getFullYear() === todayY &&
+        eventDate.getMonth() === todayM &&
+        eventDate.getDate() === todayD
+      );
+    });
+
+    if (todayEvents.length > 0) {
+      const earliestEvent = todayEvents.reduce((earliest, current) => {
+        return new Date(current.start).getTime() <
+          new Date(earliest.start).getTime()
+          ? current
+          : earliest;
+      }, todayEvents[0]);
+
+      const d = new Date(earliestEvent.start);
+      return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:00`;
+    }
+
+    // Fallback: scroll to 8 AM today
+    return "08:00:00";
+  }, [sortedEvents]);
+  // Smart Scroll: Handles TimeGrid scrolling and ListWeek scrolling
+  // Smart Scroll: Handles TimeGrid scrolling and ListWeek scrolling
+  // Smart Scroll: Prioritize Today's section in listWeek
+  useEffect(() => {
+    if (isLoading || !calendarRef.current) return;
+
+    const executeScroll = () => {
+      const api = calendarRef.current?.getApi();
+      if (!api) return;
+
+      const currentView = api.view.type;
+
+      if (currentView.includes("timeGrid")) {
+        api.scrollToTime(initialScrollTime);
+        return;
+      }
+
+      if (!currentView.includes("list")) return;
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const allDayHeaders = Array.from(
+        document.querySelectorAll<HTMLElement>(".fc-list-day"),
+      );
+
+      const targetEl =
+        allDayHeaders.find((el) => {
+          const d = el.getAttribute("data-date");
+          return d && d >= todayStr;
+        }) ?? allDayHeaders[0];
+
+      if (!targetEl) return;
+
+      // Find scroll container: first ancestor with scrollHeight > clientHeight
+      let sc: HTMLElement | null = targetEl.parentElement;
+      while (sc && sc.tagName !== "HTML") {
+        if (sc.scrollHeight > sc.clientHeight + 1) break;
+        sc = sc.parentElement;
+      }
+
+      if (!sc || sc.tagName === "HTML") {
+        targetEl.scrollIntoView({ behavior: "auto", block: "start" });
+        return;
+      }
+
+      // ABSOLUTE position: measure from a clean slate
+      // Reset to 0 first so getBoundingClientRect is accurate
+      sc.scrollTop = 0;
+
+      // Use rAF to let browser commit the reset before measuring
+      requestAnimationFrame(() => {
+        const cRect = sc!.getBoundingClientRect();
+        const eRect = targetEl.getBoundingClientRect();
+        sc!.scrollTop = eRect.top - cRect.top;
+      });
+    };
+
+    // Run once at 600ms — after the parent sheet has fully opened
+    // Running multiple times caused overshooting with scrollBy
+    const t = window.setTimeout(executeScroll, 600);
+    return () => window.clearTimeout(t);
+  }, [isLoading, initialScrollTime]);
   // ----- CHANGE: Added key prop to Skeleton Loader elements -----
   const SkeletonLoader = () => (
     <div className="grid gap-2">
@@ -1450,7 +1541,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
         </div>
       </div>
 
-      <div className="fc-theme">
+      <div className="fc-theme" ref={calendarWrapperRef}>
         <style>
           {`
             /* --- UI Improvement: Modern & Clean FullCalendar Header --- */
@@ -1488,7 +1579,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
           <SkeletonLoader />
         ) : (
           <FullCalendar
-            key={events.length}
+            // key="calendar"
             ref={calendarRef}
             plugins={[
               dayGridPlugin,
@@ -1497,22 +1588,13 @@ const DailyBloomCalendar: React.FC<Props> = ({
               listPlugin,
             ]}
             initialView={isMobile ? "listWeek" : "dayGridMonth"}
+            initialDate={new Date()} // ← Always start at today
+            scrollTime={initialScrollTime}
             headerToolbar={{
               left: "prev,next today",
               center: "title",
               right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
             }}
-            events={sortedEvents}
-            editable={true}
-            selectable={true}
-            dayMaxEvents={true}
-            eventOverlap={false}
-            slotEventOverlap={false}
-            eventContent={eventContent}
-            dateClick={handleDateClick}
-            eventDrop={handleEventDrop}
-            eventResize={handleEventResize}
-            dayHeaderFormat={{ weekday: isMobile ? "short" : "long" }}
             views={{
               dayGridMonth: { titleFormat: { year: "numeric", month: "long" } },
               timeGridWeek: {
@@ -1537,6 +1619,17 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 },
               },
             }}
+            events={sortedEvents}
+            editable={true}
+            selectable={true}
+            dayMaxEvents={true}
+            eventOverlap={false}
+            slotEventOverlap={false}
+            eventContent={eventContent}
+            dateClick={handleDateClick}
+            eventDrop={handleEventDrop}
+            eventResize={handleEventResize}
+            dayHeaderFormat={{ weekday: isMobile ? "short" : "long" }}
             height="auto"
           />
         )}
@@ -1590,7 +1683,10 @@ const DailyBloomCalendar: React.FC<Props> = ({
                   : "View or manage your event details."}
               </DrawerDescription>
             </DrawerHeader>
-            <div className="px-4 overflow-y-auto pb-24">
+            <div
+              ref={listScrollRef}
+              className="flex-1 px-4 overflow-y-auto min-w-0 "
+            >
               {currentEvent && (
                 <EventForm
                   currentEvent={currentEvent}
@@ -1601,9 +1697,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 />
               )}
             </div>
-            <DrawerFooter className="pt-4">
+            <DrawerFooter className="pt-4 ">
               <FormButtons />
-              <Button variant="outline" onClick={handleCloseModal}>Cancel</Button>
+              <Button variant="outline" onClick={handleCloseModal}>
+                Cancel
+              </Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>

@@ -46,19 +46,19 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
       noValidate
     >
       <header>
-        <h2 className="text-3xl font-bold text-[#1e293b]">Completion & Certificate</h2>
-        <p className="text-gray-500 mt-2 text-base">
+        <h2 className="text-3xl font-bold text-[#1e293b] dark:text-gray-200">Completion & Certificate</h2>
+        <p className="text-gray-500 dark:text-gray-300 mt-2 text-base">
           Define the requirements for participants to earn their certificate.
         </p>
       </header>
 
       <div className="space-y-8">
         {/* Threshold Slider */}
-        <div className="bg-white border border-gray-100 p-6 rounded-[32px] shadow-sm space-y-6">
+        <div className="bg-white dark:bg-slate-900 border border-gray-100 p-6 rounded-[32px] shadow-sm space-y-6">
           <div className="flex flex-wrap justify-between items-center gap-3">
             <div>
-              <h3 className="font-bold text-gray-900 text-sm">Completion Threshold</h3>
-              <p className="text-xs text-gray-400 mt-1">
+              <h3 className="font-bold text-gray-900 text-sm dark:text-gray-300">Completion Threshold</h3>
+              <p className="text-xs text-gray-400 dark:text-gray-300 mt-1">
                 Minimum percentage of course material to be consumed.
               </p>
             </div>
@@ -94,9 +94,9 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
         </div>
 
         {/* Certificate Title */}
-        <div className="bg-white border border-gray-100 p-6 rounded-[32px] shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 border border-gray-100 p-6 rounded-[32px] shadow-sm space-y-4">
           <div>
-            <h3 className="font-bold text-gray-900 text-sm">Certificate Title</h3>
+            <h3 className="font-bold text-gray-900 dark:text-gray-200 text-sm">Certificate Title</h3>
             <p className="text-xs text-gray-400 mt-1">
               This title will appear prominently on the issued digital certificate.
             </p>
@@ -107,7 +107,7 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
             })}
             type="text"
             placeholder="Enter certificate title..."
-            className={`w-full p-4 border rounded-2xl font-medium text-gray-700 text-sm focus:ring-2 outline-none transition-all ${
+            className={`w-full p-4 border rounded-2xl font-medium text-gray-700 dark:bg-slate-950 dark:text-gray-200  text-sm focus:ring-2 outline-none transition-all ${
               errors.certTitle
                 ? "bg-red-50/30 border-red-400 focus:ring-red-400"
                 : "bg-gray-50/50 border-gray-100 focus:ring-blue-400"
@@ -119,13 +119,13 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
         </div>
 
         {/* Info Note */}
-        <div className="bg-blue-50/60 border border-blue-100 p-5 rounded-[24px] flex gap-4">
+        <div className="bg-blue-50/60 dark:bg-slate-900 border border-blue-100 p-5 rounded-[24px] flex gap-4">
           <div className="bg-blue-500 p-1 rounded-full h-fit mt-0.5 shrink-0">
             <Info size={13} className="text-white" />
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-gray-900 text-sm">Mandatory Feedback</h4>
-            <p className="text-xs text-gray-500 leading-relaxed">
+            <h4 className="font-bold text-gray-900 dark:text-gray-300 text-sm">Mandatory Feedback</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
               Participants must submit final program feedback before they are eligible to download
               their certificate.
             </p>
@@ -154,13 +154,13 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all text-sm"
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-950 transition-all text-sm"
         >
           <ArrowLeft size={18} /> Back
         </button>
         <button
           type="submit"
-          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
+          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl light:shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
         >
           Save & Continue <ArrowRight size={18} />
         </button>

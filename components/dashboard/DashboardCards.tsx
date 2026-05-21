@@ -402,10 +402,10 @@ export default function DashboardCards({
               if (card.path) router.push(card.path);
             }}
             className={cn(
-              "group relative cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl border",
+              "group relative cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl border bg-white dark:bg-slate-900 dark:text-slate-100 dark:hover:shadow-black/40",
               card.highlight
-                ? "border-emerald-200 overflow-hidden"
-                : "border-gray-200",
+                ? "border-emerald-200 overflow-hidden dark:border-emerald-700/70"
+                : "border-gray-200 dark:border-slate-700",
             )}
           >
             <CardContent className="p-4 flex flex-col h-full">

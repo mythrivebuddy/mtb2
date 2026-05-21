@@ -27,10 +27,10 @@ const SiginUpPageContent = () => {
     //       <Navbar /> */}
       <div className="mt-8 max-w-md mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#1E2875] mb-2">
+          <h1 className="text-3xl font-bold text-[#1E2875] dark:text-blue-400 mb-2">
             Create Account
           </h1>
-          <p className="text-gray-600">Join MyThriveBuddy today</p>
+          <p className="text-gray-600 dark:text-gray-400">Join MyThriveBuddy today</p>
         </div>
         {/* <SignUpForm /> */}
 

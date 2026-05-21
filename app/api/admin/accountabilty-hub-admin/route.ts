@@ -11,7 +11,7 @@ export const GET = async (req: Request) => {
     if (!session) {
       return NextResponse.json(
         { error: "Unauthorized, Kindly login first" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -24,6 +24,8 @@ export const GET = async (req: Request) => {
     const search = searchParams.get("search")?.trim() || "";
 
     const skip = (page - 1) * pageSize;
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
 
     // ✅ Search filter (typed correctly)
     const where = search
@@ -35,15 +37,35 @@ export const GET = async (req: Request) => {
         }
       : {};
 
-    // ✅ Count after applying search
     const totalCount = await prisma.group.count({ where });
+    const orderBy: Prisma.GroupOrderByWithRelationInput = (() => {
+      switch (sortBy) {
+        case "name":
+          return { name: sortOrder };
 
-    // ✅ Typed findMany (fixes TS errors)
+        case "createdAt":
+          return { createdAt: sortOrder };
+
+        case "updatedAt":
+          return { updatedAt: sortOrder };
+
+        case "memberCount":
+          return {
+            members: {
+              _count: sortOrder,
+            },
+          };
+
+        default:
+          return { createdAt: "desc" };
+      }
+    })();
+
     const groups = await prisma.group.findMany({
       where,
       skip,
       take: pageSize,
-      orderBy: { updatedAt: "desc" },
+      orderBy,
       include: {
         members: true,
         User_Group_creatorIdToUser: { select: { name: true } },
@@ -72,7 +94,7 @@ export const GET = async (req: Request) => {
     console.error(error);
     return NextResponse.json(
       { error: "Failed to fetch groups" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 };

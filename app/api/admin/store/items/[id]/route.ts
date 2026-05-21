@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma"
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 
-const prisma = new PrismaClient();
 
 // Helper: extract storage path from Supabase public URL
 // e.g. "https://xxx.supabase.co/storage/v1/object/public/store-images/store-images/file.png"

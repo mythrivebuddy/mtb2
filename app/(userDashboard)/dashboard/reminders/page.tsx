@@ -150,20 +150,20 @@ const ReminderForm = ({
     };
 
     return (
-        <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 sm:p-8 shadow-2xl m-4">
+        <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-slate-950 p-6 sm:p-8 shadow-2xl m-4">
             <button
                 onClick={onClose}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
             >
                 <X size={24} />
             </button>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">
                 {isEditMode ? "Edit Reminder" : "Add New Reminder"}
             </h2>
             <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-2">
                 {!isEditMode && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                             Start with a template
                         </label>
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -171,12 +171,12 @@ const ReminderForm = ({
                                 <button
                                     key={template.title}
                                     onClick={() => applyTemplate(template)}
-                                    className="flex-1 text-left p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                    className="flex-1 text-left p-3 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 rounded-lg transition-colors"
                                 >
-                                    <p className="font-semibold text-gray-800">
+                                    <p className="font-semibold text-gray-800 dark:text-gray-200">
                                         {template.title}
                                     </p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-gray-500 dark:text-gray-200">
                                         {template.description.substring(0, 25)}...
                                     </p>
                                 </button>
@@ -187,7 +187,7 @@ const ReminderForm = ({
                 <div>
                     <label
                         htmlFor="title"
-                        className="block text-sm font-medium text-gray-700 mb-1"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1"
                     >
                         Reminder Name
                     </label>
@@ -197,13 +197,13 @@ const ReminderForm = ({
                         placeholder="e.g. Water Reminder"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-900 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div>
                     <label
                         htmlFor="description"
-                        className="block text-sm font-medium text-gray-700 mb-1"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1"
                     >
                         Description
                     </label>
@@ -212,12 +212,12 @@ const ReminderForm = ({
                         placeholder="e.g. Hydration fuels your focus..."
                         value={description || ""}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-900  px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         rows={3}
                     ></textarea>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                         Choose an Image
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -243,20 +243,20 @@ const ReminderForm = ({
                     </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                         Frequency
                     </label>
                     <select
                         value={frequency}
                         onChange={(e) => setFrequency(parseInt(e.target.value))}
-                        className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-900  px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         <option value={30}>Every 30 minutes</option>
                         <option value={60}>Every 60 minutes</option>
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300  mb-2">
                         Time Range (Optional)
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -266,7 +266,7 @@ const ReminderForm = ({
                                 type="time"
                                 value={startTime || ""}
                                 onChange={(e) => setStartTime(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-900  focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                         <div className="relative">
@@ -275,7 +275,7 @@ const ReminderForm = ({
                                 type="time"
                                 value={endTime || ""}
                                 onChange={(e) => setEndTime(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-900  focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                     </div>
@@ -332,7 +332,7 @@ const ViewReminderModal = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm p-4">
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-sm rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 p-8 shadow-2xl text-center"
+                className="relative w-full max-w-sm rounded-2xl dark:bg-slate-900 light:bg-gradient-to-br from-blue-50 to-indigo-100 p-8 shadow-2xl text-center"
             >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -340,10 +340,10 @@ const ViewReminderModal = ({
                     alt={reminder.title}
                     className="w-32 h-32 rounded-full object-cover mx-auto mb-6 border-4 border-white shadow-lg"
                 />
-                <h2 className="text-3xl font-bold text-indigo-900 mb-2">
+                <h2 className="text-3xl font-bold text-indigo-900 dark:text-indigo-400 mb-2">
                     {reminder.title}
                 </h2>
-                <p className="text-gray-600 mb-8">{reminder.description}</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-8">{reminder.description}</p>
                 <div className="space-y-3">
                     <button
                         onClick={() => onDone(reminder.id)}
@@ -399,7 +399,7 @@ const ReminderCard = ({
     return (
         <div
             onClick={() => onViewClick(reminder)}
-            className="flex items-center justify-between p-4 bg-white rounded-xl shadow-md transition-transform  cursor-pointer"
+            className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-xl shadow-md transition-transform  cursor-pointer"
         >
             <div className="flex flex-col">
                 {isSnoozed ? (
@@ -409,7 +409,7 @@ const ReminderCard = ({
                         {reminder.isActive ? "Active" : "Inactive"}
                     </span>
                 )}
-                <h3 className="text-lg sm:text-xl font-bold text-gray-800">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200">
                     {reminder.title}
                 </h3>
                 <p className="text-sm sm:text-base text-gray-500 mb-3">
@@ -596,16 +596,16 @@ export default function RemindersPage() {
                                 <span className="">Create</span>
                             </button>
                         </div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center order-first sm:order-none">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-200 text-center order-first sm:order-none">
                             Reminders
                         </h1>
                     </header>
-                    <p className="text-center text-gray-600 mb-10 text-base sm:text-lg">
+                    <p className="text-center text-gray-600 dark:text-gray-300 mb-10 text-base sm:text-lg">
                         Set up gentle reminders to stay aligned, hydrated, and focused.
                     </p>
 
                     {isLoading && (
-                        <div className="text-center text-gray-500">
+                        <div className="text-center text-gray-500 dark:text-gray-400">
                             Loading reminders...
                         </div>
                     )}

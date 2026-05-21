@@ -77,7 +77,7 @@ const Step5VisionSummary = ({
   isJoining,
 }: Step5Props) => {
   return (
-    <div className="flex min-h-screen flex-col  font-['Inter'] text-[#064e3b]">
+    <div className="flex min-h-screen flex-col font-['Inter'] text-[#064e3b] dark:text-slate-100">
       <main className="mx-auto w-full max-w-[1024px] flex-1 px-6 py-8 md:px-10 md:py-12">
         {/* Progress Tracker */}
         <div className="mx-auto mb-12 flex max-w-6xl flex-col gap-3">
@@ -85,7 +85,7 @@ const Step5VisionSummary = ({
             <p className="text-sm font-semibold uppercase tracking-wider text-[#10b981]">
               Step 5 of 5
             </p>
-            <p className="text-sm font-normal text-gray-500">Final Review</p>
+            <p className="text-sm font-normal text-gray-500 dark:text-slate-400">Final Review</p>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-[#d1fae5]">
             <div className="h-full w-full rounded-full bg-[#10b981] transition-all duration-500 ease-out" />
@@ -94,10 +94,10 @@ const Step5VisionSummary = ({
 
         {/* Hero Section */}
         <div className="mx-auto mb-12 flex max-w-3xl flex-col items-center gap-4  text-left">
-          <h1 className="text-4xl font-black tracking-tight md:text-5xl text-[#064e3b]">
+          <h1 className="text-4xl font-black tracking-tight md:text-5xl text-[#064e3b] dark:text-slate-50">
             Your 2026 Blueprint
           </h1>
-          <p className="max-w-xl text-lg leading-relaxed text-[#374151]">
+          <p className="max-w-xl text-lg leading-relaxed text-[#374151] dark:text-slate-300">
             This summary represents your core commitments. Take a final look
             before we generate your program rules.
           </p>
@@ -105,14 +105,14 @@ const Step5VisionSummary = ({
 
         {/* Vision Statement Card */}
         <div className="mx-auto mb-16 max-w-6xl">
-          <div className="group relative overflow-hidden rounded-3xl border border-[#d1fae5] bg-gradient-to-br from-white to-[#f0fdf4] p-8 shadow-lg text-center md:p-10">
+          <div className="group relative overflow-hidden rounded-3xl border border-[#d1fae5] bg-gradient-to-br from-white to-[#f0fdf4] p-8 shadow-lg text-center md:p-10 dark:border-emerald-700 dark:from-slate-900 dark:to-emerald-950/40">
             <Quote className="absolute top-6 left-6 size-12 text-[#10b981] opacity-10 group-hover:opacity-20 transition-opacity" />
             <Quote className="absolute bottom-6 right-6 size-12 rotate-180 text-[#10b981] opacity-10 group-hover:opacity-20 transition-opacity" />
 
             <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#10b981]">
               My Annual Vision Statement
             </h3>
-            <p className="mx-auto max-w-2xl text-2xl font-bold leading-snug md:text-3xl text-[#064e3b]">
+            <p className="mx-auto max-w-2xl text-2xl font-bold leading-snug md:text-3xl text-[#064e3b] dark:text-slate-50">
               "
               {formData.vision ||
                 "I am stepping into 2026 with purpose, health, and a commitment to my ultimate growth."}
@@ -130,7 +130,7 @@ const Step5VisionSummary = ({
               return (
                 <div
                   key={areaId}
-                  className="group relative flex flex-col gap-6 rounded-2xl border border-[#d1fae5] bg-white p-6 shadow-sm transition-all duration-300 hover:border-[#10b981] hover:shadow-md md:flex-row md:p-8"
+                  className="group relative flex flex-col gap-6 rounded-2xl border border-[#d1fae5] bg-white p-6 shadow-sm transition-all duration-300 hover:border-[#10b981] hover:shadow-md md:flex-row md:p-8 dark:border-emerald-700 dark:bg-slate-900"
                 >
                   <div className="flex-shrink-0">
                     <div
@@ -147,16 +147,16 @@ const Step5VisionSummary = ({
                         {config.label}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold leading-tight text-[#064e3b]">
+                    <h3 className="text-xl font-bold leading-tight text-[#064e3b] dark:text-slate-50">
                       {formData.areaGoals[areaId]}
                     </h3>
-                    <div className="my-1 h-px w-full bg-[#d1fae5]" />
+                    <div className="my-1 h-px w-full bg-[#d1fae5] dark:bg-emerald-800" />
                     <div className="flex gap-2 items-start">
                       <Quote
                         size={20}
                         className={`${config.color} mt-0.5 opacity-50`}
                       />
-                      <p className="text-base font-medium italic leading-relaxed text-[#374151]">
+                      <p className="text-base font-medium italic leading-relaxed text-[#374151] dark:text-slate-300">
                         {formData.identities[areaId]}
                       </p>
                     </div>
@@ -168,18 +168,18 @@ const Step5VisionSummary = ({
 
           {/* Commitment Summary Card */}
           <div className="lg:col-span-4">
-            <div className="sticky top-24 rounded-2xl border border-[#d1fae5] bg-white p-6 shadow-sm">
-              <h4 className="mb-6 flex items-center gap-2 text-lg font-bold text-[#064e3b]">
+            <div className="sticky top-24 rounded-2xl border border-[#d1fae5] bg-white p-6 shadow-sm dark:border-emerald-700 dark:bg-slate-900">
+              <h4 className="mb-6 flex items-center gap-2 text-lg font-bold text-[#064e3b] dark:text-slate-50">
                 <CheckCircle2 size={20} className="text-[#10b981]" />
                 Blueprint Statistics
               </h4>
               <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg bg-[#f0fdf4] p-3">
+                <div className="flex items-center justify-between rounded-lg bg-[#f0fdf4] p-3 dark:bg-emerald-900/20">
                   <div className="flex items-center gap-3">
-                    <div className="flex size-8 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
+                    <div className="flex size-8 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm dark:bg-slate-800 dark:text-slate-300">
                       <Hash size={14} />
                     </div>
-                    <span className="text-sm font-medium text-gray-600">
+                    <span className="text-sm font-medium text-gray-600 dark:text-slate-300">
                       Focus Areas
                     </span>
                   </div>
@@ -187,12 +187,12 @@ const Step5VisionSummary = ({
                     {formData.selectedAreas.length}
                   </span>
                 </div>
-                <div className="flex items-center justify-between rounded-lg bg-[#f0fdf4] p-3">
+                <div className="flex items-center justify-between rounded-lg bg-[#f0fdf4] p-3 dark:bg-emerald-900/20">
                   <div className="flex items-center gap-3">
-                    <div className="flex size-8 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
+                    <div className="flex size-8 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm dark:bg-slate-800 dark:text-slate-300">
                       <Brain size={14} />
                     </div>
-                    <span className="text-sm font-medium text-gray-600">
+                    <span className="text-sm font-medium text-gray-600 dark:text-slate-300">
                       Identity Statements
                     </span>
                   </div>

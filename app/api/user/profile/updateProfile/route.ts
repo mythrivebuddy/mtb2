@@ -170,8 +170,8 @@ export async function PUT(req: Request) {
           }
         }
 
-        const ext = photoFile.name.split(".").pop()
-        const fileName = `profile-${Date.now()}.${ext}`
+      
+        const fileName = `profile`
         const filePath = `${fileName}`
 
         const { error } = await supabaseAdmin.storage

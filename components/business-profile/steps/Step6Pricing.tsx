@@ -39,7 +39,29 @@ export default function Step6SessionAvailability({ next, back }: Props) {
   // 2. Initialize state with saved value or empty string
   const [timezone, setTimezone] = useState<ITimezone>(savedTimezone || "");
 
+  const [isDark, setIsDark] = useState<boolean>(
+    typeof window !== "undefined"
+      ? window.document.documentElement.classList.contains("dark")
+      : false,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const observer = new MutationObserver(() => {
+      setIsDark(window.document.documentElement.classList.contains("dark"));
+    });
+
+    observer.observe(window.document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   // 3. Sync state if savedTimezone changes (optional but safer for edit mode)
+
   useEffect(() => {
     if (savedTimezone) {
       setTimezone(savedTimezone);
@@ -84,7 +106,7 @@ export default function Step6SessionAvailability({ next, back }: Props) {
   const showError = <K extends keyof FormValues>(field: K) => errors[field];
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow">
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow">
       <h2 className="text-xl font-semibold mb-6">
         Session & Availability Details
       </h2>
@@ -121,7 +143,11 @@ export default function Step6SessionAvailability({ next, back }: Props) {
       {/* Timezone - FIXED FOR EDIT MODE */}
       <div className="mb-6">
         <label className="block font-medium mb-2">Primary Timezone</label>
-        <input type="hidden" {...register("timezone")} />
+        <input
+          type="hidden"
+          {...register("timezone")}
+          className="dark:bg-slate-950"
+        />
         <div
           className={`${showError("timezone") ? "border border-red-500 rounded-lg p-1" : ""}`}
         >
@@ -135,6 +161,38 @@ export default function Step6SessionAvailability({ next, back }: Props) {
                 shouldTouch: true,
                 shouldDirty: true,
               });
+            }}
+            styles={{
+              control: (base) => ({
+                ...base,
+                backgroundColor: isDark ? "#020617" : "#ffffff", // slate-950 / white
+                borderColor: isDark ? "#334155" : "#d1d5db", // slate-700 / gray-300
+                color: isDark ? "#f1f5f9" : "#111827",
+              }),
+              menu: (base) => ({
+                ...base,
+                backgroundColor: isDark ? "#020617" : "#ffffff",
+                color: isDark ? "#f1f5f9" : "#111827",
+              }),
+              option: (base, state) => ({
+                ...base,
+                backgroundColor: state.isFocused
+                  ? isDark
+                    ? "#1e293b"
+                    : "#f3f4f6" // slate-800 / gray-100
+                  : isDark
+                    ? "#020617"
+                    : "#ffffff",
+                color: isDark ? "#f1f5f9" : "#111827",
+              }),
+              singleValue: (base) => ({
+                ...base,
+                color: isDark ? "#f1f5f9" : "#111827",
+              }),
+              input: (base) => ({
+                ...base,
+                color: isDark ? "#f1f5f9" : "#111827",
+              }),
             }}
           />
         </div>
@@ -157,7 +215,7 @@ export default function Step6SessionAvailability({ next, back }: Props) {
                 key={format}
                 type="button"
                 onClick={() => selectFormat(format)}
-                className={`p-4 rounded-xl border transition ${active ? "border-blue-500 bg-blue-50" : "border-gray-200"}`}
+                className={`p-4 rounded-xl border transition ${active ? "border-blue-500 bg-blue-50 dark:bg-blue-950" : "border-gray-200 dark:border-gray-700"}`}
               >
                 {format}
               </button>
@@ -179,7 +237,7 @@ export default function Step6SessionAvailability({ next, back }: Props) {
         <input
           {...register("calendlyUrl")}
           placeholder="https://calendly.com/....."
-          className={`w-full border p-3 rounded-lg ${showError("calendlyUrl") ? "border-red-500" : "border-gray-300"}`}
+          className={`w-full border dark:bg-slate-950 p-3 rounded-lg ${showError("calendlyUrl") ? "border-red-500" : "border-gray-300"}`}
         />
         {showError("calendlyUrl") && (
           <p className="text-red-500 text-sm mt-1">
@@ -195,7 +253,7 @@ export default function Step6SessionAvailability({ next, back }: Props) {
         </label>
         <select
           {...register("sessionDuration")}
-          className={`w-full border p-3 rounded-lg ${showError("sessionDuration") ? "border-red-500" : "border-gray-300"}`}
+          className={`w-full border dark:bg-slate-950 p-3 rounded-lg ${showError("sessionDuration") ? "border-red-500" : "border-gray-300"}`}
         >
           <option value="">Select Duration</option>
           <option value="30">30 Minutes</option>
@@ -231,8 +289,8 @@ export default function Step6SessionAvailability({ next, back }: Props) {
                 }
                 className={`p-4 rounded-xl border transition flex items-center justify-center gap-2 ${
                   active
-                    ? "border-blue-500 bg-blue-50 text-blue-700 font-semibold"
-                    : "border-gray-200 text-gray-700"
+                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:text-blue-400 font-semibold dark:bg-blue-950"
+                    : "border-gray-200 text-gray-700 dark:border-gray-700 dark:text-gray-300"
                 }`}
               >
                 <span className="text-lg">
@@ -269,7 +327,7 @@ export default function Step6SessionAvailability({ next, back }: Props) {
               <input
                 type="number"
                 {...register("priceMin", { valueAsNumber: true })}
-                className={`border p-3 pl-8 rounded-lg w-full ${showError("priceMin") ? "border-red-500" : "border-gray-300"}`}
+                className={`border p-3 pl-8 rounded-lg w-full dark:bg-slate-950 ${showError("priceMin") ? "border-red-500" : "border-gray-300"}`}
               />
             </div>
             {showError("priceMin") && (
@@ -289,7 +347,7 @@ export default function Step6SessionAvailability({ next, back }: Props) {
               <input
                 type="number"
                 {...register("priceMax", { valueAsNumber: true })}
-                className={`border p-3 pl-8 rounded-lg w-full ${showError("priceMax") ? "border-red-500" : "border-gray-300"}`}
+                className={`border p-3 pl-8 dark:bg-slate-950 rounded-lg w-full ${showError("priceMax") ? "border-red-500" : "border-gray-300"}`}
               />
             </div>
             {showError("priceMax") && (
@@ -305,7 +363,7 @@ export default function Step6SessionAvailability({ next, back }: Props) {
         <button
           type="button"
           onClick={back}
-          className="px-5 py-2 rounded-lg border hover:bg-gray-100"
+          className="px-5 py-2 rounded-lg border light:hover:bg-gray-100"
         >
           Back
         </button>

@@ -50,13 +50,13 @@ useEffect(() => {
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm">
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm">
 
       <h2 className="text-xl font-semibold mb-2">
         What Transformation Do You Create?
       </h2>
 
-      <p className="text-gray-500 mb-6">
+      <p className="text-gray-500 mb-6 dark:text-slate-200">
         Be specific about the shift your clients undergo.
       </p>
 
@@ -65,7 +65,7 @@ useEffect(() => {
         <textarea
           {...register("transformation")}
           placeholder="After working with me, you will..."
-          className="w-full border p-3 rounded-lg min-h-[120px]"
+          className="w-full border p-3 rounded-lg min-h-[120px] dark:bg-slate-950"
         />
 
         {errors.transformation && (
@@ -89,7 +89,7 @@ useEffect(() => {
             <input
               {...register(`typicalResults.${index}`)}
               placeholder={`Result ${index + 1}`}
-              className="flex-1 border p-2 rounded-lg"
+              className="flex-1 border p-2 rounded-lg dark:bg-slate-950"
             />
 
             <button
@@ -122,7 +122,7 @@ useEffect(() => {
         <button
           type="button"
           onClick={back}
-          className="px-5 py-2 rounded-lg border hover:bg-gray-100"
+          className="px-5 py-2 rounded-lg border light:hover:bg-gray-100"
         >
           Back
         </button>

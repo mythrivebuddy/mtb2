@@ -1,7 +1,6 @@
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { renderEmailTemplate, renderEmailTemplateUsingConditionals } from "@/utils/renderEmailContent";
-import { formatDate } from "@/lib/utils/dateUtils";
 
 interface EmailData {
   toEmail: string;

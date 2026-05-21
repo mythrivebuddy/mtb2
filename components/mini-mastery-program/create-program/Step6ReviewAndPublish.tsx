@@ -108,8 +108,8 @@ export default function Step6ReviewAndPublish({ formData, onBack, onSubmit, onSa
         }`}
       >
         <header>
-          <h2 className="text-3xl font-bold text-[#1e293b]">Review Your Program</h2>
-          <p className="text-gray-500 mt-2 text-base">
+          <h2 className="text-3xl font-bold text-[#1e293b] dark:text-gray-200">Review Your Program</h2>
+          <p className="text-gray-500 dark:text-gray-300 mt-2 text-base">
             Please verify all details before submitting for review.
           </p>
         </header>
@@ -151,7 +151,7 @@ export default function Step6ReviewAndPublish({ formData, onBack, onSubmit, onSa
         <div className="flex flex-wrap items-center justify-between gap-4 pt-4">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 font-bold text-gray-400 hover:text-gray-800 transition-colors text-sm"
+            className="flex items-center gap-2 font-bold text-gray-400 light:hover:text-gray-800 transition-colors text-sm"
           >
             <ArrowLeft size={16} /> Back
           </button>
@@ -160,7 +160,7 @@ export default function Step6ReviewAndPublish({ formData, onBack, onSubmit, onSa
             <button
               onClick={handleSaveDraft}
               disabled={isSavingDraft}
-              className="flex items-center gap-2 font-bold text-gray-500 hover:text-gray-900 transition-colors px-4 py-2.5 border border-gray-200 rounded-full text-sm disabled:opacity-50"
+              className="flex items-center gap-2 font-bold text-gray-500 light:hover:text-gray-900 transition-colors px-4 py-2.5 border border-gray-200 rounded-full text-sm disabled:opacity-50"
             >
               {isSavingDraft ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -171,7 +171,7 @@ export default function Step6ReviewAndPublish({ formData, onBack, onSubmit, onSa
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 shadow-xl shadow-blue-100 transition-all active:scale-95 text-sm"
+              className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 shadow-xl light:shadow-blue-100 transition-all active:scale-95 text-sm"
             >
               <Send size={16} /> Submit for Review
             </button>
@@ -186,16 +186,16 @@ export default function Step6ReviewAndPublish({ formData, onBack, onSubmit, onSa
             className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
             onClick={() => { if (!isSubmitting) setIsModalOpen(false); }}
           />
-          <div className="bg-white rounded-[40px] p-8 md:p-10 max-w-md w-full relative z-10 shadow-2xl animate-in zoom-in-95 duration-200 text-center space-y-6">
+          <div className="bg-white dark:bg-slate-900 rounded-[40px] p-8 md:p-10 max-w-md w-full relative z-10 shadow-2xl animate-in zoom-in-95 duration-200 text-center space-y-6">
             <div className="w-14 h-14 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle2 size={28} />
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-gray-900">Ready to Publish?</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-200">Ready to Publish?</h3>
               <p className="text-gray-500 text-sm leading-relaxed px-2">
                 Your program{" "}
-                <span className="font-bold text-gray-800">&ldquo;{payload.name}&rdquo;</span> will
+                <span className="font-bold text-gray-800 dark:text-gray-300">&ldquo;{payload.name}&rdquo;</span> will
                 be sent to our moderation team. This usually takes 24–48 hours.
               </p>
             </div>

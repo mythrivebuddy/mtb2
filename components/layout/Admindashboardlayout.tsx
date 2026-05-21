@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useSession, signOut } from 'next-auth/react';
-import AdminSideBar from '@/components/adminDashboard/AdminSideBar';
-import { BellIcon, LogOut } from 'lucide-react';
-import { Toaster } from 'sonner';
-
+import React from "react";
+import { useSession, signOut } from "next-auth/react";
+import AdminSideBar from "@/components/adminDashboard/AdminSideBar";
+import { BellIcon, LogOut } from "lucide-react";
+import { Toaster } from "sonner";
+import { useRouter } from "next/navigation";
 
 const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
-
-  if (session.status === 'loading') {
+  const router = useRouter()
+  if (session.status === "loading") {
     return <div className="p-8 text-center">Loading...</div>;
   }
 
   return (
     <div className="flex min-h-screen w-full bg-dashboard px-4 sm:px-6 lg:px-7 py-7">
       {/* Sidebar */}
-      <AdminSideBar/>
+      <AdminSideBar />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden lg:pl-7 pt-16 lg:pt-0">
+      <div className="flex-1 flex flex-col overflow-hidden lg:px-4 pt-16 lg:pt-0">
         {/* Header */}
         <header className="h-16 bg-white px-6 sm:px-8 lg:px-10 rounded-lg flex items-center justify-between">
           <div className="flex justify-between gap-4 sm:gap-8 w-full items-center">
             <div className="flex items-center space-x-3 sm:space-x-4">
-              <button className="p-2 rounded-full hover:bg-gray-100">
+              <button onClick={()=> router.push('/admin/notifications')}  className="p-2 rounded-full hover:bg-gray-100">
                 <BellIcon size={20} />
               </button>
               <div className="flex items-center space-x-2">
@@ -46,7 +46,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-7 bg-transparent pt-4">
+        <main className="flex-1 overflow-auto   bg-transparent pt-4">
           {children}
           <Toaster richColors position="top-right" />
         </main>

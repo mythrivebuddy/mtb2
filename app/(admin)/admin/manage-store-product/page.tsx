@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
@@ -114,12 +114,12 @@ const GPIcon = ({ className }: { className?: string }) => (
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function ProductManagement() {
   const router = useRouter();
-
+  const searchParams = useSearchParams();
   const [isModalOpen, setModalOpen] = useState(false);
   const [isCategoryModalOpen, setCategoryModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [newCategory, setNewCategory] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("");
   const [approvalFilter, setApprovalFilter] = useState("all");
   const [creatorFilter, setCreatorFilter] = useState("all");
@@ -460,6 +460,10 @@ if (data.downloadFile) {
 
     setModalOpen(true);
   };
+  useEffect(() => {
+  const search = searchParams.get("search") || "";
+  setSearchQuery(search);
+}, [searchParams]);
   // ─── JSX ──────────────────────────────────────────────────────────────────────
   return (
     <div className="bg-white p-6 rounded-lg shadow">

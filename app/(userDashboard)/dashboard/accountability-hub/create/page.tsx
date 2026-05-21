@@ -33,11 +33,11 @@ const RadioInput = ({
       value={value}
       checked={checked}
       onChange={onChange}
-      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+      className="h-4 w-4 text-blue-600  border-gray-300 focus:ring-blue-500"
     />
     <label
       htmlFor={id}
-      className="ml-3 block text-sm font-medium text-gray-700"
+      className="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-200"
     >
       {label}
     </label>
@@ -190,17 +190,17 @@ export default function CreateGroupPage() {
             />
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+        className="flex items-center gap-2 text-gray-500 dark:text-gray-200 light:hover:text-gray-700 mb-4"
       >
         <ArrowLeft className="h-5 w-5" />
         <span>Back</span>
       </button>
 
-      <div className="bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md p-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white  mb-2">
           {isEditMode ? "Edit Group" : "Create New Group"}
         </h1>
-        <p className="text-gray-600 mb-8">
+        <p className="text-gray-600 dark:text-gray-300 mb-8">
           {isEditMode
             ? "Update the group details."
             : "Fill in the details below to create a new accountability group."}
@@ -209,7 +209,7 @@ export default function CreateGroupPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Group Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Group Name
             </label>
             <input
@@ -217,7 +217,7 @@ export default function CreateGroupPage() {
               name="groupName"
               value={formData.groupName}
               onChange={handleChange}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md"
+              className="block w-full px-3 py-2 border dark:bg-slate-900 border-gray-300 rounded-md"
               placeholder="e.g., Q4 Marketing Goals"
               required
               disabled={isLoading}
@@ -226,7 +226,7 @@ export default function CreateGroupPage() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Group Description
             </label>
             <textarea
@@ -234,7 +234,7 @@ export default function CreateGroupPage() {
               rows={3}
               value={formData.description}
               onChange={handleChange}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md"
+              className="block w-full px-3 py-2 border border-gray-300 dark:bg-slate-900 rounded-md"
               placeholder="Describe the main objective of this group."
               disabled={isLoading}
             />
@@ -244,7 +244,7 @@ export default function CreateGroupPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 pt-4">
             {/* Visibility */}
             <fieldset>
-              <legend className="text-sm font-medium text-gray-700">
+              <legend className="text-sm font-medium text-gray-700 dark:text-gray-200" >
                 Visibility of Goals
               </legend>
               <div className="mt-2 space-y-2">
@@ -269,7 +269,7 @@ export default function CreateGroupPage() {
 
             {/* Cycle Duration */}
             <fieldset>
-              <legend className="text-sm font-medium text-gray-700">
+              <legend className="text-sm font-medium text-gray-700 dark:text-gray-200">
                 Cycle Duration
               </legend>
               <div className="mt-2 space-y-2">
@@ -286,7 +286,7 @@ export default function CreateGroupPage() {
 
             {/* Progress Stages */}
             <fieldset>
-              <legend className="text-sm font-medium text-gray-700">
+              <legend className="text-sm font-medium text-gray-700 dark:text-gray-200">
                 Progress Stages
               </legend>
               <div className="mt-2 space-y-2">
@@ -311,7 +311,7 @@ export default function CreateGroupPage() {
 
             {/* Notes Privacy */}
             <fieldset>
-              <legend className="text-sm font-medium text-gray-700">
+              <legend className="text-sm font-medium text-gray-700 dark:text-gray-200">
                 Notes Privacy
               </legend>
               <div className="mt-2 space-y-2">

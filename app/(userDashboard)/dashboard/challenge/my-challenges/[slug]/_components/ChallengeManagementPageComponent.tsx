@@ -97,15 +97,15 @@ const StatCard = ({
   colorClass: string;
   cornerIcon?: React.ReactNode;
 }) => (
-  <div className="bg-white px-2 py-4 rounded-xl shadow-md flex items-center space-x-4 relative h-full">
+  <div className="bg-white px-2 py-4 rounded-xl shadow-md flex items-center space-x-4 relative h-full dark:border dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30">
     <div
       className={`w-12 h-12 flex items-center justify-center rounded-full ${colorClass}`}
     >
       {icon}
     </div>
     <div>
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="text-lg sm:text-2xl font-bold text-gray-800">{value}</p>
+      <p className="text-sm text-gray-500 dark:text-slate-400">{label}</p>
+      <p className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-slate-100">{value}</p>
     </div>
     {cornerIcon && <div className="absolute top-2 right-2">{cornerIcon}</div>}
   </div>
@@ -125,7 +125,7 @@ const TaskItem = ({
   <button
     onClick={() => onToggle(task.id, !task.completed)}
     disabled={isUpdating}
-    className={`flex w-full text-left items-center p-4 rounded-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed ${task.completed ? "bg-green-100 text-gray-500 line-through" : "bg-gray-50 hover:bg-gray-100"}`}
+    className={`flex w-full text-left items-center p-4 rounded-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed ${task.completed ? "bg-green-100 text-gray-500 line-through dark:bg-green-900/30 dark:text-slate-400" : "bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"}`}
   >
     <div
       className={`w-6 h-6 rounded-full border-2 ${task.completed ? "bg-green-500 border-green-500" : "border-gray-300"} flex items-center justify-center mr-4 flex-shrink-0`}
@@ -240,10 +240,10 @@ const ChallengeCalendar = ({
   return (
     <div
       ref={calendarRef as React.RefObject<HTMLDivElement>}
-      className={`absolute ${positionClasses} w-80 max-w-[90vw] bg-white p-5 rounded-xl shadow-2xl border border-slate-200 z-50`}
+      className={`absolute ${positionClasses} w-80 max-w-[90vw] bg-white p-5 rounded-xl shadow-2xl border border-slate-200 z-50 dark:border-slate-700 dark:bg-slate-900`}
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-slate-800">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
           {currentDate.toLocaleString("default", {
             month: "long",
             year: "numeric",
@@ -759,12 +759,12 @@ export default function ChallengeManagementPage({
     <>
       <div className="min-h-screen font-sans">
         {/* HEADER */}
-        <header className="bg-white m-4 p-4 sm:p-6 rounded-2xl shadow-sm">
+        <header className="bg-white m-4 p-4 sm:p-6 rounded-2xl shadow-sm dark:border dark:border-slate-700 dark:bg-slate-900">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={handleBack}
-                className="flex items-center gap-1 text-gray-600 hover:text-indigo-600 transition-colors"
+                className="flex items-center gap-1 text-gray-600 hover:text-indigo-600 transition-colors dark:text-slate-300 dark:hover:text-indigo-300"
               >
                 <ChevronLeft className="w-5 h-5" />
                 <span className="font-medium">Back</span>
@@ -780,14 +780,14 @@ export default function ChallengeManagementPage({
             </div>
 
             <div className="flex items-center gap-8 justify-between mb-4">
-              <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">
+              <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-slate-50">
                 {challenge.title}
               </h1>
 
               <Link
                 href={`/profile/${challenge.creatorId}`}
                 target="_blank"
-                className="w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-[0.6rem] sm:text-xs font-semibold px-1 sm:py-1 rounded-md shadow-sm border flex items-center justify-center border-purple-100"
+                className="w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-[0.6rem] sm:text-xs font-semibold px-1 sm:py-1 rounded-md shadow-sm border flex items-center justify-center border-purple-100 dark:border-purple-800 dark:from-indigo-950/60 dark:to-purple-950/60 dark:text-purple-200"
               >
                 Created by : {challenge?.creator?.name}
               </Link>
@@ -808,15 +808,15 @@ export default function ChallengeManagementPage({
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
           {/* DESCRIPTION */}
           {challenge.description && (
-            <div className="bg-white p-6 rounded-2xl shadow-sm mb-8">
+            <div className="bg-white p-6 rounded-2xl shadow-sm mb-8 dark:border dark:border-slate-700 dark:bg-slate-900">
               <ChallengeDescription html={challenge.description} />
             </div>
           )}
 
           {/* SOCIAL LINK */}
           {challenge.social_link_task?.trim() && (
-            <div className="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm mb-6">
-              <p className="text-gray-700 font-semibold mb-1">Related Links:</p>
+            <div className="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm mb-6 dark:border-slate-700 dark:bg-slate-900">
+              <p className="text-gray-700 font-semibold mb-1 dark:text-slate-200">Related Links:</p>
               <Link
                 href={challenge.social_link_task}
                 target="_blank"
@@ -952,8 +952,8 @@ export default function ChallengeManagementPage({
             {/* ✅ LEFT COLUMN (Daily Tasks + Group Chat) */}
             <div className="lg:col-span-2 flex flex-col gap-8 min-h-0">
               {/* DAILY TASKS */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              <div className="bg-white p-6 rounded-2xl shadow-sm dark:border dark:border-slate-700 dark:bg-slate-900">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4 dark:text-slate-50">
                   Your Daily Tasks
                 </h2>
                 <div className="space-y-3">
@@ -967,13 +967,13 @@ export default function ChallengeManagementPage({
                       />
                     ))
                   ) : (
-                    <p className="text-gray-500">No tasks defined.</p>
+                    <p className="text-gray-500 dark:text-slate-400">No tasks defined.</p>
                   )}
                 </div>
               </div>
 
               {/* GROUP CHAT */}
-              <div className="bg-white px-0 sm:px-4 py-2 rounded-2xl shadow-sm">
+              <div className="bg-white px-0 sm:px-4 py-2 rounded-2xl shadow-sm dark:border dark:border-slate-700 dark:bg-slate-950">
                 <ChallengeChat
                   challengeId={challenge.id}
                   isChatDisabled={
@@ -986,9 +986,9 @@ export default function ChallengeManagementPage({
 
             {/* ✅ RIGHT COLUMN (Leaderboard) */}
             {/* Changes: Removed 'self-start', added 'h-full flex flex-col' */}
-            <div className="lg:col-span-1 bg-white px-3 py-6 rounded-2xl shadow-sm flex flex-col h-[530px] sm:h-[790px] overflow-hidden">
+            <div className="lg:col-span-1 bg-white px-3 py-6 rounded-2xl shadow-sm flex flex-col h-[530px] sm:h-[790px] overflow-hidden dark:border dark:border-slate-700 dark:bg-slate-900">
               <div className="flex-shrink-0 mb-4">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center dark:text-slate-50">
                   <Users className="w-6 h-6 mr-3 text-indigo-500" /> Leaderboard
                 </h2>
               </div>
@@ -999,13 +999,13 @@ export default function ChallengeManagementPage({
                 <ul className="space-y-4">
                   {challenge.leaderboard?.map((player, index) => (
                     <li key={player.id}>
-                      <div className="flex justify-between items-start hover:bg-gray-100 rounded-lg py-4 px-2 min-h-[60px]">
+                      <div className="flex justify-between items-start hover:bg-gray-100 rounded-lg py-4 px-2 min-h-[60px] dark:hover:bg-slate-800">
                         <Link
                           href={`/profile/${player.id}`}
                           target="_blank"
                           className="flex items-center w-full"
                         >
-                          <span className="text-md font-bold text-gray-400 w-6">
+                          <span className="text-md font-bold text-gray-400 w-6 dark:text-slate-500">
                             {index + 1}
                           </span>
 
@@ -1022,10 +1022,10 @@ export default function ChallengeManagementPage({
                           />
 
                           <div className="flex-grow">
-                            <p className="font-semibold text-gray-800">
+                            <p className="font-semibold text-gray-800 dark:text-slate-100">
                               {player.name}
                             </p>
-                            <p className="text-[12px] sm:text-[16px] lg:text-[12px] xl:text-[11px] text-gray-500">
+                            <p className="text-[12px] sm:text-[16px] lg:text-[12px] xl:text-[11px] text-gray-500 dark:text-slate-400">
                               {player.completedDays} Days Completed (
                               {player.score} Streak)
                             </p>
@@ -1058,12 +1058,12 @@ export default function ChallengeManagementPage({
       {/* ✅ COMPLETION MODAL */}
       {isCompletionModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-100">
+          <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-700 dark:bg-slate-900">
             <PartyPopper className="w-20 h-20 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2 dark:text-slate-50">
               Day Complete!
             </h2>
-            <p className="text-slate-600 mb-6">
+            <p className="text-slate-600 mb-6 dark:text-slate-300">
               Great job! You've completed all your tasks today.
             </p>
             <button
@@ -1079,12 +1079,12 @@ export default function ChallengeManagementPage({
       {/* ✅ ERROR MODAL */}
       {isErrorModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-100">
+          <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-700 dark:bg-slate-900">
             <CalendarX className="w-20 h-20 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2 dark:text-slate-50">
               Challenge Not Active
             </h2>
-            <p className="text-slate-600 mb-6">{errorMessage}</p>
+            <p className="text-slate-600 mb-6 dark:text-slate-300">{errorMessage}</p>
             <button
               onClick={() => setIsErrorModalOpen(false)}
               className="w-full bg-slate-800 text-white p-3 rounded-lg font-semibold hover:bg-slate-700"
@@ -1103,10 +1103,10 @@ export default function ChallengeManagementPage({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 sm:p-8"
+            className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 sm:p-8 dark:border dark:border-slate-700 dark:bg-slate-900"
           >
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800">Share</h2>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">Share</h2>
               <button
                 onClick={() => setIsShareModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600"

@@ -53,7 +53,7 @@ export default function Step5Services({
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow">
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow">
 
       <h2 className="text-xl font-semibold mb-2">
         What Do You Offer?
@@ -86,8 +86,8 @@ export default function Step5Services({
               onClick={() => toggleService(service)}
               className={`p-4 border rounded-xl text-left transition
                 ${isSelected
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200"
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
+                  : "border-gray-200 dark:border-gray-700"
                 }
               `}
             >
@@ -109,7 +109,7 @@ export default function Step5Services({
         <button
           type="button"
           onClick={back}
-          className="px-5 py-2 rounded-lg border hover:bg-gray-100"
+          className="px-5 py-2 rounded-lg border light:hover:bg-gray-100"
         >
           Back
         </button>

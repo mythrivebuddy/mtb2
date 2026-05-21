@@ -88,13 +88,13 @@ export default function ReminderListener({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-white to-gray-100 rounded-xl shadow-lg border border-gray-200">
+      <DialogContent className="sm:max-w-md light:bg-gradient-to-br from-white to-gray-100 dark:bg-slate-950 rounded-xl shadow-lg border light:border-gray-200">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold text-gray-900">
+          <DialogTitle className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-300">
             <span className="text-2xl">{getMoodEmoji(action.mood)}</span>
             Your 1% Start Action Awaits!
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-600">
+          <DialogDescription className="text-sm text-gray-600 dark:text-gray-300">
             Its time to tackle your scheduled task. Lets make it happen!
           </DialogDescription>
         </DialogHeader>
@@ -110,7 +110,7 @@ export default function ReminderListener({
             </p>
           </div>
 
-          <div className="bg-gray-50 p-3 rounded-md">
+          <div className="light:bg-gray-50  p-3 rounded-md">
             <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">
               Category
             </h4>
@@ -126,7 +126,7 @@ export default function ReminderListener({
             variant="outline"
             onClick={handleSnooze}
             disabled={snoozeLoading || completeLoading}
-            className="px-4 py-1 text-sm text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 shadow-sm rounded-md"
+            className="px-4 py-1 text-sm text-gray-700 border-gray-300 light:hover:bg-gray-100 hover:border-gray-400 shadow-sm rounded-md"
           >
             {snoozeLoading ? "Snoozing..." : "Remind in 5 Min"}
           </Button>

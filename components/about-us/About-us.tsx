@@ -17,7 +17,7 @@ const AboutUsPage = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-transparent via-blue-50 to-blue-100 flex flex-col items-center sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-transparent via-blue-50 dark:via-slate-900 to-blue-100 dark:to-slate-800 flex flex-col items-center sm:px-6 lg:px-8">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -25,10 +25,10 @@ const AboutUsPage = () => {
         transition={{ duration: 1 }}
         className="w-full max-w-7xl text-center py-16 sm:py-20 md:py-28"
       >
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-800 mb-4 md:mb-6 leading-tight">
-          Welcome to <span className="text-blue-600">MyThriveBuddy.com</span>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-800 dark:text-gray-200 mb-4 md:mb-6 leading-tight">
+          Welcome to <span className="text-blue-600 dark:text-blue-400">MyThriveBuddy.com</span>
         </h1>
-        <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto">
+        <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
           Where solopreneurs fuel their mindset, sharpen their tools, get seen, and grow with a tribe. 🌟
         </p>
       </motion.div>
@@ -64,12 +64,12 @@ const AboutUsPage = () => {
         ].map((item, idx) => (
           <motion.div
             key={idx}
-            className="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition hover:scale-105"
+            className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl hover:shadow-2xl transition hover:scale-105"
           >
-            <h3 className="text-2xl font-semibold text-blue-700 mb-4">
+            <h3 className="text-2xl font-semibold text-blue-700 dark:text-blue-400 mb-4">
               {item.title}
             </h3>
-            <p className="text-gray-600">{item.desc}</p>
+            <p className="text-gray-600 dark:text-gray-400">{item.desc}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -82,9 +82,9 @@ const AboutUsPage = () => {
         viewport={{ once: true }}
         className="max-w-5xl text-center mb-20"
       >
-        <h2 className="text-4xl font-bold text-gray-800 mb-6">Our Story</h2>
-        <p className="text-lg text-gray-600 leading-relaxed">
-          At <span className="font-semibold text-blue-600">MyThriveBuddy</span>,
+        <h2 className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-6">Our Story</h2>
+        <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
+          At <span className="font-semibold text-blue-600 dark:text-blue-400">MyThriveBuddy</span>,
           we believe that thriving as a solopreneur isn’t about doing it all
           alone — it’s about having the right support at every step.
           <br />
@@ -114,30 +114,30 @@ const AboutUsPage = () => {
         viewport={{ once: true }}
         className="max-w-5xl text-center mb-20"
       >
-        <h2 className="text-4xl font-bold text-gray-800 mb-6">
+        <h2 className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-6">
           Our Vision & Mission
         </h2>
-        <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+        <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
           We envision a world where success is not defined by hustle or
           isolation, but by sustainable growth, daily joy, and authentic
           connections.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left mt-10">
-          <div className="p-6 bg-white rounded-2xl shadow-md hover:shadow-xl transition">
-            <h3 className="text-2xl font-semibold text-blue-700 mb-4">
+          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-md hover:shadow-xl transition">
+            <h3 className="text-2xl font-semibold text-blue-700 dark:text-blue-400 mb-4">
               Vision
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               To empower individuals to thrive authentically by strengthening
               their mindset, equipping them with tools, amplifying their
               visibility, and surrounding them with a supportive network.
             </p>
           </div>
-          <div className="p-6 bg-white rounded-2xl shadow-md hover:shadow-xl transition">
-            <h3 className="text-2xl font-semibold text-blue-700 mb-4">
+          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-md hover:shadow-xl transition">
+            <h3 className="text-2xl font-semibold text-blue-700 dark:text-blue-400 mb-4">
               Mission
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               To make solopreneurship easier, more joyful, and more connected by
               celebrating progress, offering powerful tools, creating visibility
               opportunities, and nurturing community support.
@@ -154,10 +154,10 @@ const AboutUsPage = () => {
         viewport={{ once: true }}
         className="max-w-5xl text-center mb-20"
       >
-        <h2 className="text-4xl font-bold text-gray-800 mb-6">
+        <h2 className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-6">
           Why Choose Us? 🚀
         </h2>
-        <ul className="text-gray-600 text-lg space-y-4">
+        <ul className="text-gray-600 dark:text-gray-400 text-lg space-y-4">
           <li>
             ✨ A beautifully designed, easy-to-use platform tailored for your
             real journey
@@ -188,15 +188,15 @@ const AboutUsPage = () => {
         viewport={{ once: true }}
         className="text-center mb-12"
       >
-        <h2 className="text-3xl font-bold text-blue-700 mb-4">
+        <h2 className="text-3xl font-bold text-blue-700 dark:text-blue-400 mb-4">
           Ready to Thrive?
         </h2>
-        <p className="text-lg text-gray-600 mb-6">
+        <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
           Let’s build your dreams — one small, powerful step at a time. 🌿
         </p>
         <button
           onClick={handleRedirect}
-          className="bg-blue-600 text-white py-3 px-8 rounded-full text-lg font-semibold hover:bg-blue-700 transition"
+          className="bg-blue-600 dark:bg-blue-700 text-white py-3 px-8 rounded-full text-lg font-semibold hover:bg-blue-700 dark:hover:bg-blue-800 transition"
         >
           <span>Join Us Now</span>
         </button>

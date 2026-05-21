@@ -1,5 +1,5 @@
 import { inngest } from "@/lib/inngest";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { sendPushNotificationFromDBToUser} from "@/lib/utils/pushNotifications";
 import { prisma } from "@/lib/prisma";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 
@@ -80,12 +80,12 @@ export const alignedActionReminders = inngest.createFunction(
 );
 
 async function notify(userId: string, phase: "START" | "END") {
-  await sendPushNotificationToUser(
+  // Pass the exact Notification Type based on the phase
+  const type = phase === "START" ? "ALIGNED_ACTION_START" : "ALIGNED_ACTION_END";
+  
+  await sendPushNotificationFromDBToUser({
+    type,
     userId,
-    "1% Start Reminder",
-    phase === "START"
-      ? "Your task starts in 5 minutes"
-      : "Your task ends in 5 minutes",
-    { url: "/dashboard/aligned-actions" },
-  );
+    context: {}, // Add dynamic properties here if you want them in the future!
+  });
 }

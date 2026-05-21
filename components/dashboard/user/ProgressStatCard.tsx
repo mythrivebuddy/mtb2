@@ -9,10 +9,10 @@ type Props = {
 
 export const ProgressStatCard = ({ value, label }: Props) => {
   return (
-   <Card className="py-2 px-4 xl:px-1 xl:py-3 rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-all w-full max-w-[180px]">
+   <Card className="py-2 px-4 xl:px-1 xl:py-3 rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-all w-full max-w-[180px] dark:border-slate-700 dark:from-slate-800 dark:to-slate-900">
       <div className="flex items-center gap-1 xl:gap-3">
         {/* Icon */}
-        <div className="bg-dashboard/10 shrink-0 w-[40px] h-[40px] p-2 rounded-lg">
+        <div className="bg-dashboard/10 shrink-0 w-[40px] h-[40px] p-2 rounded-lg dark:bg-slate-700/70">
           <Image src="/Pearls.png" alt="icon" width={28} height={28} />
         </div>
 
@@ -21,7 +21,7 @@ export const ProgressStatCard = ({ value, label }: Props) => {
           <p className="text-sm xlg:text-md font-semibold text-jp-orange leading-none">
             {formatJP(Number(value))}
           </p>
-          <p className="text-xs text-gray-500 leading-tight">{label}</p>
+          <p className="text-xs text-gray-500 leading-tight dark:text-slate-400">{label}</p>
         </div>
       </div>
     </Card>

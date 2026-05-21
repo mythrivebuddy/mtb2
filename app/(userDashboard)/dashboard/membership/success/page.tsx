@@ -141,7 +141,7 @@ export default function SuccessPage() {
           <CardContent className="p-8 text-center space-y-4">
             <Loader2 className="mx-auto h-10 w-10 animate-spin text-blue-600" />
             <h2 className="text-xl font-semibold">Verifying</h2>
-            <p className="text-slate-600 text-sm">
+            <p className="text-slate-600 dark:text-slate-300 text-sm">
               We’re confirming your purchase and setting things up for you.
             </p>
           </CardContent>
@@ -186,12 +186,12 @@ export default function SuccessPage() {
           </div>
 
           {/* Heading */}
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-200">
             Payment Successful
           </h1>
           {isMembership && membership && (
             <>
-              <p className="text-slate-600 leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                 🎉 Your <strong>{membership.planName}</strong> membership is now
                 active.
               </p>
@@ -216,7 +216,7 @@ export default function SuccessPage() {
                 <InfoRow text="This is a lifetime membership — no renewals required." />
               )}
 
-              <p className="text-sm text-slate-700">
+              <p className="text-sm text-slate-700 dark:text-slate-300">
                 You now have full access to all features included in your plan.
               </p>
             </>
@@ -224,7 +224,7 @@ export default function SuccessPage() {
 
           {isProgram && (
             <>
-              <p className="text-slate-600 leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                 🎉 You’re officially enrolled in the{" "}
                 <strong>MTB 2026: Complete Makeover Program</strong>. We’re
                 excited to have you on this transformation journey.
@@ -239,7 +239,7 @@ export default function SuccessPage() {
               />
 
               <CountdownTimer startDate={programStart} />
-              <p className="text-sm text-slate-700">
+              <p className="text-sm text-slate-700  dark:text-slate-300">
                 Your subscription benefits are active immediately, and full
                 program access will unlock once the program begins.
               </p>
@@ -248,7 +248,7 @@ export default function SuccessPage() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col w-full gap-3 pt-4">
-            <Button asChild className="w-full">
+            <Button asChild className="w-full dark:text-slate-950">
               <Link href={redirectTo}>
                 Go to Dashboard
                 <ArrowRight className="ml-2 w-4 h-4" />

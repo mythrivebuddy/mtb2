@@ -77,7 +77,9 @@ export default function CreateChallenge({
 
   const [isShowingCertificateToggle, setIsShowingCertificateToggle] =
     useState(false);
-
+  const isDark =
+    typeof window !== "undefined" &&
+    document.documentElement.classList.contains("dark");
   const {
     data: user,
     isLoading: isUserLoading,
@@ -179,8 +181,6 @@ export default function CreateChallenge({
         message = error.message;
       }
 
-
-
       setModalContent({
         title: "Challenge Creation Failed",
         message,
@@ -257,31 +257,31 @@ export default function CreateChallenge({
                 Your GP Balance: {user?.jpBalance ?? "N/A"}
               </div>
             </div>
-            <h1 className="text-3xl font-extrabold text-slate-800 md:text-4xl">
+            <h1 className="text-3xl font-extrabold text-slate-800 md:text-4xl dark:text-slate-50">
               Create Your Challenge
             </h1>
-            <p className="mt-2 text-lg text-slate-500">
+            <p className="mt-2 text-lg text-slate-500 dark:text-slate-400">
               Craft a unique challenge and inspire others!
             </p>
           </div>
 
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="space-y-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-xl md:p-8"
+            className="space-y-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-xl md:p-8 dark:border-slate-700 dark:bg-slate-900"
           >
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
               {/* Title */}
               <div className="flex-1">
                 <label
                   htmlFor="title"
-                  className="mb-1 block text-sm font-medium text-slate-700"
+                  className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
                 >
                   Challenge Title
                 </label>
                 <input
                   id="title"
                   placeholder="e.g., 30-Day Fitness"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   {...register("title")}
                 />
                 {errors.title && (
@@ -295,7 +295,7 @@ export default function CreateChallenge({
               <div>
                 <label
                   htmlFor="cost"
-                  className="mb-1 block text-sm font-medium text-slate-700"
+                  className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
                 >
                   Cost (GP)
                 </label>
@@ -303,7 +303,7 @@ export default function CreateChallenge({
                   id="cost"
                   type="number"
                   placeholder="50"
-                  className="w-[6rem] rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-[6rem] rounded-lg border border-slate-200 dark:bg-slate-800  px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   {...register("cost", { valueAsNumber: true })}
                 />
                 {errors.cost && (
@@ -317,7 +317,7 @@ export default function CreateChallenge({
               <div>
                 <label
                   htmlFor="reward"
-                  className="mb-1 block text-sm font-medium text-slate-700"
+                  className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
                 >
                   Reward (GP)
                 </label>
@@ -325,7 +325,7 @@ export default function CreateChallenge({
                   id="reward"
                   type="number"
                   placeholder="50"
-                  className="w-[6rem] rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-[6rem] rounded-lg border border-slate-200  dark:bg-slate-800 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   {...register("reward", { valueAsNumber: true })}
                 />
                 {errors.reward && (
@@ -339,7 +339,7 @@ export default function CreateChallenge({
             <div>
               <label
                 htmlFor="description"
-                className="mb-1 block text-sm font-medium text-slate-700"
+                className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
               >
                 Detailed Description
               </label>
@@ -393,13 +393,36 @@ export default function CreateChallenge({
                         "Describe the goals, rules, and what makes your challenge unique...",
 
                       content_style: `
-          body { font-family: Inter, sans-serif; font-size: 14px; color: #334155; line-height: 1.6; }
-          h1 { font-size: 1.8em; font-weight: 700; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; }
-          h2 { font-size: 1.5em; font-weight: 600; color: #334155; margin-top: 0.75rem; margin-bottom: 0.5rem; }
-          h3 { font-size: 1.25em; font-weight: 600; color: #475569; margin-top: 0.5rem; margin-bottom: 0.5rem; }
-          blockquote { border-left: 3px solid #c084fc; margin-left: 0; padding-left: 1rem; color: #4b5563; font-style: italic; background-color: #f9fafb; border-radius: 0.25rem; }
-          p { margin: 0.5rem 0; }
-        `,
+  body {
+    font-family: Inter, sans-serif;
+    font-size: 14px;
+    color: ${isDark ? "#e2e8f0" : "#334155"};
+    background-color: ${isDark ? "#020817" : "#ffffff"};
+    line-height: 1.6;
+  }
+
+  h1 { font-size: 1.8em; font-weight: 700; color: ${isDark ? "#f1f5f9" : "#1e293b"}; margin-top: 1rem; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.5em; font-weight: 600; color: ${isDark ? "#e2e8f0" : "#334155"}; margin-top: 0.75rem; margin-bottom: 0.5rem; }
+  h3 { font-size: 1.25em; font-weight: 600; color: ${isDark ? "#cbd5f5" : "#475569"}; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+
+  blockquote {
+    border-left: 3px solid #c084fc;
+    margin-left: 0;
+    padding-left: 1rem;
+    color: ${isDark ? "#cbd5f5" : "#4b5563"};
+    font-style: italic;
+    background-color: ${isDark ? "#1e293b" : "#f9fafb"};
+    border-radius: 0.25rem;
+  }
+
+  p { margin: 0.5rem 0; }
+  /* placeholder text color */
+.mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
+  color: ${isDark ? "#94a3b8" : "#9ca3af"} !important;
+  opacity: 1;
+}
+  
+`,
                     }}
                   />
                 )}
@@ -416,7 +439,7 @@ export default function CreateChallenge({
               <div>
                 <label
                   htmlFor="startDate"
-                  className="mb-1 block text-sm font-medium text-slate-700"
+                  className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
                 >
                   Start Date
                 </label>
@@ -439,7 +462,7 @@ export default function CreateChallenge({
                           id="startDate"
                           type="date"
                           min={formatDateForInput(today)}
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full rounded-lg border border-slate-200 dark:bg-slate-800 bg-slate-50 py-3 pl-10 pr-4 text-slate-600 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
                           value={formatDateForInput(value)}
                           onChange={(e) => {
                             const newDate = e.target.value
@@ -462,7 +485,7 @@ export default function CreateChallenge({
               <div>
                 <label
                   htmlFor="endDate"
-                  className="mb-1 block text-sm font-medium text-slate-700"
+                  className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
                 >
                   End Date
                 </label>
@@ -484,7 +507,7 @@ export default function CreateChallenge({
                           id="endDate"
                           type="date"
                           min={formatDateForInput(today)}
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full rounded-lg border border-slate-200 dark:bg-slate-800 dark:text-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                           value={formatDateForInput(value)}
                           onChange={(e) => {
                             const newDate = e.target.value
@@ -508,7 +531,7 @@ export default function CreateChallenge({
 
             {/* Challenge Type */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
                 Challenge Type
               </label>
 
@@ -521,8 +544,10 @@ export default function CreateChallenge({
                     className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500"
                   />
                   <div>
-                    <p className=" text-slate-700">Free Challenge</p>
-                    <p className="text-xs text-slate-500">
+                    <p className=" text-slate-700 dark:text-slate-200">
+                      Free Challenge
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-200">
                       Anyone can join without paying fee
                     </p>
                   </div>
@@ -536,8 +561,10 @@ export default function CreateChallenge({
                     className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500"
                   />
                   <div>
-                    <p className=" text-slate-700">Paid Challenge</p>
-                    <p className="text-xs text-slate-500">
+                    <p className=" text-slate-700 dark:text-slate-200">
+                      Paid Challenge
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-200">
                       Users must pay fee to join
                     </p>
                   </div>
@@ -548,14 +575,14 @@ export default function CreateChallenge({
               <div className="mt-4 flex gap-4 items-center">
                 {/* Fee */}
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
                     Challenge Joining Fee
                   </label>
                   <input
                     type="number"
                     min={1}
                     placeholder="Enter joining fee"
-                    className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-800 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     {...register("challengeJoiningFee", {
                       valueAsNumber: true,
                     })}
@@ -569,7 +596,7 @@ export default function CreateChallenge({
 
                 {/* Currency */}
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                  <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
                     Fee Currency
                   </label>
 
@@ -606,7 +633,7 @@ export default function CreateChallenge({
 
             <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
                   Challenge Mode
                 </label>
                 <div className="flex items-center space-x-6 pt-2">
@@ -621,7 +648,9 @@ export default function CreateChallenge({
                       {...register("mode")}
                       className="h-4 w-4 border-slate-300 text-purple-600 focus:ring-purple-500"
                     />
-                    <span className="ml-2 text-slate-700">Public</span>
+                    <span className="ml-2 text-slate-700 dark:text-slate-200">
+                      Public
+                    </span>
                   </label>
                   <label
                     htmlFor="modePersonal"
@@ -634,14 +663,16 @@ export default function CreateChallenge({
                       {...register("mode")}
                       className="h-4 w-4 border-slate-300 text-purple-600 focus:ring-purple-500"
                     />
-                    <span className="ml-2 text-slate-700">Personal</span>
+                    <span className="ml-2 text-slate-700 dark:text-slate-200">
+                      Personal
+                    </span>
                   </label>
                 </div>
               </div>
               <div>
                 <label
                   htmlFor="penalty"
-                  className="mb-1 block text-sm font-medium text-slate-700"
+                  className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
                 >
                   Penalty (GP)
                 </label>
@@ -649,7 +680,7 @@ export default function CreateChallenge({
                   id="penalty"
                   type="number"
                   placeholder="0"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-800 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   {...register("penalty", { valueAsNumber: true })}
                 />
                 {errors.penalty && (
@@ -661,7 +692,9 @@ export default function CreateChallenge({
             </div>
 
             <div className="space-y-4 border-t border-slate-200 pt-4">
-              <h3 className="font-semibold text-slate-800">Challenge Tasks</h3>
+              <h3 className="font-semibold text-slate-800 dark:text-slate-200">
+                Challenge Tasks
+              </h3>
               {fields.map((field, index) => (
                 <div key={field.id} className="space-y-1">
                   <div className="flex items-center">
@@ -672,7 +705,7 @@ export default function CreateChallenge({
                     <input
                       id={`task-${index}`}
                       placeholder={`Task #${index + 1}`}
-                      className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="flex-1 rounded-lg border border-slate-200 dark:bg-slate-800 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       {...register(`tasks.${index}.description`)}
                     />
                     {fields.length > 1 && (
@@ -715,17 +748,18 @@ export default function CreateChallenge({
             <div className="flex flex-col">
               <label
                 htmlFor="social_link_task"
-                className="mb-1 block text-sm font-medium text-slate-700"
+                className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
               >
                 Related Link:
               </label>
               <input
                 type="text"
                 id="social_link_task"
-                className={`flex-1 w-full rounded-lg border px-4 py-3 focus:outline-none focus:ring-2 ${errors.social_link_task
+                className={`flex-1 w-full rounded-lg border dark:bg-slate-800 px-4 py-3 focus:outline-none focus:ring-2 ${
+                  errors.social_link_task
                     ? "border-red-500 focus:ring-red-500"
                     : "border-slate-200 bg-slate-50 focus:ring-purple-500"
-                  }`}
+                }`}
                 {...register("social_link_task", {
                   required: "Social media link is required",
                   pattern: {
@@ -742,7 +776,7 @@ export default function CreateChallenge({
                   {errors.social_link_task.message}
                 </p>
               )}
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Add one YouTube or Instagram link related to this challenge —
                 for example, a promo video.
               </p>

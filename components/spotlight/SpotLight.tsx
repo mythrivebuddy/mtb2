@@ -134,19 +134,19 @@ export default function SpotlightPage() {
         message={upgradeModal.message}
         redirectToPricingUrl={`/pricing?ref=spotlight`}
       />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 ">
         {/* <h1 className="text-3xl font-bold mb-8">Spotlight Feature</h1> */}
 
-        <Card className="p-6 mb-8">
+        <Card className="p-6 mb-8 dark:bg-slate-900">
           <h2 className="text-2xl font-semibold mb-6">What is Spotlight?</h2>
 
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             A rotating daily Spotlight that showcases one solopreneur to the
             ecosystem with their one-line pitch, profile, and link.
           </p>
 
           <h3 className="text-xl font-semibold mb-4">Benefits:</h3>
-          <ul className="list-disc pl-6 text-gray-600 mb-8">
+          <ul className="list-disc pl-6 text-gray-600 dark:text-gray-300 mb-8">
             <li className="mb-2">
               Increased visibility and exposure, leading to new business
               opportunities.
@@ -164,30 +164,30 @@ export default function SpotlightPage() {
               Terms and Conditions:
             </h3>
 
-            <div className="bg-gray-50 p-4 rounded-lg mb-6">
-              <p className="text-gray-600 mb-3">
+            <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg mb-6">
+              <p className="text-gray-600 dark:text-gray-300 mb-3">
                 1. Spotlight duration can be increased/decreased to provide
                 sufficient business visibility.
               </p>
-              <p className="text-gray-600 mb-3">
+              <p className="text-gray-600 dark:text-gray-300 mb-3">
                 2. Content must comply with our community guidelines and terms
                 of service.
               </p>
-              <p className="text-gray-600 mb-3">
+              <p className="text-gray-600 dark:text-gray-300 mb-3">
                 3. We reserve the right to remove your spotlight if it violates
                 our policies.
               </p>
-              <p className="text-gray-600 mb-3">
+              <p className="text-gray-600   dark:text-gray-300 mb-3">
                 4. Spotlight placement is subject to availability and approval.
               </p>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-300">
                 5. No Growth Points will be credited back once the applied for
                 Spotlight
               </p>
             </div>
 
             <h3 className="text-xl font-semibold mb-4"> Requirements:</h3>
-            <ul className="list-disc pl-6 text-gray-600 mb-8">
+            <ul className="list-disc pl-6 text-gray-600 dark:text-gray-300 mb-8">
               <li className="mb-2">
                 You must have {jpAmount} GP tokens to apply (lower amounts for
                 premium plan members).
@@ -255,16 +255,13 @@ export default function SpotlightPage() {
           </div>
         </Card>
         <Dialog open={isDialogBoxOpen} onOpenChange={setIsDialogBoxOpen}>
-          <DialogContent className="bg-white text-black rounded-3xl sm:rounded-3xl">
+          <DialogContent className=" rounded-3xl sm:rounded-3xl">
             <DialogHeader className="text-center">
-              <DialogTitle
-                className="text-2xl font-semibold"
-                style={{ color: "#151E46" }}
-              >
+              <DialogTitle className="text-2xl font-semibold">
                 Business Profile Required
               </DialogTitle>
             </DialogHeader>
-            <p className="text-gray-600 ">
+            <p className="text-gray-600 dark:text-gray-300 ">
               You need to create a business profile before applying for
               Spotlight.
             </p>
@@ -282,6 +279,7 @@ export default function SpotlightPage() {
                   setIsDialogBoxOpen(false);
                   router.push("/dashboard/business-profile");
                 }}
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 Create Business Profile
               </Button>

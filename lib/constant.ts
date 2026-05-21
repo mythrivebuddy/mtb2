@@ -17,6 +17,7 @@ export const MAKEOVER_PROGRAM_QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];
 export const CURRENT_MAKEOVER_PROGRAM_QUARTER = 'Q1';
 
 export const  GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+export const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
 export const CMP_NOTIFICATIONS = {
   /* =====================================================
@@ -294,3 +295,5 @@ export const STATE_NAME_MAP: Record<string, string> = {
   "dadra and nagar haveli and daman and diu":
     "dadra and nagar haveli and daman and diu",
 };
+
+

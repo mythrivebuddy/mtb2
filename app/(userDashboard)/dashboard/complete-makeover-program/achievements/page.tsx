@@ -99,10 +99,10 @@ export default async function MakeoverAchievementsPage() {
       <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
         <div className="flex flex-col gap-2 max-w-2xl">
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full bg-[#0f2cbd]/10 text-[#0f2cbd] text-xs font-bold uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#0f2cbd]/10 dark:text-gray-200 text-[#0f2cbd] text-xs font-bold uppercase tracking-wider">
               Level {USER_PROGRESS.currentLevel}
             </span>
-            <span className="text-[#4c599a] text-sm">
+            <span className="text-[#4c599a] dark:text-blue-300 text-sm">
               {USER_PROGRESS.levelName}
             </span>
           </div>

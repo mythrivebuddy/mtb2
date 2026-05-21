@@ -186,10 +186,10 @@ export default function UpcomingChallengesPage() {
     <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-indigo-900">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-indigo-900 dark:text-indigo-300">
             Challenges
           </h1>
-          <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto dark:text-slate-300">
             Your personal challenges and new ones to discover, all in one place.
           </p>
         </div>
@@ -202,7 +202,7 @@ export default function UpcomingChallengesPage() {
               placeholder="Search for any challenge..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 text-lg bg-white border border-slate-300 rounded-full shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+              className="w-full pl-12 pr-4 py-3 text-lg bg-white border border-slate-300 rounded-full shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
           </div>
           <CreateChallengeButton />
@@ -219,7 +219,7 @@ export default function UpcomingChallengesPage() {
                 className={`px-5 py-2 text-sm font-semibold rounded-full transition-all duration-200 ${
                   isActive
                     ? "bg-indigo-600 text-white shadow-lg"
-                    : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                    : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                 }`}
               >
                 {status.charAt(0) + status.slice(1).toLowerCase()}
@@ -287,16 +287,16 @@ export default function UpcomingChallengesPage() {
                         }/${challenge.id}`
                       )
                     }
-                    className="relative overflow-hidden bg-white rounded-xl shadow hover:shadow-lg p-6 border cursor-pointer flex flex-col transition hover:-translate-y-1 h-full"
+                    className="relative overflow-hidden bg-white rounded-xl shadow hover:shadow-lg p-6 border cursor-pointer flex flex-col transition hover:-translate-y-1 h-full dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30"
                   >
                     {/* Render Ribbon */}
                     {ribbon}
 
                     <div className="mb-2 pt-4">
-                      <h3 className="text-xl font-bold text-indigo-800 truncate">{challenge.title}</h3>
+                      <h3 className="text-xl font-bold text-indigo-800 truncate dark:text-indigo-300">{challenge.title}</h3>
                     </div>
                     
-                    <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                    <p className="text-sm text-slate-600 mb-4 line-clamp-2 dark:text-slate-300">
                       {challenge.description || "No description available."}
                     </p>
 
@@ -309,15 +309,15 @@ export default function UpcomingChallengesPage() {
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-2 mb-2 text-slate-700">
+                    <div className="flex items-center gap-2 mb-2 text-slate-700 dark:text-slate-300">
                       <CalendarDays className="w-4 h-4" />
                       <span className="text-sm font-medium">{formatDate(challenge.startDate)}</span>
                       <span className="text-slate-400">→</span>
                       <span className="text-sm font-medium">{formatDate(challenge.endDate)}</span>
                     </div>
 
-                    <div className="flex justify-between mt-auto pt-4 border-t">
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <div className="flex justify-between mt-auto pt-4 border-t dark:border-slate-700">
+                      <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                         <Users className="w-4 h-4" />
                         <span>{participantCount} Joined</span>
                       </div>
@@ -332,10 +332,10 @@ export default function UpcomingChallengesPage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <h3 className="text-2xl font-semibold text-slate-700">
+              <h3 className="text-2xl font-semibold text-slate-700 dark:text-slate-200">
                 No Challenges Found
               </h3>
-              <p className="mt-2 text-slate-500">
+              <p className="mt-2 text-slate-500 dark:text-slate-400">
                 Try adjusting your search or filters.
               </p>
             </div>

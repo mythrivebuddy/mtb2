@@ -26,6 +26,8 @@ import { FiCopy, FiCheck } from "react-icons/fi";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
+import SortIndicator from "@/components/common/SortIndicator";
+import { useServerSort } from "@/hooks/use-server-sort";
 
 // --- API Functions ---
 
@@ -38,6 +40,8 @@ async function fetchUsers(
   planType: string,
   programType: string,
   referrerId?: string,
+  sortBy?: string,
+  sortOrder?: "asc" | "desc",
 ): Promise<{
   users: IUserWithMembership[];
   total: number;
@@ -58,6 +62,8 @@ async function fetchUsers(
       planType,
       programType,
       referrerId,
+      sortBy,
+      sortOrder,
     },
   });
   return data;
@@ -144,6 +150,7 @@ export default function UserInfoContent() {
   const [showAffiliateModal, setShowAffiliateModal] = useState(false);
   const [affiliateUser, setAffiliateUser] =
     useState<IUserWithMembership | null>(null);
+  const { sortBy, sortOrder, handleSort } = useServerSort("createdAt");
 
   const form = useForm<AffiliateForm>({
     defaultValues: {
@@ -162,6 +169,8 @@ export default function UserInfoContent() {
       planType,
       programType,
       referrerId,
+      sortBy,
+      sortOrder,
     ],
     queryFn: () =>
       fetchUsers(
@@ -173,7 +182,11 @@ export default function UserInfoContent() {
         planType,
         programType,
         referrerId,
+        sortBy,
+        sortOrder,
       ),
+    staleTime: 1000 * 60 * 5, //  5 minutes cache
+    placeholderData: (prev) => prev,
   });
 
   // ADDED: Query to get all available plans for the modal dropdown
@@ -226,6 +239,8 @@ export default function UserInfoContent() {
           planType,
           programType,
           referrerId,
+          sortBy,
+          sortOrder,
         ],
         (oldData: UsersQueryData | undefined) => {
           if (!oldData) return oldData;
@@ -290,7 +305,10 @@ export default function UserInfoContent() {
       newPlanId: selectedPlanId,
     });
   };
-
+  const handleSortWithReset = (field: string) => {
+    setPage(1);
+    handleSort(field);
+  };
   // --- Data & Presence ---
   const users = data?.users || [];
   const total = data?.total || 0;
@@ -434,7 +452,7 @@ export default function UserInfoContent() {
         </select>
       </div>
 
-      {isLoading && <p>Loading users...</p>}
+      {isLoading && <p className="text-center">Loading users...</p>}
       {isError && <p className="text-red-600">Error: {error?.message}</p>}
 
       {/* Users Table */}
@@ -444,10 +462,58 @@ export default function UserInfoContent() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead className="text-center">GP Earned</TableHead>
-              <TableHead className="text-center">GP Balance</TableHead>
-              <TableHead className="text-center">Total Referrals</TableHead>
+              <TableHead
+                className="cursor-pointer group"
+                onClick={() => handleSortWithReset("name")}
+              >
+                <div className="flex items-center gap-1">
+                  User
+                  <SortIndicator
+                    field="name"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-center cursor-pointer group"
+                onClick={() => handleSortWithReset("jpEarned")}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  GP Earned
+                  <SortIndicator
+                    field="jpEarned"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-center cursor-pointer group"
+                onClick={() => handleSortWithReset("jpBalance")}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  GP Balance
+                  <SortIndicator
+                    field="jpBalance"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
+              <TableHead
+                className="text-center cursor-pointer group"
+                onClick={() => handleSortWithReset("referrals")}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  Total Referrals
+                  <SortIndicator
+                    field="referrals"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
               <TableHead className="text-center">Plan</TableHead>
               <TableHead className="text-center">Actions</TableHead>
             </TableRow>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
@@ -14,6 +14,7 @@ import {
   User,
   Clock,
   CheckCircle2,
+  XCircle,
 } from "lucide-react";
 
 import {
@@ -26,8 +27,16 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Pagination } from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ================= TYPES =================
 type EarningDetail = {
@@ -47,6 +56,7 @@ type EarningDetail = {
   buyerEmail: string;
   itemName: string;
   discountApplied: number; //  Added Discount
+  netAmount: number;
 };
 
 type PayoutApiResponse = {
@@ -55,8 +65,18 @@ type PayoutApiResponse = {
     email: string;
   };
   earnings: EarningDetail[];
+  analytics: {
+    total: number;
+    paid: number;
+    matured: number;
+    holding: number;
+  };
+  pagination: {
+    page: number;
+    totalPages: number;
+    totalCount: number;
+  };
 };
-
 // ================= HELPERS =================
 function CurrencyIcon({ currency }: { currency: string }) {
   return currency === "INR" ? (
@@ -83,44 +103,99 @@ function formatContextType(type: string) {
 // ================= COMPONENT =================
 export default function CreatorPayoutDetailsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const creatorId = params.creatorId as string;
+  const id = params.creatorId as string;
+  const type = searchParams.get("type"); // CREATOR | AFFILIATE
+  const currency = searchParams.get("currency");
 
-  const [filter, setFilter] = useState<"ALL" | "MATURED" | "HOLDING" | "PAID">(
-    "ALL",
-  );
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   //  Updated useQuery to handle the new { creator, earnings } response
   const { data, isLoading, isError } = useQuery<PayoutApiResponse>({
-    queryKey: ["creator-payout-details", creatorId],
+    queryKey: [
+      "creator-payout-details",
+      id,
+      page,
+      limit,
+      statusFilter,
+      currency,
+      fromDate,
+      toDate,
+    ],
+
     queryFn: async () => {
-      const res = await axios.get(`/api/admin/payouts/${creatorId}`);
+      const queryParams = new URLSearchParams();
+      queryParams.set("type", type ?? "");
+      queryParams.set("page", String(page));
+      queryParams.set("limit", String(limit));
+      queryParams.set("status", statusFilter);
+      if (currency && currency !== "ALL") queryParams.set("currency", currency);
+      if (fromDate) queryParams.set("fromDate", fromDate);
+      if (toDate) queryParams.set("toDate", toDate);
+
+      const res = await axios.get(
+        `/api/admin/payouts/${id}?${queryParams.toString()}`,
+      );
       return res.data;
     },
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
+  const [datePreset, setDatePreset] = useState<
+    "ALL" | "TODAY" | "THIS_MONTH" | "CUSTOM"
+  >("ALL");
+
+  const totalPages = data?.pagination?.totalPages || 1;
 
   //  Safely extract derived data
   const earnings = data?.earnings || [];
-  const creator = data?.creator || { name: "Unknown Creator", email: "" };
+  const creator = data?.creator || { name: "", email: "" };
 
-  const filteredEarnings = earnings.filter((e) => {
-    if (filter === "MATURED") return e.isMatured;
-    if (filter === "HOLDING") return e.isHolding;
-    if (filter === "PAID") return e.status === "PAID";
-    return true; // ALL
-  });
+  const filteredEarnings = earnings;
 
   // Calculate stats
-  const stats = earnings.reduce(
-    (acc, curr) => {
-      if (curr.status === "PAID") acc.paid += curr.earnedAmount;
-      else if (curr.isMatured) acc.matured += curr.earnedAmount;
-      else if (curr.isHolding) acc.holding += curr.earnedAmount;
-      return acc;
-    },
-    { paid: 0, matured: 0, holding: 0 },
-  );
+  const stats = data?.analytics || {
+    total: 0,
+    paid: 0,
+    matured: 0,
+    holding: 0,
+  };
+  const handleDatePresetChange = (val: string) => {
+    setDatePreset(val as typeof datePreset);
 
+    const today = new Date();
+
+    if (val === "ALL") {
+      setFromDate("");
+      setToDate("");
+    } else if (val === "TODAY") {
+      const d = today.toISOString().split("T")[0];
+      setFromDate(d);
+      setToDate(d);
+    } else if (val === "THIS_MONTH") {
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+      setFromDate(first.toISOString().split("T")[0]);
+      setToDate(today.toISOString().split("T")[0]);
+    }
+  };
+  const handleClearFilters = () => {
+    setStatusFilter("ALL");
+    setLimit(10);
+    setFromDate("");
+    setToDate("");
+    setDatePreset("ALL");
+    setPage(1); // ✅ important
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("currency");
+
+    router.push(`?${params.toString()}`);
+  };
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
@@ -133,7 +208,7 @@ export default function CreatorPayoutDetailsPage() {
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Ledger Details</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{type === "AFFILIATE" ?"Affiliate":"Coach"} Ledger Details</h1>
           <p className="text-muted-foreground mt-1 flex items-center gap-2">
             <User className="w-4 h-4" />
             {creator.name} {creator.email && `(${creator.email})`}
@@ -183,46 +258,152 @@ export default function CreatorPayoutDetailsPage() {
           </CardContent>
         </Card>
       </div>
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Status */}
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All</SelectItem>
+              <SelectItem value="MATURED">Matured</SelectItem>
+              <SelectItem value="HOLDING">Holding</SelectItem>
+              <SelectItem value="PAID">Paid</SelectItem>
+            </SelectContent>
+          </Select>
 
+          {/* Currency */}
+          <Select
+            value={currency || "ALL"}
+            onValueChange={(v) => {
+              setPage(1);
+              const params = new URLSearchParams(searchParams.toString());
+              if (v === "ALL") params.delete("currency");
+              else params.set("currency", v);
+              router.push(`?${params.toString()}`);
+            }}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Currency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Currencies</SelectItem>
+              <SelectItem value="INR">INR only</SelectItem>
+              <SelectItem value="USD">USD only</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Per Page */}
+          <Select
+            value={limit.toString()}
+            onValueChange={(v) => {
+              setLimit(Number(v));
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Per page" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10 per page</SelectItem>
+              <SelectItem value="20">20 per page</SelectItem>
+              <SelectItem value="50">50 per page</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Date Preset */}
+          <Select value={datePreset} onValueChange={handleDatePresetChange}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Date Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Time</SelectItem>
+              <SelectItem value="TODAY">Today</SelectItem>
+              <SelectItem value="THIS_MONTH">This Month</SelectItem>
+              <SelectItem value="CUSTOM">Custom Range</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Custom Date */}
+          {datePreset === "CUSTOM" && (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">From</span>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => {
+                    setFromDate(e.target.value);
+                    setPage(1);
+                  }}
+                  className="border rounded px-2 py-1 text-sm"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">To</span>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => {
+                    setToDate(e.target.value);
+                    setPage(1);
+                  }}
+                  className="border rounded px-2 py-1 text-sm"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Clear Filters */}
+          {(statusFilter !== "ALL" || currency || fromDate || toDate) && (
+            <Button
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground px-2"
+              onClick={handleClearFilters}
+            >
+              <XCircle className="w-4 h-4 mr-1.5" />
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
       {/* Data Section */}
       <div className="border rounded-lg bg-card overflow-hidden flex flex-col space-y-4 p-4">
-        <div className="flex justify-between items-center">
-          <Tabs
-            value={filter}
-            onValueChange={(v) =>
-              setFilter(v as "ALL" | "MATURED" | "HOLDING" | "PAID")
-            }
-            className="w-full"
-          >
-            <TabsList>
-              <TabsTrigger value="ALL">All Transactions</TabsTrigger>
-              <TabsTrigger value="MATURED">Matured</TabsTrigger>
-              <TabsTrigger value="HOLDING">Holding</TabsTrigger>
-              <TabsTrigger value="PAID">Paid</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead>Date</TableHead>
               <TableHead>Purchased Item</TableHead>
               <TableHead>Buyer</TableHead>
-              <TableHead className="text-right">Base Amount</TableHead>
-              <TableHead className="text-right text-red-500">
+              <TableHead className="text-center">
+                {/* Base Amount */}
+                Total Business Referred
+              </TableHead>
+              <TableHead className="text-center text-red-500">
                 Discount
               </TableHead>
-              <TableHead className="text-right text-orange-500">
-                Platform Fee
+              <TableHead className="text-center">
+                Net Business Referred
               </TableHead>
-              <TableHead className="text-right font-bold text-green-600">
+              {type !== "AFFILIATE" && (
+                <TableHead className="text-center text-orange-500">
+                  MTB Commission
+                </TableHead>
+              )}
+              <TableHead className="text-center font-bold text-green-600">
                 Final Earning
               </TableHead>
-              <TableHead className="text-right">Status</TableHead>
+              <TableHead className="text-center">Status</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className="whitespace-nowrap">
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-12">
@@ -294,13 +475,13 @@ export default function CreatorPayoutDetailsPage() {
                   </TableCell>
 
                   {/* Base Amount */}
-                  <TableCell className="text-right text-sm">
+                  <TableCell className="text-center text-sm">
                     <CurrencyIcon currency={e.currency} />
                     {fmt(e.baseAmount)}
                   </TableCell>
 
                   {/* ✅ Discount */}
-                  <TableCell className="text-right text-sm text-red-500">
+                  <TableCell className="text-center text-sm text-red-500 ">
                     {e.discountApplied > 0 ? (
                       <>
                         − <CurrencyIcon currency={e.currency} />
@@ -310,27 +491,33 @@ export default function CreatorPayoutDetailsPage() {
                       <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
-
-                  {/* Commission */}
-                  <TableCell className="text-right text-sm text-orange-500">
-                    {e.platformFee > 0 ? (
-                      <>
-                        − <CurrencyIcon currency={e.currency} />
-                        {fmt(e.platformFee)}
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
+                  {/* Net Amount */}
+                  <TableCell className="text-center text-sm">
+                    <CurrencyIcon currency={e.currency} />
+                    {fmt(e.netAmount)}
                   </TableCell>
+                  {/* Commission */}
+                  {type !== "AFFILIATE" && (
+                    <TableCell className="text-center text-sm text-orange-500">
+                      {e.platformFee > 0 ? (
+                        <>
+                          − <CurrencyIcon currency={e.currency} />
+                          {fmt(e.platformFee)}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  )}
 
                   {/* Final Earning */}
-                  <TableCell className="text-right font-semibold text-green-600">
+                  <TableCell className="text-center font-semibold text-green-600">
                     <CurrencyIcon currency={e.currency} />
                     {fmt(e.earnedAmount)}
                   </TableCell>
 
                   {/* Status Badge */}
-                  <TableCell className="text-right">
+                  <TableCell className="text-center">
                     {e.status === "PAID" ? (
                       <Badge
                         variant="outline"
@@ -360,6 +547,20 @@ export default function CreatorPayoutDetailsPage() {
             )}
           </TableBody>
         </Table>
+        <div className="flex flex-col items-center justify-center py-4 border-t bg-muted/10 gap-2">
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={(p) => setPage(p)}
+            />
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            Showing {earnings.length} entries (Total:{" "}
+            {data?.pagination?.totalCount || 0})
+          </p>
+        </div>
       </div>
     </div>
   );

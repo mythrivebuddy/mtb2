@@ -334,7 +334,7 @@ export default function CoachCouponsPage() {
             />
 
             {/* Table */}
-            <Card>
+            <Card className="dark:bg-slate-900">
                 <CouponTabs activeTab={activeTab} setActiveTab={setActiveTab} />
                 <CardHeader>
                     <CardTitle>Your Coupons</CardTitle>

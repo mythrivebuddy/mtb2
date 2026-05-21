@@ -2,14 +2,19 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { PaymentStatus, SubscriptionStatus } from "@prisma/client";
+import {
+  NotificationType,
+  PaymentStatus,
+  SubscriptionStatus,
+} from "@prisma/client";
 import {
   getRazorpayConfig,
   verifyRazorpaySignature,
 } from "@/lib/razorpay/razorpay";
-import { inngest } from "@/lib/inngest";
 import Razorpay from "razorpay";
 import { createAffiliateEarningForSubscription } from "@/lib/affiliate/affiliateEarning";
+import { handlePaymentReversal } from "@/lib/payment/handlePaymentReversal";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -39,7 +44,7 @@ export const POST = async (req: NextRequest) => {
     }
 
     const event = JSON.parse(rawBody);
- 
+
     /* ========================================================= */
     /* 🔵 ONE-TIME PAYMENT SUCCESS (LIFETIME UPGRADE FIX)        */
     /* ========================================================= */
@@ -92,28 +97,39 @@ export const POST = async (req: NextRequest) => {
             where: { id: order.userId },
             data: { membership: "PAID" },
           });
-         
         });
-         await createAffiliateEarningForSubscription({
-            tx:prisma,
-            order: {
-              id: order.id,
-              userId: order.userId,
-              totalAmount: order.totalAmount,
-              baseAmount: order.baseAmount,
-              gstAmount: order.gstAmount,
-              discountApplied: order.discountApplied,
-              currency: order.currency,
-              contextType: order.contextType,
-            },
-            isAdmin:true
-          });
+        await createAffiliateEarningForSubscription({
+          tx: prisma,
+          order: {
+            id: order.id,
+            userId: order.userId,
+            totalAmount: order.totalAmount,
+            baseAmount: order.baseAmount,
+            gstAmount: order.gstAmount,
+            discountApplied: order.discountApplied,
+            currency: order.currency,
+            contextType: order.contextType,
+          },
+          isAdmin: true,
+        });
         return NextResponse.json({ received: true });
       }
 
       // 🔎 Use Razorpay order_id to find our paymentOrder
       const order = await prisma.paymentOrder.findFirst({
         where: { razorpayOrderId: payment.order_id },
+        include: {
+          user: {
+            select: {
+              name: true,
+            },
+          },
+          plan: {
+            select: {
+              name: true,
+            },
+          },
+        },
       });
 
       if (!order || order.status === PaymentStatus.PAID)
@@ -207,24 +223,57 @@ export const POST = async (req: NextRequest) => {
           data: { membership: "PAID" },
         });
       });
-       await createAffiliateEarningForSubscription({
-            tx:prisma,
-            order: {
-              id: order.id,
-              userId: order.userId,
-              totalAmount: order.totalAmount,
-              baseAmount: order.baseAmount,
-              gstAmount: order.gstAmount,
-              discountApplied: order.discountApplied,
-              currency: order.currency,
-              contextType: order.contextType,
-            },
-            isAdmin:true
-          });
-      await inngest.send({
+      await createAffiliateEarningForSubscription({
+        tx: prisma,
+        order: {
+          id: order.id,
+          userId: order.userId,
+          totalAmount: order.totalAmount,
+          baseAmount: order.baseAmount,
+          gstAmount: order.gstAmount,
+          discountApplied: order.discountApplied,
+          currency: order.currency,
+          contextType: order.contextType,
+        },
+        isAdmin: true,
+      });
+      await safeInngestSend({
         name: "invoice/send",
         data: { orderId: order.id },
         id: `invoice-${order.id}`,
+      });
+      const amountSection =
+        order.totalAmount && order.totalAmount > 0
+          ? `for ${order.totalAmount}`
+          : "";
+
+      const currency = order.currency ?? "INR";
+
+      await safeInngestSend({
+        id: `notif-payment-${order.id}`,
+        name: "notification/send",
+        data: {
+          types: [
+            NotificationType.SUBSCRIPTION_ACTIVATED_USER,
+            NotificationType.SUBSCRIPTION_PURCHASED_ADMIN,
+          ],
+          actorId: order.userId,
+
+          sendToUser: true,
+          sendToAdmin: true,
+          sendToCoach: false,
+          sendEmailAdmin: true,
+          billingType: "Subscription", // OR "CMP"
+          context: {
+            userName: order.user?.name ?? "A user",
+            userId: order.userId,
+            planName: order.plan?.name ?? "your plan",
+            orderId: order.id,
+            amountSection,
+
+            currency,
+          },
+        },
       });
       return NextResponse.json({ received: true });
     }
@@ -241,6 +290,12 @@ export const POST = async (req: NextRequest) => {
       const order = await prisma.paymentOrder.findFirst({
         where: { razorpaySubscriptionId: subscription.id },
         include: {
+          user: {
+            select: {
+              id:true,
+              name: true,
+            },
+          },
           plan: true,
         },
       });
@@ -449,26 +504,58 @@ export const POST = async (req: NextRequest) => {
           where: { id: order.userId },
           data: { membership: "PAID" },
         });
-       
-      },);
-       await createAffiliateEarningForSubscription({
-          tx:prisma,
-          order: {
-            id: order.id,
-            userId: order.userId,
-            totalAmount: order.totalAmount,
-            baseAmount: order.baseAmount,
-            gstAmount: order.gstAmount,
-            discountApplied: order.discountApplied,
-            currency: order.currency,
-            contextType: order.contextType,
-          },
-          isAdmin:true
-        });
-      await inngest.send({
+      });
+      await createAffiliateEarningForSubscription({
+        tx: prisma,
+        order: {
+          id: order.id,
+          userId: order.userId,
+          totalAmount: order.totalAmount,
+          baseAmount: order.baseAmount,
+          gstAmount: order.gstAmount,
+          discountApplied: order.discountApplied,
+          currency: order.currency,
+          contextType: order.contextType,
+        },
+        isAdmin: true,
+      });
+      await safeInngestSend({
         name: "invoice/send",
         data: { orderId: order.id },
         id: `invoice-${order.id}`,
+      });
+      const amountSection =
+        order.totalAmount && order.totalAmount > 0
+          ? `for ${order.totalAmount}`
+          : "";
+
+      const currency = order.currency ?? "INR";
+
+      await safeInngestSend({
+        id: `notif-payment-${order.id}`,
+        name: "notification/send",
+        data: {
+          types: [
+            NotificationType.SUBSCRIPTION_ACTIVATED_USER,
+            NotificationType.SUBSCRIPTION_PURCHASED_ADMIN,
+          ],
+          actorId: order.userId,
+
+          sendToUser: true,
+          sendToAdmin: true,
+          sendToCoach: false,
+          sendEmailAdmin: true,
+          billingType: "Subscription", // OR "CMP"
+          context: {
+            userName: order.user?.name ?? "A user",
+            userId:order.user.id,
+            planName: order.plan.name,
+            orderId: order.id,
+            amountSection,
+
+            currency,
+          },
+        },
       });
       return NextResponse.json({ received: true });
     }
@@ -481,11 +568,15 @@ export const POST = async (req: NextRequest) => {
 
       const subscription = await prisma.subscription.findFirst({
         where: { razorpaySubscriptionId: invoice.subscription_id },
+        include: {
+          user: { select: { name: true } },
+          plan: { select: { name: true } },
+          mandate: { select: { currency: true } },
+        },
       });
 
       if (!subscription) return NextResponse.json({ received: true });
 
-  
       const periodEndTimestamp = invoice.period_end;
 
       await prisma.$transaction(async (tx) => {
@@ -512,6 +603,46 @@ export const POST = async (req: NextRequest) => {
             });
           }
         }
+      });
+      const amountSection =
+        invoice.amount_paid && invoice.amount_paid > 0
+          ? `for ${invoice.amount_paid / 100}`
+          : "";
+
+      const currency = subscription?.mandate?.currency ?? "INR";
+
+      const isFirstCycle = !subscription.renewedAt;
+
+      if (isFirstCycle) {
+        console.log("⛔ Skipping renewal notification (first payment)");
+        return NextResponse.json({ received: true });
+      }
+
+      await safeInngestSend({
+        id: `notif-payment-${invoice.id}`,
+        name: "notification/send",
+        data: {
+          types: [
+            NotificationType.SUBSCRIPTION_RENEWED_USER,
+            NotificationType.SUBSCRIPTION_RENEWED_ADMIN,
+          ],
+          actorId: subscription.userId,
+
+          sendToUser: true,
+          sendToAdmin: true,
+          sendToCoach: false,
+          sendEmailAdmin: true,
+          billingType: "Subscription", // OR "CMP"
+          context: {
+            userName: subscription.user?.name ?? "A user",
+            userId: subscription.userId,
+            planName: subscription.plan?.name ?? "your plan",
+            orderId: subscription.paymentOrderId,
+            amountSection,
+
+            currency,
+          },
+        },
       });
       return NextResponse.json({ received: true });
     }
@@ -560,6 +691,20 @@ export const POST = async (req: NextRequest) => {
       });
 
       return NextResponse.json({ received: true });
+    }
+
+    /* ========================================================= */
+    /* 💸 BANK REVERSAL / REFUND */
+    /* ========================================================= */
+    if (event.event === "refund.processed") {
+      const refund = event.payload.refund.entity;
+
+      await handlePaymentReversal(refund.payment_id);
+
+      return NextResponse.json(
+        { received: true, message: "Payment refund event fires" },
+        { status: 200 },
+      );
     }
 
     console.log("⚠️ Unhandled event:", event.event);

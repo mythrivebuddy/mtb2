@@ -15,6 +15,7 @@ import { Badge, BadgeProps } from "@/components/ui/badge";
 import { NotificationIcon } from "@/components/icons/NotificationIcons";
 import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import UserProfileDropdown from "./UserProfileDropDown";
+import { useSession } from "next-auth/react";
 
 type TopBarProps = {
   user?: UserType;
@@ -31,7 +32,7 @@ const TopBarBadge = ({
     <Badge
       variant="outline"
       className={cn(
-        "bg-white rounded-md h-8 sm:h-10 flex items-center  justify-center px-1 sm:px-3 border border-[#4B65A2]",
+        "bg-white rounded-md h-8 sm:h-10 flex items-center  justify-center px-1 sm:px-3 border border-[#4B65A2] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100",
         className,
       )}
       {...props}
@@ -50,15 +51,25 @@ export const fetchUsers = async (searchTerm: string): Promise<SearchUser[]> => {
 // The main TopBar component
 export default function TopBar({ user, toggleSidebar }: TopBarProps) {
   const pathname = usePathname();
-  
+  const { data: session } = useSession();
   const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(
-    user?.image || null,
+    user?.image ? `${user.image}?t=${Date.now()}` : null,
   );
 
+  // ✅ Sync with session when it updates (after profile save)
+  useEffect(() => {
+    const image = session?.user?.image || user?.image;
+    console.log("Image chagnes ");
+    
+    if (image) {
+      setLocalProfilePicture(`${image}?t=${Date.now()}`);
+    }
+  }, [session?.user?.image, user?.image]);
   // Listen for profile updates from other components to update avatar in real-time
   useEffect(() => {
     const handleProfileUpdate = (event: CustomEvent) => {
+      console.log("✅ profileUpdated received in TopBar:", event.detail);
       if (event.detail?.profilePicture) {
         setLocalProfilePicture(event.detail.profilePicture);
       }
@@ -74,7 +85,6 @@ export default function TopBar({ user, toggleSidebar }: TopBarProps) {
       );
     };
   }, []);
-
 
   // React Query hook for Magic Box status
   const { data: hasUnopenedBox } = useQuery({
@@ -109,12 +119,12 @@ export default function TopBar({ user, toggleSidebar }: TopBarProps) {
   return (
     <header className="sticky top-0 z-50 px-2 sm:px-0 flex items-center justify-between lg:static">
       <button
-        className="lg:hidden p-2 bg-white rounded-md shadow-md"
+        className="lg:hidden p-2 bg-white rounded-md shadow-md dark:bg-slate-950 dark:text-slate-100"
         onClick={toggleSidebar}
       >
         <Menu size={20} />
       </button>
-      <h1 className="text-xl sm:text-2xl font-normal text-slate-800 lg:block hidden">
+      <h1 className="text-xl sm:text-2xl font-normal text-slate-800 lg:block hidden dark:text-slate-50">
         {pageTitle}
       </h1>
       <div className="flex justify-between items-center gap-3 ml-auto">

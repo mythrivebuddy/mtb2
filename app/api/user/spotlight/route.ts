@@ -1,14 +1,18 @@
 import { checkRole } from "@/lib/utils/auth";
-import { ActivityType, SpotlightStatus } from "@prisma/client";
+import {
+  ActivityType,
+  NotificationType,
+  SpotlightStatus,
+} from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getJpToDeduct } from "@/lib/utils/jp";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { format } from "date-fns";
-import { getSpotlightAppliedNotificationData } from "@/lib/utils/notifications";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
 import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 //! add check for profile completion
 
@@ -190,7 +194,6 @@ export async function POST() {
     } else {
       estimatedActivationDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
     }
-    const notificationData = getSpotlightAppliedNotificationData(userId);
 
     // Deduct JP and create transaction
     await prisma.$transaction([
@@ -217,11 +220,36 @@ export async function POST() {
           // isActive: false,
         },
       }),
-      prisma.notification.create({
-        data: notificationData,
-      }),
     ]);
+  await safeInngestSend({
+  name: "notification/send",
+  data: {
+    types: [
+      NotificationType.SPOTLIGHT_APPLIED,
+      NotificationType.SPOTLIGHT_APPLIED_ADMIN,
+    ],
+    actorId: userId,
 
+    sendToUser: true,
+    sendToAdmin: true,
+    sendToCoach: false,
+
+    // ✅ THIS ENABLES EMAIL
+    sendEmailAdmin: true,
+    adminEntityType: "SPOTLIGHT",
+
+    context: {
+      userName: user.name,
+      userId: userId,
+
+      // ✅ IMPORTANT FOR TEMPLATE
+      spotlightTitle: `${user.name}'s Spotlight`,
+      spotlightId: "N/A", // or actual id if you want
+
+      actionType: "created", // or "applied" (see below)
+    },
+  },
+});
     // send email to user
     await sendEmailUsingTemplate({
       toEmail: user.email,

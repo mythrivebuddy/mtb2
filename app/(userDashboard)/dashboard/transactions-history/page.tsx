@@ -6,7 +6,7 @@ export const metadata = {
 }
 function page() {
   return (
-    <div><TransactionsHistoryPage/></div>
+    <div className=" min-h-screen"><TransactionsHistoryPage/></div>
   )
 }
 

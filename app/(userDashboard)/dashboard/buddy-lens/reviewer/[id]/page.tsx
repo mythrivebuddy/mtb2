@@ -40,19 +40,19 @@ export default function ReviewPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center gap-1.5 text-gray-600"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400"
           >
             <ChevronLeft className="w-4 h-4" />
             Back to BuddyLens
           </Button>
         </Link>
       </div>
-      <Card className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <Card className="overflow-hidden border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow dark:bg-slate-900">
         <CardContent className="p-0">
           <div className="p-5">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2">
-                <h1 className="font-medium text-gray-900 text-xl">
+                <h1 className="font-medium text-gray-900 dark:text-gray-100 text-xl">
                   BuddyLens Review Details
                 </h1>
               </div>
@@ -60,19 +60,19 @@ export default function ReviewPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2.5">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Tag className="w-4 h-4 text-gray-500" />
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <Tag className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="font-medium">Domain:</span>{" "}
                   {data.request.domain || "N/A"}
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock className="w-4 h-4 text-gray-500" />
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="font-medium">Status:</span> {data.status}
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Star className="w-4 h-4 text-gray-500" />
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <Star className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="font-medium">Rating:</span> {data.rating} / 5
                 </div>
 
@@ -81,7 +81,7 @@ export default function ReviewPage() {
                     href={data.request.socialMediaUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                    className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                     View Review Content
@@ -89,14 +89,14 @@ export default function ReviewPage() {
                 )}
               </div>
 
-              <div className="bg-gray-100 p-3 rounded-lg">
+              <div className="bg-gray-100 dark:bg-slate-800 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <User className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">
+                  <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Submitted At:
                   </span>
                 </div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 dark:text-gray-400">
                   {data.submittedAt
                     ? new Date(data.submittedAt).toLocaleString()
                     : "N/A"}
@@ -106,27 +106,27 @@ export default function ReviewPage() {
 
             <div className="mt-4 space-y-4">
               <div>
-                <h3 className="font-medium text-gray-900 mb-1">Feedback</h3>
-                <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">
+                <h3 className="font-medium text-gray-900 dark:text-gray-200 mb-1">Feedback</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 p-3 rounded">
                   {data.feedback || "No feedback provided"}
                 </p>
               </div>
 
               <div>
-                <h3 className="font-medium text-gray-900 mb-1">Review Text</h3>
-                <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">
+                <h3 className="font-medium text-gray-900 dark:text-gray-200 mb-1">Review Text</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 p-3 rounded">
                   {data.reviewText || "No review text provided"}
                 </p>
               </div>
 
               {data.answers?.length > 0 && (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-1">Answers</h3>
-                  <ul className="space-y-2 text-sm text-gray-700 bg-gray-50 p-3 rounded">
+                  <h3 className="font-medium text-gray-900 dark:text-gray-200 mb-1">Answers</h3>
+                  <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 p-3 rounded">
                     {data.answers.map((answer: string, index: number) => (
                       <li key={index} className="flex items-start gap-2">
                         <span className="font-medium">{index + 1}.</span>
-                        <span>{answer}</span>
+                        <span className="text-gray-700 dark:text-gray-400">{answer}</span>
                       </li>
                     ))}
                   </ul>

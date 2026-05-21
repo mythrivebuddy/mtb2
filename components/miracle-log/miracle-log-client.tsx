@@ -103,7 +103,6 @@ export default function MiracleLogClient({
 
   useOnlineUserLeaderBoard();
 
-
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["miracleLogs"],
     queryFn: async () => {
@@ -265,7 +264,7 @@ export default function MiracleLogClient({
       <CustomAccordion />
       <div className="min-h-screen xl:mx-4">
         <div className=" max-lg:px-4 space-y-8">
-          <Card className="relative bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl border border-gray-100">
+          <Card className="relative bg-white/95 dark:bg-slate-900 backdrop-blur-md shadow-2xl rounded-2xl border light:border-gray-100">
             {/* 🔥 Streak Count - Top Right */}
             <div className="absolute top-4 right-4 flex items-center gap-1 text-orange-500 font-bold text-sm animate-pulse">
               🔥 {streak.count === 0 ? "Day 0" : `${streak.count} day streak`}
@@ -297,7 +296,7 @@ export default function MiracleLogClient({
 
             <CardContent className="space-y-6">
               {/* Info Box */}
-           {(todayEntriesCount >= DAILY_LIMIT) ? (
+              {todayEntriesCount >= DAILY_LIMIT ? (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-yellow-800 flex items-center flex-wrap">
                     <Info className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -404,7 +403,7 @@ export default function MiracleLogClient({
               </CardContent>
             </Card>
           ) : (
-            <Card className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl border border-gray-100">
+            <Card className="bg-white/95 dark:bg-slate-950 backdrop-blur-md shadow-2xl rounded-2xl border light:border-gray-100">
               <CardHeader>
                 <CardTitle>Your Miracle Logs</CardTitle>
                 <CardDescription>
@@ -555,16 +554,16 @@ export default function MiracleLogClient({
 
           {/* View Modal */}
           <Dialog open={!!viewLog} onOpenChange={() => setViewLog(null)}>
-            <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+            <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
               <DialogHeader>
-                <DialogTitle className="text-xl font-semibold text-gray-800">
+                <DialogTitle className="text-xl font-semibold text-gray-800 dark:text-gray-300">
                   Miracle Log Entry
                 </DialogTitle>
               </DialogHeader>
               <div className="mt-4 space-y-4">
                 {viewLog && (
                   <>
-                    <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                    <div className="text-sm text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-black p-3 rounded-lg">
                       {new Date(viewLog.createdAt).toLocaleString("en-US", {
                         weekday: "long",
                         year: "numeric",
@@ -574,7 +573,7 @@ export default function MiracleLogClient({
                         minute: "2-digit",
                       })}
                     </div>
-                    <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                    <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
                       {viewLog.content}
                     </p>
                   </>
@@ -594,15 +593,15 @@ export default function MiracleLogClient({
 
           {/* Delete Modal */}
           <Dialog open={!!deleteLog} onOpenChange={() => setDeleteLog(null)}>
-            <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+            <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
               <DialogHeader className="text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
                   <AlertTriangle className="h-6 w-6 text-red-600" />
                 </div>
-                <DialogTitle className="mt-4 text-xl font-semibold text-gray-800">
+                <DialogTitle className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-300">
                   Confirm Deletion
                 </DialogTitle>
-                <DialogDescription className="mt-2 text-sm text-gray-500">
+                <DialogDescription className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                   Are you sure you want to delete this entry? This action cannot
                   be undone.
                 </DialogDescription>
@@ -643,9 +642,9 @@ export default function MiracleLogClient({
               reset();
             }}
           >
-            <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+            <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
               <DialogHeader>
-                <DialogTitle className="text-xl font-semibold text-gray-800">
+                <DialogTitle className="text-xl font-semibold text-gray-800 dark:text-gray-300">
                   Update Your Miracle Log
                 </DialogTitle>
                 <DialogDescription>

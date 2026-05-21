@@ -277,7 +277,7 @@ export default function CommentsModal({
           )}
           {!isLoading &&
             comments?.map((comment) => (
-              <div key={comment.id} className="flex items-start gap-3">
+              <div key={comment.id} className="flex items-start gap-3 ">
                 <Link
                   href={`/dashboard/accountability-hub/member/${comment.author.id}?groupId=${groupId}`}
                   target="_blank"
@@ -297,8 +297,8 @@ export default function CommentsModal({
                   />
                 </Link>
 
-                <div className="w-full">
-                  <div className="flex items-center gap-2">
+                <div className="w-full ">
+                  <div className="flex items-center gap-2 " >
                     <Link
                       href={`/dashboard/accountability-hub/member/${comment.author.id}?groupId=${groupId}`}
                       className="font-semibold hover:underline"
@@ -313,7 +313,7 @@ export default function CommentsModal({
                     </p>
                   </div>
 
-                  <p className="text-sm text-foreground whitespace-pre-wrap">
+                  <p className="text-sm text-foreground whitespace-pre-wrap ">
                     {renderCommentContent(comment.content, groupId, allMembersData)}
                   </p>
 
@@ -370,7 +370,7 @@ export default function CommentsModal({
                         />
                       </Link>
 
-                      <div className="bg-gray-100 px-3 py-2 rounded-2xl max-w-xs">
+                      <div className="bg-gray-100 dark:bg-slate-900 px-3 py-2 rounded-2xl max-w-xs">
                         <p className="font-semibold text-xs">{reply.author.name}</p>
 
                         <p className="text-sm whitespace-pre-wrap">
@@ -443,7 +443,7 @@ export default function CommentsModal({
             </div>
           )}
           {replyingTo && (
-            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 text-blue-700 px-3 py-2 rounded-md mb-2">
+            <div className="flex items-center justify-between bg-blue-50 dark:bg-slate-900 border border-blue-200 text-blue-700 px-3 py-2 rounded-md mb-2">
               <p className="text-sm">
                 Replying to <span className="font-semibold">{replyingToName}</span>
               </p>
@@ -471,7 +471,7 @@ export default function CommentsModal({
             onKeyDown={handleKeyDown}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
             onFocus={handleCommentChange}
-            className="mb-2"
+            className="mb-2 dark:bg-slate-900"
           />
           <Button
             onClick={handleSubmit}

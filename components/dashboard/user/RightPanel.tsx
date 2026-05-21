@@ -104,8 +104,10 @@ const RightPanel = ({
       className={`w-full overflow-x-hidden overflow-y-auto bg-transparent ${className}`}
     >
       <section className="mb-6">
-        <div className="space-y-3 bg-white rounded-3xl p-5">
-          <h3 className="text-xl  font-semibold">Progress Snapshot</h3>
+        <div className="space-y-3 bg-white rounded-3xl p-5 shadow-sm transition-colors dark:border dark:border-slate-700 dark:bg-slate-900">
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+            Progress Snapshot
+          </h3>
 
           <div className="grid grid-cols-2 gap-3">
             <ProgressStatCard value={jpEarned} label="GP Earned" />
@@ -119,7 +121,9 @@ const RightPanel = ({
       {/* Buddies Section */}
       <section className="mb-6">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-bold text-gray-800">Buddies</h2>
+          <h2 className="text-lg font-bold text-gray-800 dark:text-slate-100">
+            Buddies
+          </h2>
           <Link
             href="#"
             className="text-sm text-blue-500 hover:text-gray-700 hover:underline"
@@ -127,7 +131,7 @@ const RightPanel = ({
             <ComingSoonWrapper>View all</ComingSoonWrapper>
           </Link>
         </div>
-        <div className="space-y-3 bg-white rounded-3xl p-5">
+        <div className="space-y-3 bg-white rounded-3xl p-5 shadow-sm transition-colors dark:border dark:border-slate-700 dark:bg-slate-900">
           {buddies.map((buddy) => (
             <div key={buddy.id} className="flex items-center w-full">
               {buddy.avatar ? (
@@ -139,15 +143,15 @@ const RightPanel = ({
                   height={40}
                 />
               ) : (
-                <p className="w-10 h-10 rounded-full mr-3 bg-gray-200 flex items-center justify-center text-sm font-semibold uppercase">
+                <p className="w-10 h-10 rounded-full mr-3 bg-gray-200 flex items-center justify-center text-sm font-semibold uppercase dark:bg-slate-700 dark:text-slate-100">
                   {buddy.name.slice(0, 2)}
                 </p>
               )}
               <div className="w-full">
-                <p className="font-medium text-gray-800 break-words">
+                <p className="font-medium text-gray-800 break-words dark:text-slate-100">
                   {buddy.name}
                 </p>
-                <p className="text-sm text-gray-500 break-words">
+                <p className="text-sm text-gray-500 break-words dark:text-slate-400">
                   {buddy.access}
                 </p>
               </div>
@@ -166,7 +170,9 @@ const RightPanel = ({
       {/* History Section */}
       <section>
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-bold text-gray-800">History</h2>
+          <h2 className="text-lg font-bold text-gray-800 dark:text-slate-100">
+            History
+          </h2>
           <Link
             href="/dashboard/transactions-history"
             className="text-sm text-blue-500 hover:text-gray-700 hover:underline"
@@ -182,10 +188,10 @@ const RightPanel = ({
               <div key={item.id} className="flex items-start w-full">
                 <span className="text-xl text-blue-700 mr-2">•</span>
                 <div className="flex-1">
-                  <p className="text-gray-800 break-words">
+                  <p className="text-gray-800 break-words dark:text-slate-200">
                     {item.description}
                   </p>
-                  <p className="text-sm text-gray-500 break-words">
+                  <p className="text-sm text-gray-500 break-words dark:text-slate-400">
                     {item.date}
                   </p>
                 </div>

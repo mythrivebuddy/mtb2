@@ -22,12 +22,12 @@ const SuccessModal = ({
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center dark:border dark:border-slate-700 dark:bg-slate-900">
         <PartyPopper className="w-20 h-20 text-green-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">
+        <h2 className="text-2xl font-bold text-slate-800 mb-2 dark:text-slate-50">
           Successfully Joined!
         </h2>
-        <p className="text-slate-500 mb-6">
+        <p className="text-slate-500 mb-6 dark:text-slate-400">
           You are now enrolled in &quot;{challengeTitle}&quot;. Your tasks are
           being prepared.
         </p>
@@ -92,10 +92,10 @@ export default function ChallengeDetailClient({
 
   // 1. Extract the main page content into a constant
   const pageContent = (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4">
-      <div className="w-full max-w-2xl bg-white p-8 rounded-2xl shadow-lg space-y-6">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4 dark:bg-slate-950">
+      <div className="w-full max-w-2xl bg-white p-8 rounded-2xl shadow-lg space-y-6 dark:border dark:border-slate-700 dark:bg-slate-900">
         <div className="flex justify-between items-start">
-          <h1 className="text-3xl font-bold text-slate-800">
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-50">
             {challenge.title}
           </h1>
           <div className="text-right">

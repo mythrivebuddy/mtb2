@@ -17,7 +17,7 @@ function RequestStatusBadge({ status }: { status: string }) {
       return (
         <Badge
           variant="outline"
-          className="bg-blue-50 text-blue-700 border-blue-200"
+          className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
         >
           Open
         </Badge>
@@ -26,7 +26,7 @@ function RequestStatusBadge({ status }: { status: string }) {
       return (
         <Badge
           variant="outline"
-          className="bg-amber-50 text-amber-700 border-amber-200"
+          className="bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
         >
           Pending
         </Badge>
@@ -35,7 +35,7 @@ function RequestStatusBadge({ status }: { status: string }) {
       return (
         <Badge
           variant="outline"
-          className="bg-green-50 text-green-700 border-green-200"
+          className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
         >
           Claimed
         </Badge>
@@ -57,12 +57,12 @@ function AvailableRequestCard({
   userId: string;
 }) {
   return (
-    <Card className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+    <Card className="overflow-hidden border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow dark:bg-slate-900">
       <CardContent className="p-0">
         <div className="p-5">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-2">
-              <h3 className="font-medium text-gray-900">
+              <h3 className="font-medium text-gray-900 dark:text-gray-100">
                 Domain: {req.domain}
               </h3>
               <RequestStatusBadge status={req.status} />
@@ -71,13 +71,13 @@ function AvailableRequestCard({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2.5">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Tag className="w-4 h-4 text-gray-500" />
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <Tag className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <span className="font-medium">Tier:</span> {req.tier}
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Award className="w-4 h-4 text-gray-500" />
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <Award className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <span className="font-medium">Reward:</span>
                 <span className="font-semibold text-jp-orange">
                   {req.jpCost} Growth Points
@@ -93,17 +93,17 @@ function AvailableRequestCard({
                 href={req.socialMediaUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
               >
                 <ExternalLink className="w-4 h-4" />
                 View Content
               </a>
             </div>
 
-            <div className="bg-gray-100 p-3 rounded-lg">
+            <div className="bg-gray-100 dark:bg-slate-800 p-3 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <User className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">
+                <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Requested By:
                 </span>
               </div>
@@ -111,7 +111,7 @@ function AvailableRequestCard({
                 href={`/profile/${req.requester?.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1.5 font-medium"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors flex items-center gap-1.5 font-medium"
               >
                 {req.requester?.name}
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -121,7 +121,7 @@ function AvailableRequestCard({
         </div>
       </CardContent>
 
-      <CardFooter className="flex justify-end gap-2 p-4 bg-gray-50 border-t border-gray-200">
+      <CardFooter className="flex justify-end gap-2 p-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
         {
           !req.review ||
           (!req.review.find((r) => r.reviewer.id === userId) && (
@@ -203,8 +203,8 @@ export default function AvailableRequest({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-5 items-center md:justify-between py-4 border-b border-gray-200 mb-4 custom-responsive">
-        <p className="text-base font-normal text-gray-800">
+      <div className="flex gap-5 items-center md:justify-between py-4 border-b border-gray-200 dark:border-slate-700 mb-4 custom-responsive">
+        <p className="text-base font-normal text-gray-800 dark:text-gray-200">
           List of all available profile audit requests in the system
         </p>
       </div>
@@ -212,8 +212,8 @@ export default function AvailableRequest({ userId }: { userId: string }) {
       {isLoading ? (
         <PageSkeleton type="available-requests" />
       ) : reviewRequests.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-gray-600">No requests available to review.</p>
+        <div className="text-center py-12 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
+          <p className="text-gray-600 dark:text-gray-400">No requests available to review.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">

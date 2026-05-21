@@ -110,7 +110,7 @@ const handleNext = () => {
   };
 
   return (
-    <div className="min-h-screen w-full  font-sans text-[#0d1b12]">
+    <div className="min-h-screen w-full font-sans text-[#0d1b12] dark:text-slate-100">
       <main className="flex justify-center py-8 sm:py-12 px-4 sm:px-6">
         <div className="flex w-full max-w-[1024px] flex-col gap-8">
           {/* Progress Bar */}
@@ -136,7 +136,7 @@ const handleNext = () => {
             <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-tight">
               What is your Unified Vision for 2026?
             </h1>
-            <p className="text-lg text-[#4c9a66] max-w-2xl">
+            <p className="text-lg text-[#4c9a66] max-w-2xl dark:text-emerald-300">
               Draft one combined statement that weaves together your career,
               health, and personal goals into a single narrative. Keep it bold
               and cohesive.
@@ -168,10 +168,10 @@ const handleNext = () => {
                     onChange={(e) =>
                       setVision(e.target.value.slice(0, maxLength))
                     }
-                    className="w-full min-h-[240px] resize-none rounded-2xl border-2 border-[#cfe7d7] bg-white p-6 text-lg leading-relaxed placeholder:text-[#4c9a66]/60 focus:border-[#11d452] focus:ring-0 focus:outline-none shadow-sm transition-all duration-200"
+                    className="w-full min-h-[240px] resize-none rounded-2xl border-2 border-[#cfe7d7] bg-white p-6 text-lg leading-relaxed placeholder:text-[#4c9a66]/60 focus:border-[#11d452] focus:ring-0 focus:outline-none shadow-sm transition-all duration-200 dark:border-emerald-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-emerald-300/50"
                     placeholder="In 2026, I am an energetic leader growing my startup..."
                   />
-                  <div className="absolute bottom-4 right-4 text-xs font-medium text-[#4c9a66] bg-[#f8fcf9] px-2 py-1 rounded">
+                  <div className="absolute bottom-4 right-4 text-xs font-medium text-[#4c9a66] bg-[#f8fcf9] px-2 py-1 rounded dark:bg-slate-800 dark:text-emerald-300">
                     {vision.length}/{maxLength} characters
                   </div>
                 </div>
@@ -194,7 +194,7 @@ const handleNext = () => {
                 </div>
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="relative flex h-[20rem] w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#cfe7d7] bg-white  hover:border-[#11d452]/50 hover:bg-[#11d452]/5 transition-colors group"
+                  className="relative flex h-[20rem] w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#cfe7d7] bg-white hover:border-[#11d452]/50 hover:bg-[#11d452]/5 transition-colors group dark:border-emerald-700 dark:bg-slate-900 dark:hover:bg-emerald-900/20"
                 >
                   {(previewUrl || visionImageUrl) ? (
                     <img
@@ -231,7 +231,7 @@ const handleNext = () => {
 
             {/* Inspiration Column */}
             <div className="lg:col-span-5 flex flex-col gap-6 text-left">
-              <div className="rounded-2xl bg-white p-6 shadow-sm border border-[#cfe7d7]">
+              <div className="rounded-2xl bg-white p-6 shadow-sm border border-[#cfe7d7] dark:border-emerald-700 dark:bg-slate-900">
                 <h3 className="flex items-center gap-2 text-lg font-bold mb-4">
                   <Lightbulb
                     size={22}
@@ -248,7 +248,7 @@ const handleNext = () => {
                     <button
                       key={example.id}
                       onClick={() => handleExampleClick(example.text)}
-                      className="text-left group flex flex-col gap-3 rounded-xl border border-[#cfe7d7] bg-[#f8fcf9] p-4 hover:border-[#11d452] hover:shadow-md transition-all active:scale-[0.98]"
+                      className="text-left group flex flex-col gap-3 rounded-xl border border-[#cfe7d7] bg-[#f8fcf9] p-4 hover:border-[#11d452] hover:shadow-md transition-all active:scale-[0.98] dark:border-emerald-700 dark:bg-slate-800 dark:hover:bg-emerald-900/20"
                     >
                       <div className="flex items-center gap-2">
                         <example.icon size={16} className="text-[#11d452]" />
@@ -264,7 +264,7 @@ const handleNext = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3 rounded-xl bg-[#11d452]/10 p-4 border border-[#11d452]/20">
+              <div className="flex gap-3 rounded-xl bg-[#11d452]/10 p-4 border border-[#11d452]/20 dark:bg-emerald-900/20">
                 <Info size={20} className="text-[#11d452] shrink-0" />
                 <p className="text-sm">
                   <span className="font-bold">Pro Tip:</span> Don't worry about

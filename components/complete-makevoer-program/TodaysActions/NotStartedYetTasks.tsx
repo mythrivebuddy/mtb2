@@ -26,8 +26,8 @@ type ProgramLockedViewProps = {
 /* ---------------- Sub Component ---------------- */
 function TimeBox({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 min-w-[80px]">
-      <div className="text-2xl font-bold text-slate-900">{value}</div>
+    <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 min-w-[80px] dark:border-slate-700 dark:bg-slate-900">
+      <div className="text-2xl font-bold text-slate-900 dark:text-slate-50">{value}</div>
       <div className="text-xs uppercase tracking-wide text-slate-400">
         {label}
       </div>
@@ -52,20 +52,20 @@ export default function NotStartedYetTasks({
   const router = useRouter();
   return (
     <div className="flex-1 flex flex-col  items-center justify-center min-h-[60vh]">
-      <div className="w-full  bg-white shadow-xl shadow-slate-200/50 border border-slate-100 p-8 text-center">
+      <div className="w-full bg-white shadow-xl shadow-slate-200/50 border border-slate-100 p-8 text-center dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30">
         {/* Icon */}
         <div className="bg-[#1990e6]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
           <Hourglass className="text-[#1990e6] w-9 h-9" />
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">{title}</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2 dark:text-slate-50">{title}</h1>
 
         {/* Description */}
-        <p className="text-slate-500 mb-8">{description}</p>
+        <p className="text-slate-500 mb-8 dark:text-slate-400">{description}</p>
 
         {/* Countdown */}
-        <div className="bg-slate-50 rounded-xl p-6 border border-slate-100 mb-8">
+        <div className="bg-slate-50 rounded-xl p-6 border border-slate-100 mb-8 dark:border-slate-700 dark:bg-slate-800">
           <p className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-4">
             Starts In
           </p>

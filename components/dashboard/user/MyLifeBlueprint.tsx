@@ -31,8 +31,8 @@ export default function MyLifeBlueprint({
   console.log({ cmpProgramId });
 
   return (
-    <div className="mb-6">
-      <Card className="rounded-2xl shadow-sm border">
+    <div className="mb-6 ">
+      <Card className="rounded-2xl shadow-sm border dark:bg-slate-900">
         <CardContent className="p-4 sm:p-5">
           {/* Header */}
           <h2 className="text-xl font-semibold text-foreground mb-4">
@@ -63,7 +63,7 @@ export default function MyLifeBlueprint({
                   return (
                     <div key={item.id} className="h-full">
                       {/* Card Item */}
-                      <div className="relative p-4 h-full flex flex-col">
+                      <div className="relative p-4 h-full flex flex-col dark:bg-slate-900">
                         {/* Vertical Divider (desktop only) */}
                         {index !== data.length - 1 && (
                           <div className="hidden sm:block absolute right-0 top-4 bottom-4 w-px bg-border" />

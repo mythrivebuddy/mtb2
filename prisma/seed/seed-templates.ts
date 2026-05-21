@@ -1593,6 +1593,393 @@ async function main() {
 </div>
 `.trim(),
     },
+    {
+      templateId: "creator-payout-success",
+      subject: "💸 Your payout of {{currency}} {{amount}} has been processed!",
+      description: "Sent when a creator payout is successfully completed",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+
+  <!-- HEADER -->
+  <div style="padding:30px;text-align:center;background:linear-gradient(90deg,#16a34a,#059669);">
+    <h1 style="margin:0;color:#ffffff;font-size:26px;">Creator Payout 💸</h1>
+    <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">
+      Your earnings have been successfully paid
+    </p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:30px;">
+
+    <p style="font-size:16px;color:#374151;margin-top:0;">
+      Hi <strong>{{name}}</strong>,
+    </p>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;">
+      Your earnings from your products, challenges, and programs have been successfully processed.
+    </p>
+
+    <!-- AMOUNT -->
+    <div style="text-align:center;margin:24px 0;">
+      <span style="
+        background:#ecfdf5;
+        color:#065f46;
+        padding:14px 28px;
+        border-radius:10px;
+        font-size:22px;
+        font-weight:700;
+        border:1px solid #bbf7d0;
+        display:inline-block;
+      ">
+        {{currency}} {{amount}}
+      </span>
+    </div>
+
+    <!-- DETAILS -->
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:18px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:8px 0;color:#6b7280;font-size:14px;">
+            Payout Reference ID
+          </td>
+          <td style="padding:8px 0;text-align:right;color:#111827;font-weight:600;font-size:14px;">
+            {{referenceId}}
+          </td>
+        </tr>
+
+        <tr style="border-top:1px solid #e5e7eb;">
+          <td style="padding:8px 0;color:#6b7280;font-size:14px;">
+            Date
+          </td>
+          <td style="padding:8px 0;text-align:right;color:#111827;font-weight:600;font-size:14px;">
+            {{paidAt}}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- INFO -->
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-top:20px;">
+      <p style="margin:0;color:#1d4ed8;font-size:13px;">
+        💡 This includes earnings after platform fees and completed holding period.
+      </p>
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{dashboardUrl}}" style="
+        background:#16a34a;
+        color:white;
+        padding:14px 28px;
+        border-radius:8px;
+        text-decoration:none;
+        font-weight:600;
+        font-size:15px;
+        display:inline-block;
+      ">
+        View Earnings →
+      </a>
+    </div>
+
+    <p style="color:#9ca3af;font-size:13px;">
+      Funds have been transferred to your registered payout method.
+    </p>
+
+    <p style="color:#9ca3af;font-size:13px;">
+      Keep building. Keep earning 🚀
+    </p>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">
+      © My Thrive Buddy. All rights reserved.
+    </p>
+  </div>
+
+</div>
+  `.trim(),
+    },
+    {
+      templateId: "affiliate-payout-success",
+      subject: "💸 Your payout of {{currency}} {{amount}} has been processed!",
+      description: "Sent when a affiliate payout is successfully completed",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+
+  <!-- HEADER -->
+  <div style="padding:30px;text-align:center;background:linear-gradient(90deg,#16a34a,#059669);">
+    <h1 style="margin:0;color:#ffffff;font-size:26px;">Creator Payout 💸</h1>
+    <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">
+      Your affiliate earnings have been successfully paid
+    </p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:30px;">
+
+    <p style="font-size:16px;color:#374151;margin-top:0;">
+      Hi <strong>{{name}}</strong>,
+    </p>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;">
+      Your affiliate earnings from MTB products have been successfully processed.
+    </p>
+
+    <!-- AMOUNT -->
+    <div style="text-align:center;margin:24px 0;">
+      <span style="
+        background:#ecfdf5;
+        color:#065f46;
+        padding:14px 28px;
+        border-radius:10px;
+        font-size:22px;
+        font-weight:700;
+        border:1px solid #bbf7d0;
+        display:inline-block;
+      ">
+        {{currency}} {{amount}}
+      </span>
+    </div>
+
+    <!-- DETAILS -->
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:18px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:8px 0;color:#6b7280;font-size:14px;">
+            Payout Reference ID
+          </td>
+          <td style="padding:8px 0;text-align:right;color:#111827;font-weight:600;font-size:14px;">
+            {{referenceId}}
+          </td>
+        </tr>
+
+        <tr style="border-top:1px solid #e5e7eb;">
+          <td style="padding:8px 0;color:#6b7280;font-size:14px;">
+            Date
+          </td>
+          <td style="padding:8px 0;text-align:right;color:#111827;font-weight:600;font-size:14px;">
+            {{paidAt}}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- INFO -->
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-top:20px;">
+      <p style="margin:0;color:#1d4ed8;font-size:13px;">
+        💡 This includes earnings after platform fees and completed holding period.
+      </p>
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{dashboardUrl}}" style="
+        background:#16a34a;
+        color:white;
+        padding:14px 28px;
+        border-radius:8px;
+        text-decoration:none;
+        font-weight:600;
+        font-size:15px;
+        display:inline-block;
+      ">
+        View Earnings →
+      </a>
+    </div>
+
+    <p style="color:#9ca3af;font-size:13px;">
+      Funds have been transferred to your registered payout method.
+    </p>
+
+    <p style="color:#9ca3af;font-size:13px;">
+      Keep building. Keep earning 🚀
+    </p>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">
+      © My Thrive Buddy. All rights reserved.
+    </p>
+  </div>
+
+</div>
+  `.trim(),
+    },
+    {
+      templateId: "admin-entity-created",
+      subject: "🚀 {{actionLabel}}",
+      description:
+        "Common admin email for any entity creation (spotlight, challenge, MMP, store)",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+
+  <!-- HEADER -->
+  <div style="padding:24px;text-align:center;background:#f1f5f9;">
+    <h2 style="margin:0;color:#111827;font-size:22px;">
+      {{actionLabel}}
+    </h2>
+    <p style="margin:6px 0 0;color:#6b7280;font-size:13px;">
+      Platform Activity Notification
+    </p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:24px;">
+
+   <p style="font-size:14px;color:#374151;">
+  <strong>
+    <a href="{{userProfileUrl}}" style="color:#2563eb;text-decoration:underline;">
+      {{username}}
+    </a>
+  </strong>
+    {{actionSentence}} 
+  <strong>{{entityType}}</strong>.
+</p>
+
+    <!-- ENTITY DETAILS -->
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-top:16px;">
+      
+      <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">
+        Entity Type
+      </p>
+      <p style="margin:0 0 12px;font-size:14px;color:#111827;font-weight:600;">
+        {{entityType}}
+      </p>
+
+      <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">
+        Title
+      </p>
+      <p style="margin:0 0 12px;font-size:14px;color:#111827;font-weight:600;">
+        {{entityTitle}}
+      </p>
+
+      {{#if email}}
+      <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">
+        Created By (Email)
+      </p>
+      <p style="margin:0;font-size:14px;color:#111827;font-weight:600;">
+        {{email}}
+      </p>
+      {{/if}}
+
+    </div>
+
+    <!-- OPTIONAL META -->
+    {{#if challengeType}}
+    <div style="background:#f1f5f9;border-radius:8px;padding:12px;margin-top:16px;">
+      <p style="margin:0;font-size:13px;color:#475569;">
+        Type: {{challengeType}}
+      </p>
+    </div>
+    {{/if}}
+
+    {{#if amount}}
+    <div style="background:#f1f5f9;border-radius:8px;padding:12px;margin-top:10px;">
+      <p style="margin:0;font-size:13px;color:#475569;">
+        Amount: {{amount}}
+      </p>
+    </div>
+    {{/if}}
+
+    <!-- CTA -->
+    {{#if ctaUrl}}
+    <div style="text-align:center;margin:24px 0;">
+      <a href="{{ctaUrl}}" style="
+        background:#111827;
+        color:white;
+        padding:12px 24px;
+        border-radius:6px;
+        text-decoration:none;
+        font-size:14px;
+        font-weight:600;
+        display:inline-block;
+      ">
+        View Details →
+      </a>
+    </div>
+    {{/if}}
+
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:14px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">
+      © My Thrive Buddy. Internal Admin Notification
+    </p>
+  </div>
+
+</div>
+  `.trim(),
+    },
+    {
+  templateId: "admin-subscription-cmp",
+  subject: "💳 New {{billingType}} Purchased",
+  description:
+    "Admin notification when a user purchases a subscription or CMP plan",
+  htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
+
+  <!-- HEADER -->
+  <div style="padding:24px;text-align:center;background:#f1f5f9;">
+    <h2 style="margin:0;color:#111827;font-size:22px;">
+      {{actionLabel}}
+    </h2>
+    <p style="margin:6px 0 0;color:#6b7280;font-size:13px;">
+      Billing Activity Notification
+    </p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:24px;">
+
+    <p style="font-size:14px;color:#374151;">
+      <strong>
+        <a href="{{userProfileUrl}}" style="color:#2563eb;text-decoration:underline;">
+          {{username}}
+        </a>
+      </strong>
+      {{actionSentence}} 
+      <strong>{{billingType}}</strong>.
+    </p>
+
+    <!-- PLAN DETAILS -->
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-top:16px;">
+      
+      <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">
+        Plan Name
+      </p>
+      <p style="margin:0 0 12px;font-size:14px;color:#111827;font-weight:600;">
+        {{planName}}
+      </p>
+
+      {{#if amount}}
+      <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">
+        Amount Paid
+      </p>
+      <p style="margin:0;font-size:14px;color:#111827;font-weight:600;">
+        {{amount}}
+      </p>
+      {{/if}}
+
+    </div>
+
+
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:14px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">
+      © My Thrive Buddy. Internal Admin Notification
+    </p>
+  </div>
+
+</div>
+  `.trim(),
+}
   ];
 
   let createdCount = 0;

@@ -169,7 +169,7 @@ export default function AccountabilityHubPage() {
 
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+        className="flex items-center gap-2 text-gray-500 dark:text-gray-200 light:hover:text-gray-700 mb-4"
       >
         <ArrowLeft className="h-5 w-5" />
         <span>Back</span>
@@ -374,7 +374,7 @@ export default function AccountabilityHubPage() {
                             }}
                             className={`p-2 rounded-md min-h-[40px] ${
                               isCurrentUser
-                                ? "cursor-pointer hover:bg-slate-50"
+                                ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-950"
                                 : ""
                             }`}
                           >

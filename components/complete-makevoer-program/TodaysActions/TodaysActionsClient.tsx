@@ -408,7 +408,7 @@ export default function TodaysActionsClient({
   }
   if (lockQuery.isLoading) {
     return (
-      <div className="w-full min-h-screen bg-dashboard flex items-center justify-center">
+      <div className="w-full min-h-screen bg-dashboard dark:bg-slate-950 flex items-center justify-center">
         <Loader2 className="w-12 h-12 animate-spin text-purple-600" />
       </div>
     );
@@ -468,7 +468,7 @@ export default function TodaysActionsClient({
   // Fallback if no data
   if (totalSlides === 0) {
     return (
-      <div className="p-8 text-center">
+      <div className="p-8 text-center text-slate-700 dark:text-slate-300">
         No commitments found for this program.
       </div>
     );
@@ -493,7 +493,7 @@ export default function TodaysActionsClient({
 
   // VIEW 2: Main Carousel Page
   return (
-    <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
+    <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans text-slate-950 dark:text-slate-100">
       <HeaderOfDailyTodaysActions isTodaySunday={isTodaySunday} />
       {/* Main Carousel Area */}
 
