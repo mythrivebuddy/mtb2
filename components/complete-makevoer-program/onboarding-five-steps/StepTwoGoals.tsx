@@ -249,12 +249,12 @@ const StepTwoGoals = ({
                             setGoals((p) => ({ ...p, [id]: value }))
                           }
                         >
-                          <SelectTrigger className="w-full bg-inherit border border-emerald-600 rounded-lg">
+                          <SelectTrigger className="w-full bg-inherit dark:text-white border border-emerald-600 rounded-lg">
                             <SelectValue placeholder="Choose a suggestion" />
                           </SelectTrigger>
                           <SelectContent>
                             {suggestions.map((s) => (
-                              <SelectItem key={s} value={s}>
+                              <SelectItem key={s} value={s} >
                                 {s}
                               </SelectItem>
                             ))}
