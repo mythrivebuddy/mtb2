@@ -87,7 +87,7 @@ export default function Step7Trust({ back, submit, isLoading }: Step6TrustProps)
   }
 
   return (
-    <div className="bg-white p-8 rounded-2xl shadow-md  mx-auto">
+    <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-md  mx-auto">
 
       {/* Header */}
       <div className="mb-6">
@@ -173,7 +173,7 @@ export default function Step7Trust({ back, submit, isLoading }: Step6TrustProps)
         <input
           {...register("introVideo")}
           placeholder="https://youtube.com/watch?v=..."
-          className="w-full border border-gray-200 p-3 rounded-lg"
+          className="w-full border border-gray-200 p-3 rounded-lg dark:bg-slate-950"
         />
         {errors.introVideo && (
           <p className="text-red-500 text-sm mt-1">
@@ -198,7 +198,7 @@ export default function Step7Trust({ back, submit, isLoading }: Step6TrustProps)
         <input
           {...register("linkedin")}
           placeholder="https://linkedin.com/in/username"
-          className={`w-full border p-3 rounded-lg ${errors.linkedin ? "border-red-400" : "border-gray-200"}`}
+          className={`w-full border p-3 rounded-lg dark:bg-slate-950 ${errors.linkedin ? "border-red-400" : "border-gray-200"}`}
         />
         {errors.linkedin && (
           <p className="text-red-500 text-sm mt-1">
@@ -212,7 +212,7 @@ export default function Step7Trust({ back, submit, isLoading }: Step6TrustProps)
         <button
           type="button"
           onClick={back}
-          className="px-5 py-2 rounded-lg border hover:bg-gray-100"
+          className="px-5 py-2 rounded-lg border light:hover:bg-gray-100"
         >
           Back
         </button>

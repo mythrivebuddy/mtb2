@@ -27,6 +27,7 @@ declare module "next-auth" {
       isFirstTimeSurvey: boolean;
       lastSurveyTime: string | null;
       authMethod: AuthMethod;
+      isAffiliate?: boolean;
     } & DefaultSession["user"];
   }
 
@@ -59,6 +60,7 @@ declare module "next-auth/jwt" {
     maxAge: number;
     supabaseAccessToken?: string;
      authMethod: AuthMethod;
+      isAffiliate?: boolean; 
   }
 }
 // --- END AUGMENTATION ---
@@ -269,7 +271,8 @@ export const authConfig: AuthOptions = {
             userType: true,
             isFirstTimeSurvey: true,
             lastSurveyTime: true,
-            authMethod: true
+            authMethod: true,
+            isAffiliate: true,
           }
         });
         // Overwrite token with fresh DB data
@@ -279,6 +282,7 @@ export const authConfig: AuthOptions = {
           token.authMethod = dbUser.authMethod
           token.isFirstTimeSurvey = dbUser.isFirstTimeSurvey ?? token.isFirstTimeSurvey;
           token.lastSurveyTime = dbUser.lastSurveyTime?.toISOString() || token.lastSurveyTime;
+          token.isAffiliate = dbUser.isAffiliate ?? false; 
         }
       }
       if (trigger === "update" && session) {
@@ -332,6 +336,7 @@ export const authConfig: AuthOptions = {
         session.user.name = token.name;
         session.user.image = token.picture;
         session.user.authMethod = token.authMethod
+        session.user.isAffiliate = token.isAffiliate ?? false; 
       }
       session.expires = new Date(Date.now() + token.maxAge * 1000).toISOString();
 

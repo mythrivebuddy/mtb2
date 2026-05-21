@@ -107,7 +107,7 @@ const getInitials = (name: string | null | undefined) => {
 const renderMentions = (
   content: string,
   allMembers: MentionSuggestion[],
-  isMe: boolean
+  isMe: boolean,
 ) => {
   const mentionRegex = /@(\w+)\b/g;
   const parts = content.split(mentionRegex);
@@ -136,7 +136,7 @@ const renderMentions = (
 function renderMessageText(
   text: string | null,
   isMe: boolean,
-  allMembers: MentionSuggestion[]
+  allMembers: MentionSuggestion[],
 ) {
   if (!text) return null;
 
@@ -211,15 +211,15 @@ export default function ChallengeChat({
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
 
-   const [upgradeModal, setUpgradeModal] = useState<{
-      open: boolean;
-      title: string;
-      message: string;
-    }>({
-      open: false,
-      title: "",
-      message: "",
-    });
+  const [upgradeModal, setUpgradeModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+  });
 
   // Map members to mention format
   const allMembersData: MentionSuggestion[] = members.map((m) => {
@@ -247,7 +247,7 @@ export default function ChallengeChat({
   // --- Scrolling logic ---
   const scrollBottom = () => {
     const viewport = scrollRef.current?.querySelector(
-      "[data-radix-scroll-area-viewport]"
+      "[data-radix-scroll-area-viewport]",
     ) as HTMLElement | null;
 
     if (viewport) {
@@ -262,7 +262,7 @@ export default function ChallengeChat({
 
   const isAtBottom = () => {
     const viewport = scrollRef.current?.querySelector(
-      "[data-radix-scroll-area-viewport]"
+      "[data-radix-scroll-area-viewport]",
     ) as HTMLElement | null;
 
     if (!viewport) return false;
@@ -312,7 +312,7 @@ export default function ChallengeChat({
 
         const existingReactions = msg.reactions || [];
         const myExistingIndex = existingReactions.findIndex(
-          (r) => r.userId === currentUserId
+          (r) => r.userId === currentUserId,
         );
 
         const newReactions = [...existingReactions];
@@ -338,7 +338,7 @@ export default function ChallengeChat({
           });
         }
         return { ...msg, reactions: newReactions };
-      })
+      }),
     );
 
     try {
@@ -356,7 +356,7 @@ export default function ChallengeChat({
   const handleCreatePoll = async (
     question: string,
     options: string[],
-    allowMultiple: boolean
+    allowMultiple: boolean,
   ) => {
     try {
       const res = await axios.post("/api/challenge/chat/poll/create", {
@@ -425,7 +425,7 @@ export default function ChallengeChat({
         });
 
         return { ...msg, poll: { ...poll, options: newOptions } };
-      })
+      }),
     );
 
     // API Call
@@ -443,7 +443,7 @@ export default function ChallengeChat({
   // Scroll listener effect (Down Arrow visibility)
   useEffect(() => {
     const viewport = scrollRef.current?.querySelector(
-      "[data-radix-scroll-area-viewport]"
+      "[data-radix-scroll-area-viewport]",
     ) as HTMLElement | null;
 
     if (!viewport) return;
@@ -500,7 +500,7 @@ export default function ChallengeChat({
         }
         typingTimeoutRef.current = window.setTimeout(
           () => setWhoIsTyping(null),
-          2500
+          2500,
         );
       })
       .on("broadcast", { event: "reaction_update" }, (payload) => {
@@ -510,8 +510,8 @@ export default function ChallengeChat({
         };
         setMessages((prev) =>
           prev.map((msg) =>
-            msg.id === messageId ? { ...msg, reactions } : msg
-          )
+            msg.id === messageId ? { ...msg, reactions } : msg,
+          ),
         );
       })
       // ✅ Poll Realtime Listener (Updates the poll when ANYONE votes)
@@ -521,7 +521,7 @@ export default function ChallengeChat({
           poll: PollData;
         };
         setMessages((prev) =>
-          prev.map((msg) => (msg.id === messageId ? { ...msg, poll } : msg))
+          prev.map((msg) => (msg.id === messageId ? { ...msg, poll } : msg)),
         );
       })
       .subscribe();
@@ -544,7 +544,7 @@ export default function ChallengeChat({
         const [entry] = entries;
         if (entry.isIntersecting) {
           const scrollContainer = scrollRef.current?.querySelector(
-            "[data-radix-scroll-area-viewport]"
+            "[data-radix-scroll-area-viewport]",
           ) as HTMLElement | null;
           if (scrollContainer) {
             scrollContainer.scrollTo({
@@ -557,7 +557,7 @@ export default function ChallengeChat({
           obs.disconnect();
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
     observer.observe(footerRef.current);
     return () => observer.disconnect();
@@ -618,11 +618,11 @@ export default function ChallengeChat({
         const message = e?.response?.data?.message || e.response?.data?.error;
         if (e.response?.status == 403) {
           setUpgradeModal({
-          open: true,
-          title: "Upgrade Required",
-          message,
-        });
-        return;
+            open: true,
+            title: "Upgrade Required",
+            message,
+          });
+          return;
         }
       }
       toast.error("Failed to send message. Please try again.");
@@ -685,7 +685,7 @@ export default function ChallengeChat({
           setMentionQuery(query);
           setMentionStartIndex(atIndex);
           const filteredSuggestions = allMembersData.filter((member) =>
-            member.display.toLowerCase().includes(query.toLowerCase())
+            member.display.toLowerCase().includes(query.toLowerCase()),
           );
           setSuggestions(filteredSuggestions);
           setShowSuggestions(filteredSuggestions.length > 0);
@@ -722,7 +722,7 @@ export default function ChallengeChat({
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setActiveSuggestionIndex(
-          (prev) => (prev - 1 + suggestions.length) % suggestions.length
+          (prev) => (prev - 1 + suggestions.length) % suggestions.length,
         );
         return;
       } else if (e.key === "Enter" || e.key === "Tab") {
@@ -750,7 +750,7 @@ export default function ChallengeChat({
         textareaRef.current.focus();
         textareaRef.current.setSelectionRange(
           textareaRef.current.value.length,
-          textareaRef.current.value.length
+          textareaRef.current.value.length,
         );
       }
     }, 0);
@@ -786,7 +786,7 @@ export default function ChallengeChat({
 
   return (
     // ✅ FIX: Added w-full, max-w-full and overflow-hidden to container
-    <Card className="flex flex-col h-[550px] mt-10 relative w-full max-w-full overflow-visible">
+    <Card className="flex dark:bg-slate-900 flex-col h-[550px] mt-10 relative w-full max-w-full overflow-visible">
       <CardHeader>
         <CardTitle>Group Chat</CardTitle>
         <p className="text-sm text-green-700 mt-1 animate-pulse">
@@ -851,7 +851,7 @@ export default function ChallengeChat({
                 const isMe = msg.userId === currentUserId;
                 const hasReactions = msg.reactions && msg.reactions.length > 0;
                 const { uniqueEmojis, allReactions } = getReactionTabs(
-                  msg.reactions ?? []
+                  msg.reactions ?? [],
                 );
                 const isHighlighted = highlightedMessageId === msg.id;
 
@@ -944,7 +944,7 @@ export default function ChallengeChat({
                             {renderMessageText(
                               msg.message,
                               isMe,
-                              allMembersData
+                              allMembersData,
                             )}
                           </p>
                         )}
@@ -1122,7 +1122,7 @@ export default function ChallengeChat({
 
       <CardFooter
         ref={footerRef}
-        className="border-t w-full p-3 flex flex-col gap-2 bg-white z-30 rounded-b-xl"
+        className="border-t w-full p-3 flex flex-col gap-2 bg-white  dark:bg-slate-950 z-30 rounded-b-xl"
       >
         {isChatDisabled ? (
           <div className="flex items-center justify-center w-full h-20 bg-red-50 text-red-700 font-medium">
@@ -1131,7 +1131,7 @@ export default function ChallengeChat({
         ) : (
           <>
             {replyingTo && (
-              <div className="w-full flex items-center justify-between bg-gray-50 p-2 rounded-lg border-l-4 border-indigo-500 animate-in slide-in-from-bottom-2">
+              <div className="w-full flex items-center justify-between bg-gray-50   p-2 rounded-lg border-l-4 border-indigo-500 animate-in slide-in-from-bottom-2">
                 <div className="flex flex-col overflow-hidden pl-1">
                   <span className="text-xs font-bold text-indigo-600">
                     Replying to {replyingTo.user?.name}
@@ -1182,7 +1182,7 @@ export default function ChallengeChat({
                   </div>
                 )}
 
-                <div className="relative w-full">
+                <div className="relative w-full ">
                   {/* ✅ FIX: Added w-full to Textarea */}
                   <Textarea
                     ref={textareaRef}
@@ -1190,16 +1190,7 @@ export default function ChallengeChat({
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDownOnTextarea}
                     placeholder="Type a message... @ to mention."
-                    className="
-      min-h-[45px] 
-      max-h-[150px] 
-      py-8 
-      pl-4    /* increased left padding */
-      pr-24 
-      resize-none 
-      w-full 
-      rounded-xl
-    "
+                    className="dark:bg-slate-900  min-h-[45px]  max-h-[150px] py-8 pl-4 pr-24 resize-none w-full rounded-xl"
                     style={{ lineHeight: "1.4" }} // fixes cursor alignment when wrapping
                   />
 
@@ -1275,13 +1266,13 @@ export default function ChallengeChat({
         onOpenChange={setIsPollModalOpen}
         onCreatePoll={handleCreatePoll}
       />
-       <UpgradeMessageModal
-              isOpen={upgradeModal.open}
-              onClose={() => setUpgradeModal({ open: false, title: "", message: "" })}
-              title={upgradeModal.title}
-              message={upgradeModal.message}
-              redirectToPricingUrl={`/pricing?ref=challenge-group-chat`}
-            />
+      <UpgradeMessageModal
+        isOpen={upgradeModal.open}
+        onClose={() => setUpgradeModal({ open: false, title: "", message: "" })}
+        title={upgradeModal.title}
+        message={upgradeModal.message}
+        redirectToPricingUrl={`/pricing?ref=challenge-group-chat`}
+      />
     </Card>
   );
 }

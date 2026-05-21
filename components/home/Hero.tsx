@@ -19,7 +19,7 @@ export default function Hero() {
       className="space-y-4 max-w-2xl mx-auto md:px-4 sm:px-6"
     >
       <div className="space-y-2">
-        <h1 className="md:text-[56px] text-[36px] lg:text-[70px] font-bold text-[#1E2875] leading-tight">
+        <h1 className="md:text-[56px] text-[36px] lg:text-[70px] font-bold text-[#1E2875] leading-tight dark:text-slate-50">
           Your Personal & Professional Growth Environment
         </h1>
         {/* <h1 className="md:text-[56px] text-[36px] font-bold text-[#7B90FF] leading-tight">

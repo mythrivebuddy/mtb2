@@ -151,11 +151,9 @@ export const POST = async (req: NextRequest) => {
     // --------------------------------------------------
     // 5️⃣ SAVE BILLING INFO
     // --------------------------------------------------
-    const billingInfo = await prisma.billingInformation.upsert({
+    const billingInfo = await prisma.userBillingInformation.upsert({
       where: { userId },
       update: {
-        fullName: billingDetails.name,
-        email: billingDetails.email,
         phone: billingDetails.phone,
         addressLine1: billingDetails.addressLine1,
         addressLine2: billingDetails.addressLine2 || "",
@@ -167,8 +165,6 @@ export const POST = async (req: NextRequest) => {
       },
       create: {
         userId,
-        fullName: billingDetails.name,
-        email: billingDetails.email,
         phone: billingDetails.phone,
         addressLine1: billingDetails.addressLine1,
         addressLine2: billingDetails.addressLine2 || "",

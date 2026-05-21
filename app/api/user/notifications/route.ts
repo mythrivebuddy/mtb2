@@ -5,7 +5,7 @@ import { checkRole } from "@/lib/utils/auth";
 // GET: Get all notifications for the user
 export async function GET() {
   try {
-    const session = await checkRole("USER");
+    const session = await checkRole(["USER", "ADMIN"]);
     const userId = session.user.id;
 
     // Use transaction to fetch notifications and mark them as read

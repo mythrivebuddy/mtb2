@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
+  NotificationType,
   PaymentStatus,
   PlanInterval,
   PlanUserType,
@@ -13,6 +14,7 @@ import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 import { verifySignature } from "@/lib/payment/payment.utils";
 import { inngest } from "@/lib/inngest";
 import { createAffiliateEarningForSubscription } from "@/lib/affiliate/affiliateEarning";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 /* ------------------------------------------------------------------ */
 /* Types */
@@ -207,7 +209,7 @@ async function grantProgramAccess(
               gstAmount: paymentOrder.gstAmount,
               discountApplied: paymentOrder.discountApplied ?? 0,
               currency: paymentOrder.currency ?? "INR",
-              contextType: "SUBSCRIPTION", 
+              contextType: "SUBSCRIPTION",
             },
             isAdmin: true,
           });
@@ -215,6 +217,28 @@ async function grantProgramAccess(
             id: `invoice-${paymentOrderId}`,
             name: "invoice/send",
             data: { orderId: paymentOrderId },
+          });
+          await safeInngestSend({
+            name: "notification/send",
+            data: {
+              types: [NotificationType.SUBSCRIPTION_PURCHASED_ADMIN], // 👈 create if not exists
+              actorId: purchase.userId,
+
+              sendToAdmin: true,
+              sendToUser: false,
+              sendEmailAdmin: true,
+
+              billingType: "CMP", // ✅ IMPORTANT
+
+              context: {
+                userName: purchase.user.name,
+                userId: purchase.user.id,
+
+                planName: purchase.plan.name,
+                amountSection: `for ${purchase.totalAmount ?? 0}`,
+                currency: purchase.currency ?? "INR",
+              },
+            },
           });
         }
       }

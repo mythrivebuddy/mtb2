@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useServerSort } from "@/hooks/use-server-sort";
+import SortIndicator from "@/components/common/SortIndicator";
 
 // ✅ Group Type
 type AccountabilityGroup = {
@@ -60,7 +62,7 @@ export default function AccountabilityHubAdminPage() {
   const [selectedGroupStatus, setSelectedGroupStatus] = useState<
     "block" | "unblock" | null
   >(null);
-
+  const { sortBy, sortOrder, handleSort } = useServerSort("createdAt");
   // ✅ Debounce Search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -72,13 +74,26 @@ export default function AccountabilityHubAdminPage() {
 
   // ✅ Fetch Groups
   const { data, isLoading, refetch } = useQuery<GroupsApiResponse>({
-    queryKey: ["accountabilityGroupsForAdmin", page, debouncedSearch],
+    queryKey: [
+      "accountabilityGroupsForAdmin",
+      page,
+      debouncedSearch,
+      sortBy,
+      sortOrder,
+    ],
     queryFn: async () => {
-      const res = await axios.get(
-        `/api/admin/accountabilty-hub-admin?page=${page}&pageSize=${pageSize}&search=${debouncedSearch}`
-      );
+      const res = await axios.get(`/api/admin/accountabilty-hub-admin`, {
+        params: {
+          page,
+          pageSize,
+          search: debouncedSearch,
+          sortBy,
+          sortOrder,
+        },
+      });
       return res.data;
     },
+    staleTime: 5 * 60 * 1000,
     placeholderData: (prev) => prev,
   });
 
@@ -103,7 +118,7 @@ export default function AccountabilityHubAdminPage() {
     mutationFn: async () => {
       if (!selectedGroupId) return;
       return axios.patch(
-        `/api/accountability-hub/groups/block-group?groupId=${selectedGroupId}`
+        `/api/accountability-hub/groups/block-group?groupId=${selectedGroupId}`,
       );
     },
     onSuccess: async (res) => {
@@ -123,6 +138,11 @@ export default function AccountabilityHubAdminPage() {
   });
   const getSelectedGroupName = () => {
     return groups.find((g) => g.id === selectedGroupId)?.name || "this group";
+  };
+
+  const handleSortWithReset = (field: string) => {
+    setPage(1);
+    handleSort(field);
   };
 
   const groups = data?.groups ?? [];
@@ -162,10 +182,46 @@ export default function AccountabilityHubAdminPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead
+                onClick={() => handleSortWithReset("name")}
+                className="cursor-pointer"
+              >
+                <div className="flex items-center gap-1">
+                  Name
+                  <SortIndicator
+                    field="name"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
               <TableHead className="text-center">Created By</TableHead>
-              <TableHead className="text-center">Members</TableHead>
-              <TableHead className="text-center">Created</TableHead>
+              <TableHead
+                onClick={() => handleSortWithReset("memberCount")}
+                className="cursor-pointer text-center"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  Members
+                  <SortIndicator
+                    field="memberCount"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
+              <TableHead
+                onClick={() => handleSortWithReset("createdAt")}
+                className="cursor-pointer text-center"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  Created
+                  <SortIndicator
+                    field="createdAt"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
               <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -230,7 +286,7 @@ export default function AccountabilityHubAdminPage() {
                       onClick={() =>
                         window.open(
                           `/dashboard/accountability-hub/create?groupId=${g.id}`,
-                          "_blank"
+                          "_blank",
                         )
                       }
                       className={
@@ -263,7 +319,7 @@ export default function AccountabilityHubAdminPage() {
                       onClick={() => {
                         setSelectedGroupId(g.id);
                         setSelectedGroupStatus(
-                          g.isBlocked ? "unblock" : "block"
+                          g.isBlocked ? "unblock" : "block",
                         );
                         setBlockDialogOpen(true);
                       }}

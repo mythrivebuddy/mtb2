@@ -1,11 +1,11 @@
 // add-items/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
+import { NotificationType } from "@prisma/client";
 
 // POST /api/user/store/items/add-items
 export async function POST(request: NextRequest) {
@@ -18,29 +18,44 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
 
-    const name          = formData.get("name") as string;
-    const category      = formData.get("category") as string;
-    const basePrice     = parseFloat(formData.get("basePrice") as string);
-    const monthlyPrice  = parseFloat(formData.get("monthlyPrice") as string) || 0;
-    const yearlyPrice   = parseFloat(formData.get("yearlyPrice") as string) || 0;
-    const lifetimePrice = parseFloat(formData.get("lifetimePrice") as string) || 0;
-    const imageFile     = formData.get("image") as File;
-    const downloadFile  = formData.get("download") as File | null;
+    const name = formData.get("name") as string;
+    const category = formData.get("category") as string;
+    const basePrice = parseFloat(formData.get("basePrice") as string);
+    const monthlyPrice =
+      parseFloat(formData.get("monthlyPrice") as string) || 0;
+    const yearlyPrice = parseFloat(formData.get("yearlyPrice") as string) || 0;
+    const lifetimePrice =
+      parseFloat(formData.get("lifetimePrice") as string) || 0;
+    const imageFile = formData.get("image") as File;
+    const downloadFile = formData.get("download") as File | null;
 
     // ✅ Updated to include GP currency
     const rawCurrency = (formData.get("currency") as string) || "INR";
-    const currency    = ["USD", "INR", "GP"].includes(rawCurrency) ? rawCurrency : "INR";
+    const currency = ["USD", "INR", "GP"].includes(rawCurrency)
+      ? rawCurrency
+      : "INR";
 
     if (!name || !category || !imageFile || isNaN(basePrice)) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
-    const imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
+    const imageUrl = await handleSupabaseImageUpload(
+      imageFile,
+      "store-images",
+      "store-images",
+    );
 
     let downloadUrl: string | undefined;
 
     if (downloadFile && downloadFile.size > 0) {
-      downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
+      downloadUrl = await handleSupabaseImageUpload(
+        downloadFile,
+        "store-images",
+        "store-images",
+      );
     }
 
     const item = await prisma.item.create({
@@ -59,18 +74,46 @@ export async function POST(request: NextRequest) {
         createdByRole: "USER",
       },
       select: {
-        id:            true,
-        name:          true,
-        categoryId:    true,
-        basePrice:     true,
-        monthlyPrice:  true,
-        yearlyPrice:   true,
+        id: true,
+        name: true,
+        categoryId: true,
+        basePrice: true,
+        monthlyPrice: true,
+        yearlyPrice: true,
         lifetimePrice: true,
-        currency:      true,
-        imageUrl:      true,
-        downloadUrl:   true,
-        isApproved:    true,
-        createdAt:     true,
+        currency: true,
+        imageUrl: true,
+        downloadUrl: true,
+        isApproved: true,
+        createdAt: true,
+      },
+    });
+
+    await safeInngestSend({
+      name: "notification/send",
+      data: {
+        types: [NotificationType.STORE_ITEM_CREATED_ADMIN],
+        actorId: session.user.id,
+        
+        // ✅ ONLY ADMIN
+        sendToUser: false,
+        sendToAdmin: true,
+        sendToCoach: false,
+         sendEmailAdmin: true,
+         adminEntityType: "STORE",
+        context: {
+          userName: session.user.name ?? "A user",
+          userId: session.user.id, 
+          itemName: item.name,
+          itemId: item.id,
+
+          amountSection:
+            currency === "GP"
+              ? ` for ${basePrice} GP`
+              : ` for ${basePrice} ${currency}`,
+              itemType: currency === "GP" ? "GP Item" : "Paid Item",
+                actionType: "created",
+        },
       },
     });
 
@@ -78,15 +121,18 @@ export async function POST(request: NextRequest) {
       {
         item: {
           ...item,
-          category:  item.categoryId,
+          category: item.categoryId,
           createdAt: item.createdAt.toISOString(),
         },
         message: "Item created successfully. Pending admin approval.",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error creating item:", error);
-    return NextResponse.json({ error: "Failed to create item" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create item" },
+      { status: 500 },
+    );
   }
 }

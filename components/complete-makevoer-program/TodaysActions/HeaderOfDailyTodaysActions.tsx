@@ -37,7 +37,7 @@ export default function HeaderOfDailyTodaysActions({isTodaySunday}:{isTodaySunda
         aria-label="Close"
         className="
           flex items-center justify-center
-          
+          dark:text-slate-950
         "
       >
         Close this page

@@ -15,12 +15,10 @@ export async function upsertBilling(
     userId: string,
     billing: BillingInput
 ) {
-    return prisma.billingInformation.upsert({
+    return prisma.userBillingInformation.upsert({
         where: { userId },
 
-        update: {
-            fullName: billing.name ?? "",
-            email: billing.email ?? "",
+        update: {     
             phone: billing.phone ?? null,
             addressLine1: billing.addressLine1,
             city: billing.city,
@@ -32,8 +30,6 @@ export async function upsertBilling(
 
         create: {
             userId,
-            fullName: billing.name ?? "",
-            email: billing.email ?? "",
             phone: billing.phone ?? null,
             addressLine1: billing.addressLine1,
             city: billing.city,

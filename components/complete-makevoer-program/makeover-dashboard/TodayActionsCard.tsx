@@ -75,7 +75,7 @@ const TodayActionsCard = ({
   };
   if (isLoading) {
     return (
-      <section className="lg:col-span-2 relative bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row overflow-hidden animate-pulse">
+      <section className="lg:col-span-2 relative bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row overflow-hidden animate-pulse">
         {/* Image skeleton */}
         <div className="sm:w-1/3 h-48 sm:h-auto bg-slate-200 dark:bg-slate-700" />
 

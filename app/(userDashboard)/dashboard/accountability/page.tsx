@@ -457,11 +457,11 @@ export default function AccountabilityHubHome() {
     );
 
   return (
-    <div className="w-full min-h-[calc(100vh-120px)] bg-dashboard p-4 sm:p-6 md:p-8">
+    <div className="w-full min-h-[calc(100vh-120px)] bg-dashboard dark:bg-slate-950 p-4 sm:p-6 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         <button
           onClick={() => router.push("/dashboard/accountability/home")}
-          className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+          className="flex items-center gap-2 text-gray-500 dark:text-gray-200 hover:text-gray-700 mb-4"
         >
           <ArrowLeft className="h-5 w-5" />
           <span>Back</span>
@@ -469,7 +469,7 @@ export default function AccountabilityHubHome() {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 dark:text-slate-200">
             Group Name: {group?.name}
           </h1>
           {group.description && (
@@ -512,7 +512,7 @@ export default function AccountabilityHubHome() {
           </Card>
 
           {/* Activity Feed */}
-          <Card className="rounded-3xl min-h-[200px] max-h-[400px] flex flex-col ">
+          <Card className="rounded-3xl min-h-[200px] max-h-[400px] dark:bg-slate-900 flex flex-col ">
             <CardHeader className="flex-shrink-0 border-b">
               <CardTitle className="text-lg">Activity Feed</CardTitle>
             </CardHeader>
@@ -534,7 +534,7 @@ export default function AccountabilityHubHome() {
         </div>
 
         {/* Actions */}
-        <Card className="rounded-3xl">
+        <Card className="rounded-3xl dark:bg-slate-900">
           <CardHeader>
             <CardTitle className="text-lg">Actions</CardTitle>
           </CardHeader>
@@ -668,7 +668,7 @@ export default function AccountabilityHubHome() {
         </Card>
 
         {/* Notes */}
-        <Card className="rounded-3xl">
+        <Card className="rounded-3xl dark:bg-slate-900">
           <CardHeader>
             <CardTitle className="text-lg">
               Group Notes & Notifications
@@ -705,9 +705,9 @@ export default function AccountabilityHubHome() {
 
             {isAdmin && (isEditingNotes || !group?.notes) && (
               <>
-                <div className="relative">
+                <div className="relative dark:bg-slate-900">
                   {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute bottom-full left-0 right-0 mb-2 z-50 max-h-60 overflow-y-auto rounded-md border bg-white shadow-md p-1">
+                    <div className="absolute bottom-full left-0 right-0 mb-2 z-50 max-h-60 overflow-y-auto rounded-md border bg-white dark:bg-slate-900 shadow-md p-1">
                       {suggestions.map((suggestion, index) => (
                         <button
                           key={suggestion.id}
@@ -718,7 +718,7 @@ export default function AccountabilityHubHome() {
                           }}
                           onMouseEnter={() => setActiveSuggestionIndex(index)}
                           className={`flex w-full items-center gap-2 px-2 py-1.5 text-sm rounded ${
-                            index === activeSuggestionIndex ? "bg-gray-100" : ""
+                            index === activeSuggestionIndex ? "bg-gray-100 dark:bg-slate-950" : ""
                           }`}
                         >
                           <img
@@ -739,7 +739,7 @@ export default function AccountabilityHubHome() {
 
                   <Textarea
                     ref={textareaRef}
-                    className="w-full h-40"
+                    className="w-full h-40 dark:bg-slate-950 dark:text-white dark:border-none"
                     placeholder="Write notes... Use @ to mention"
                     value={notes}
                     onChange={handleNotesChange}
@@ -781,7 +781,7 @@ export default function AccountabilityHubHome() {
 
         {/* Admin Actions */}
         {isAdmin && (
-          <Card className="rounded-3xl">
+          <Card className="rounded-3xl dark:bg-slate-900">
             <CardHeader>
               <CardTitle className="text-lg">Admin Actions</CardTitle>
             </CardHeader>

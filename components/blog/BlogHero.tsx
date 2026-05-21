@@ -57,7 +57,7 @@ const BlogHero: React.FC = () => {
     Array(postsPerPage)
       .fill(0)
       .map((_, i) => (
-        <div key={i} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden">
           <div className="relative h-48">
             <Skeleton className="h-full w-full" />
           </div>
@@ -87,7 +87,7 @@ const BlogHero: React.FC = () => {
       <div className="relative w-full mb-4">
         <button
           onClick={() => scrollBy(-300)}
-          className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-200"
+          className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 p-2 rounded-full shadow hover:bg-gray-200 dark:hover:bg-slate-700"
         >
           <ChevronLeft />
         </button>
@@ -105,7 +105,7 @@ const BlogHero: React.FC = () => {
                 className={`px-4 py-2 rounded-full text-sm ${
                   selectedCategory === cat
                     ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
+                    : "bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700"
                 }`}
               >
                 {cat}
@@ -115,7 +115,7 @@ const BlogHero: React.FC = () => {
         </div>
         <button
           onClick={() => scrollBy(300)}
-          className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-200"
+          className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 p-2 rounded-full shadow hover:bg-gray-200 dark:hover:bg-slate-700"
         >
           <ChevronRight />
         </button>
@@ -143,7 +143,7 @@ const BlogHero: React.FC = () => {
 
       {/* Error */}
       {isError && (
-        <div className="text-center mt-6 text-red-500">
+        <div className="text-center mt-6 text-red-500 dark:text-red-400">
           Error fetching blogs. Please try again later.
         </div>
       )}

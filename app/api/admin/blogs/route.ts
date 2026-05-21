@@ -1,14 +1,9 @@
 import { prisma } from "@/lib/prisma";
-// import { supabaseClient } from "@/lib/supabase"; // Fixed: Use named import
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 
-import { createClient } from "@supabase/supabase-js";
-
-export const supabaseClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // ✅ use the service role key on server routes
-);
 // Create a new blog post
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +23,7 @@ export async function POST(req: NextRequest) {
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `blog-images/${fileName}`;
 
-      const { error: uploadError } = await supabaseClient.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from("blog-images")
         .upload(filePath, file);
 
@@ -37,12 +32,12 @@ export async function POST(req: NextRequest) {
         throw new Error(`Supabase Upload Error: ${uploadError.message}`);
       }
 
-      const { data } = supabaseClient.storage
+      const { data } = supabaseAdmin.storage
         .from("blog-images")
         .getPublicUrl(filePath);
 
       if (!data || !data.publicUrl) {
-          throw new Error("Could not get public URL for the uploaded image.");
+        throw new Error("Could not get public URL for the uploaded image.");
       }
 
       imageUrl = data.publicUrl;
@@ -62,13 +57,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { message: "Blog created", blog },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error creating blog:", error);
     return NextResponse.json(
       { error: "Failed to create blog" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -81,7 +76,7 @@ export async function PUT(req: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "Blog ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -95,18 +90,29 @@ export async function PUT(req: NextRequest) {
 
     const existingBlog = await prisma.blog.findUnique({ where: { id } });
     if (!existingBlog) {
-        return NextResponse.json({ error: "Blog not found" }, { status: 404 });
+      return NextResponse.json({ error: "Blog not found" }, { status: 404 });
     }
 
     let imageUrl = existingBlog.image || "";
 
     // Check if a new image is provided
     if (file) {
+      if (existingBlog.image) {
+        try {
+          const url = new URL(existingBlog.image);
+          const path = decodeURIComponent(
+            url.pathname.split("/blog-images/")[1],
+          );
+          if (path)
+            await supabaseAdmin.storage.from("blog-images").remove([path]);
+        } catch {}
+      }
+
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `blog-images/${fileName}`;
 
-      const { error: uploadError } = await supabaseClient.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from("blog-images")
         .upload(filePath, file);
 
@@ -115,12 +121,12 @@ export async function PUT(req: NextRequest) {
         throw new Error(`Supabase Upload Error: ${uploadError.message}`);
       }
 
-      const { data } = supabaseClient.storage
+      const { data } = supabaseAdmin.storage
         .from("blog-images")
         .getPublicUrl(filePath);
 
       if (!data || !data.publicUrl) {
-          throw new Error("Could not get public URL for the uploaded image.");
+        throw new Error("Could not get public URL for the uploaded image.");
       }
       imageUrl = data.publicUrl;
     }
@@ -146,7 +152,7 @@ export async function PUT(req: NextRequest) {
     console.error("Error updating blog:", error);
     return NextResponse.json(
       { error: "Failed to update blog" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -160,7 +166,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     if (!id) {
       return NextResponse.json(
         { error: "Blog ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -172,13 +178,15 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
 
     // Remove image from Supabase if it exists
     if (blog.image) {
-        // Correctly extract the path from the full URL
-        const urlParts = blog.image.split('/');
-        const filePath = urlParts.slice(urlParts.indexOf('blog-images')).join('/');
-        
-        if (filePath) {
-             await supabaseClient.storage.from("blog-images").remove([filePath]);
-        }
+      // Correctly extract the path from the full URL
+      const urlParts = blog.image.split("/");
+      const filePath = urlParts
+        .slice(urlParts.indexOf("blog-images"))
+        .join("/");
+
+      if (filePath) {
+        await supabaseAdmin.storage.from("blog-images").remove([filePath]);
+      }
     }
 
     // Delete blog post from database
@@ -191,7 +199,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     console.error("Error deleting blog:", error);
     return NextResponse.json(
       { error: "Failed to delete blog" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

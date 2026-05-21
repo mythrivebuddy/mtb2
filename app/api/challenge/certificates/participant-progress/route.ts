@@ -25,7 +25,7 @@ type ParticipantProgress = {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await checkRole(["USER","ADMIN"]);
+    const session = await checkRole(["USER", "ADMIN"]);
     const userId = session.user.id;
 
     const { searchParams } = new URL(req.url);
@@ -37,6 +37,8 @@ export async function GET(req: NextRequest) {
 
     const fromParam = searchParams.get("from");
     const toParam = searchParams.get("to");
+    const sortBy = searchParams.get("sortBy") || "joinedAt";
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
 
     let fromDate: Date;
     let toDate: Date = new Date();
@@ -60,7 +62,7 @@ export async function GET(req: NextRequest) {
           creatorId: userId,
           startDate: { lte: toDate },
           endDate: { gte: fromDate },
-          joinMode:ChallengeJoinMode.MANUAL
+          joinMode: ChallengeJoinMode.MANUAL,
         },
         select: { id: true, title: true, startDate: true, endDate: true },
       });
@@ -308,6 +310,43 @@ export async function GET(req: NextRequest) {
         (p) => p.isCertificateIssued,
       );
     }
+    // ============================
+    // SORTING
+    // ============================
+    filteredParticipants.sort((a, b) => {
+      let valA: number | string;
+      let valB: number | string;
+
+      switch (sortBy) {
+        case "completionPercentage":
+          valA = a.completionPercentage;
+          valB = b.completionPercentage;
+          break;
+
+        case "joinedAt":
+          valA = new Date(a.joinedAt).getTime();
+          valB = new Date(b.joinedAt).getTime();
+          break;
+
+        case "lastActiveDate":
+          valA = new Date(a.lastActiveDate).getTime();
+          valB = new Date(b.lastActiveDate).getTime();
+          break;
+
+        case "name":
+          valA = a.name.toLowerCase();
+          valB = b.name.toLowerCase();
+          break;
+
+        default:
+          valA = new Date(a.joinedAt).getTime();
+          valB = new Date(b.joinedAt).getTime();
+      }
+
+      if (valA < valB) return sortOrder === "asc" ? -1 : 1;
+      if (valA > valB) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
     // ============================
     // PAGINATION
     // ============================

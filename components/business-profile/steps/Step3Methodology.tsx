@@ -48,13 +48,13 @@ export default function Step3Methodology({ next, back }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-8">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm p-8">
 
       {/* Heading */}
       <h2 className="text-2xl font-semibold mb-2">
         How Do You Work With Clients?
       </h2>
-      <p className="text-gray-500 mb-6">
+      <p className="text-gray-500 mb-6 dark:text-slate-200">
         Help potential clients understand your coaching style and structure.
       </p>
 
@@ -76,8 +76,8 @@ export default function Step3Methodology({ next, back }: Props) {
                 className={`p-4 border rounded-xl text-left transition
                   ${
                     selected
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200"
+                      ? "border-blue-500 bg-blue-50 dark:bg-slate-800"
+                      : "border-gray-200 dark:border-slate-700"
                   }
                 `}
               >
@@ -100,7 +100,7 @@ export default function Step3Methodology({ next, back }: Props) {
           <label className="font-medium">
             Describe Your Methodology <span className="text-red-500">*</span>
           </label>
-          <span className="text-sm text-gray-400">
+          <span className="text-sm text-gray-400 ">
             {methodology.length}/500
           </span>
         </div>
@@ -108,7 +108,7 @@ export default function Step3Methodology({ next, back }: Props) {
         <textarea
           {...register("methodology")}
           maxLength={500}
-          className="w-full border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl p-4 min-h-[140px]"
+          className="w-full border border-gray-200 dark:bg-slate-950 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl p-4 min-h-[140px]"
           placeholder="Explain your coaching process step-by-step..."
         />
 
@@ -127,27 +127,27 @@ export default function Step3Methodology({ next, back }: Props) {
 
         <input
           {...register("toolsFrameworks")}
-          className="w-full border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl p-3"
+          className="w-full border border-gray-200 dark:bg-slate-950 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl p-3"
           placeholder="e.g., SMART Goals, CBT, OKRs..."
         />
       </div>
 
       {/* Bottom Info Cards */}
       <div className="grid md:grid-cols-2 gap-4 mb-10">
-        <div className="bg-indigo-50 p-4 rounded-xl">
-          <p className="font-medium text-indigo-700 mb-1">
+        <div className="bg-indigo-50 dark:bg-slate-950 p-4 rounded-xl">
+          <p className="font-medium text-indigo-700 dark:text-indigo-300 mb-1">
             🧠 Why This Matters
           </p>
-          <p className="text-sm text-indigo-600">
+          <p className="text-sm text-indigo-600 dark:text-indigo-400">
             Clients want clarity on how sessions are structured before committing.
           </p>
         </div>
 
-        <div className="bg-gray-50 p-4 rounded-xl">
-          <p className="font-medium text-gray-700 mb-1">
+        <div className="bg-gray-50 dark:bg-slate-950 p-4 rounded-xl">
+          <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">
             📈 Conversion Tip
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Clear processes increase booking rates by up to 40%.
           </p>
         </div>
@@ -158,7 +158,7 @@ export default function Step3Methodology({ next, back }: Props) {
         <button
           type="button"
           onClick={back}
-          className="px-5 py-2 rounded-lg border hover:bg-gray-100"
+          className="px-5 py-2 rounded-lg border light:hover:bg-gray-100"
         >
           Back
         </button>

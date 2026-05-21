@@ -40,16 +40,16 @@ export default function ProgressBar({ step, totalSteps = 7, onStepClick }: Props
 
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-sm font-medium text-gray-600">
+        <h3 className="text-sm font-medium text-gray-600 dark:text-slate-200">
           Step {step} of {totalSteps}
         </h3>
-        <span className="text-sm font-semibold text-blue-600">
+        <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
           {completionPercentage}% Complete
         </span>
       </div>
 
       {/* Progress Line */}
-      <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+      <div className="w-full bg-gray-200 dark:bg-slate-800 rounded-full h-2 mb-6">
         <div
           className="bg-blue-600 h-2 rounded-full transition-all duration-300"
           style={{ width: `${completionPercentage}%` }}
@@ -76,8 +76,8 @@ export default function ProgressBar({ step, totalSteps = 7, onStepClick }: Props
                     isCompleted
                       ? "bg-blue-600 text-white hover:bg-blue-700"
                       : isActive
-                      ? "bg-blue-100 text-blue-700 border border-blue-600"
-                      : "bg-gray-200 text-gray-500 hover:bg-gray-300"
+                      ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-600"
+                      : "bg-gray-200 dark:bg-slate-800 text-gray-500 hover:bg-gray-300 dark:text-slate-200"
                   }
                 `}
               >

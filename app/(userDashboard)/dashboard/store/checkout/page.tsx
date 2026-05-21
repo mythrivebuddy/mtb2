@@ -157,6 +157,8 @@ interface BillingFormProps {
 
 const BillingForm = ({ billing, onSave, isSaving, onCancel, showCancel }: BillingFormProps) => {
   const [form, setForm] = useState<BillingInfo>(billing);
+  const labelClass = "block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1";
+  const inputClass = "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder-slate-500";
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
 
@@ -170,37 +172,37 @@ const BillingForm = ({ billing, onSave, isSaving, onCancel, showCancel }: Billin
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-        <div className="flex items-center gap-2 mb-4 border-b pb-2 flex-wrap">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center gap-2 mb-4 border-b pb-2 flex-wrap dark:border-slate-700">
           <MapPin className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Billing Information</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Billing Information</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="col-span-full sm:col-span-1">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Full Name <span className="text-red-500">*</span></label>
+            <label className={labelClass}>Full Name <span className="text-red-500">*</span></label>
             <div className="relative">
               <UserIcon className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <input type="text" name="fullName" value={form.fullName} onChange={handleChange} className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border" placeholder="John Doe" required />
+              <input type="text" name="fullName" value={form.fullName} onChange={handleChange} className={`pl-9 ${inputClass}`} placeholder="John Doe" required />
             </div>
           </div>
           <div className="col-span-full sm:col-span-1">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Email Address <span className="text-red-500">*</span></label>
+            <label className={labelClass}>Email Address <span className="text-red-500">*</span></label>
             <div className="relative">
               <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <input type="email" name="email" value={form.email} onChange={handleChange} className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border" placeholder="john@example.com" required />
+              <input type="email" name="email" value={form.email} onChange={handleChange} className={`pl-9 ${inputClass}`} placeholder="john@example.com" required />
             </div>
           </div>
           <div className="col-span-full">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+            <label className={labelClass}>Phone Number (Optional)</label>
             <div className="relative">
               <Phone className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <input type="tel" name="phone" value={form?.phone} onChange={handleChange} className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border" placeholder="9876543210" />
+              <input type="tel" name="phone" value={form?.phone} onChange={handleChange} className={`pl-9 ${inputClass}`} placeholder="9876543210" />
             </div>
           </div>
           {/* GST NUMBER (OPTIONAL - INDIA ONLY) */}
           {form.country === "IN" && (
             <div className="col-span-full">
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className={labelClass}>
                 GST Number (Optional)
               </label>
 
@@ -210,45 +212,44 @@ const BillingForm = ({ billing, onSave, isSaving, onCancel, showCancel }: Billin
                 value={form.gstNumber || ""}
                 onChange={handleChange}
                 placeholder="22AAAAA0000A1Z5"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border uppercase"
+                className={`${inputClass} px-3 uppercase`}
               />
 
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
                 Enter GST number if you want GST invoice for business.
               </p>
             </div>
           )}
           <div className="col-span-full">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Address <span className="text-red-500">*</span></label>
-            <input type="text" name="addressLine1" value={form.addressLine1} onChange={handleChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border" placeholder="Street Address" required />
+            <label className={labelClass}>Address <span className="text-red-500">*</span></label>
+            <input type="text" name="addressLine1" value={form.addressLine1} onChange={handleChange} className={`${inputClass} px-3`} placeholder="Street Address" required />
           </div>
           <div className="col-span-full">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Address Line 2 (Optional)</label>
-            <input type="text" name="addressLine2" value={form.addressLine2} onChange={handleChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border" placeholder="Apartment, suite, unit, etc." />
+            <label className={labelClass}>Address Line 2 (Optional)</label>
+            <input type="text" name="addressLine2" value={form.addressLine2} onChange={handleChange} className={`${inputClass} px-3`} placeholder="Apartment, suite, unit, etc." />
           </div>
           <div className="col-span-full grid grid-cols-1 gap-2 md:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">City <span className="text-red-500">*</span></label>
-              <input type="text" name="city" value={form.city} onChange={handleChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border" required />
+              <label className={labelClass}>City <span className="text-red-500">*</span></label>
+              <input type="text" name="city" value={form.city} onChange={handleChange} className={`${inputClass} px-3`} required />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">State <span className="text-red-500">*</span></label>
-              <input type="text" name="state" value={form.state} onChange={handleChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border" required />
+              <label className={labelClass}>State <span className="text-red-500">*</span></label>
+              <input type="text" name="state" value={form.state} onChange={handleChange} className={`${inputClass} px-3`} required />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Postal Code <span className="text-red-500">*</span></label>
-              <input type="text" name="postalCode" value={form.postalCode} onChange={handleChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border" required />
+              <label className={labelClass}>Postal Code <span className="text-red-500">*</span></label>
+              <input type="text" name="postalCode" value={form.postalCode} onChange={handleChange} className={`${inputClass} px-3`} required />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Country <span className="text-red-500">*</span></label>
+              <label className={labelClass}>Country <span className="text-red-500">*</span></label>
               <div className="relative">
                 <Globe className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                <select name="country" value={form.country} onChange={handleChange} className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border bg-white">
+                <select name="country" value={form.country} onChange={handleChange} className={`pl-9 ${inputClass} bg-white dark:bg-slate-950`}>
                   <option value="IN">India</option>
                   <option value="US">United States</option>
-                  <option value="GB">United Kingdom</option>
-                  <option value="AU">Australia</option>
-                  <option value="CA">Canada</option>
+                  <option value="UK">United Kingdom</option>
+                 
                   <option value="OT">Other</option>
                 </select>
               </div>
@@ -260,7 +261,7 @@ const BillingForm = ({ billing, onSave, isSaving, onCancel, showCancel }: Billin
             {isSaving ? "Saving..." : <><Check className="w-4 h-4" /> Save Address</>}
           </button>
           {showCancel && onCancel && (
-            <button type="button" onClick={onCancel} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200">
+            <button type="button" onClick={onCancel} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
               <X className="w-4 h-4" /> Cancel
             </button>
           )}
@@ -271,21 +272,21 @@ const BillingForm = ({ billing, onSave, isSaving, onCancel, showCancel }: Billin
 };
 
 const BillingSummary = ({ billing, onEdit }: { billing: BillingInfo; onEdit: () => void }) => (
-  <div className="bg-white p-4 rounded-lg shadow">
+  <div className="bg-white p-4 rounded-lg shadow dark:border dark:border-slate-700 dark:bg-slate-900">
     <div className="flex justify-between items-start">
       <div className="space-y-0.5">
-        <h2 className="font-bold flex items-center gap-1">2. DELIVERY ADDRESS <span className="text-green-500">✓</span></h2>
-        <p className="text-gray-800 font-medium">{billing.fullName}</p>
-        <p className="text-gray-600 text-sm">
+        <h2 className="font-bold flex items-center gap-1 dark:text-slate-100">2. DELIVERY ADDRESS <span className="text-green-500">✓</span></h2>
+        <p className="text-gray-800 font-medium dark:text-slate-100">{billing.fullName}</p>
+        <p className="text-gray-600 text-sm dark:text-slate-400">
           {billing.addressLine1}{billing.addressLine2 ? `, ${billing.addressLine2}` : ""}, {billing.city}, {billing.state} — {billing.postalCode}, {billing.country}
         </p>
-        {billing.phone && <p className="text-gray-500 text-sm">📞 {billing.phone}</p>}
-        <p className="text-gray-500 text-sm">✉️ {billing.email}</p>
+        {billing.phone && <p className="text-gray-500 text-sm dark:text-slate-400">📞 {billing.phone}</p>}
+        <p className="text-gray-500 text-sm dark:text-slate-400">✉️ {billing.email}</p>
         {billing.gstNumber && (
-          <p className="text-gray-500 text-sm">GST: {billing.gstNumber}</p>
+          <p className="text-gray-500 text-sm dark:text-slate-400">GST: {billing.gstNumber}</p>
         )}
       </div>
-      <button onClick={onEdit} className="flex items-center gap-1 text-blue-600 font-medium text-sm hover:text-blue-800 shrink-0 sm:ml-4">
+      <button onClick={onEdit} className="flex items-center gap-1 text-blue-600 font-medium text-sm hover:text-blue-800 shrink-0 sm:ml-4 dark:text-blue-400 dark:hover:text-blue-300">
         <Pencil className="w-3.5 h-3.5" /> CHANGE
       </button>
     </div>
@@ -302,30 +303,30 @@ const CurrencyIcon = ({ currency, className }: { currency: string; className?: s
 };
 
 const GPBalanceBanner = ({ gpBalance, requiredGP, isInsufficient }: { gpBalance: number; requiredGP: number; isInsufficient: boolean }) => (
-  <div className={`rounded-xl border-2 p-4 ${isInsufficient ? "bg-red-50 border-red-400" : "bg-purple-50 border-purple-300"}`}>
+  <div className={`rounded-xl border-2 p-4 ${isInsufficient ? "bg-red-50 border-red-400 dark:bg-red-500/10 dark:border-red-500/60" : "bg-purple-50 border-purple-300 dark:bg-purple-500/10 dark:border-purple-500/50"}`}>
     <div className="flex items-start gap-3">
       <div className={`p-2 rounded-lg ${isInsufficient ? "bg-red-500" : "bg-purple-500"}`}>
         {isInsufficient ? <AlertTriangle className="w-5 h-5 text-white" /> : <Coins className="w-5 h-5 text-white" />}
       </div>
       <div className="flex-1">
-        <p className={`font-bold text-sm mb-1 ${isInsufficient ? "text-red-900" : "text-purple-900"}`}>
+        <p className={`font-bold text-sm mb-1 ${isInsufficient ? "text-red-900 dark:text-red-300" : "text-purple-900 dark:text-purple-300"}`}>
           {isInsufficient ? "⚠️ Insufficient GP Balance" : "✅ GP Balance Available"}
         </p>
         <div className="flex flex-wrap gap-4 text-sm">
-          <span className={`font-medium ${isInsufficient ? "text-red-800" : "text-purple-800"}`}>
+          <span className={`font-medium ${isInsufficient ? "text-red-800 dark:text-red-300" : "text-purple-800 dark:text-purple-300"}`}>
             Your Balance: <strong>{Math.floor(gpBalance)} GP</strong>
           </span>
-          <span className={`font-medium ${isInsufficient ? "text-red-800" : "text-purple-800"}`}>
+          <span className={`font-medium ${isInsufficient ? "text-red-800 dark:text-red-300" : "text-purple-800 dark:text-purple-300"}`}>
             Required: <strong>{Math.ceil(requiredGP)} GP</strong>
           </span>
           {isInsufficient && (
-            <span className="font-bold text-red-700">
+            <span className="font-bold text-red-700 dark:text-red-300">
               Short by: {Math.ceil(requiredGP) - Math.floor(gpBalance)} GP
             </span>
           )}
         </div>
         {isInsufficient && (
-          <p className="text-xs text-red-700 mt-2">
+          <p className="text-xs text-red-700 dark:text-red-300 mt-2">
             You don t have enough GP to complete this purchase. Earn more GP by completing activities on the platform.
           </p>
         )}
@@ -401,12 +402,13 @@ const CheckoutContent = () => {
 
   // ── useMutation ───────────────────────────────────────────────────────────
   const saveBillingMutation = useMutation({
+    
     mutationFn: async (data: BillingInfo) => {
-      const gst = data.gstNumber?.trim()
+       const gst = data.gstNumber?.trim()
 
-      if (data.country === "IN" && gst && !GST_REGEX.test(gst)) {
-        toast.error("Invalid GST Number format")
-        return;
+    if (data.country === "IN" && gst && !GST_REGEX.test(gst)) {
+      throw new Error("Invalid GST Number format");
+
       }
       const res = await axios.post("/api/user/store/items/checkout/billinginfo", data);
       return res.data.billingInfo as BillingInfo;
@@ -917,7 +919,7 @@ const CheckoutContent = () => {
 
   // completed everything
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="mb-3 mt-3 px-4">
         <Link href="/dashboard/store" className="bg-green-600 text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-green-700">
           Back to Growth Store
@@ -931,9 +933,9 @@ const CheckoutContent = () => {
           <div className="lg:col-span-2 space-y-4">
 
             {/* 1. Login */}
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h2 className="font-bold">1. LOGIN ✓</h2>
-              <p className="text-gray-600 text-sm mt-1">
+            <div className="bg-white p-4 rounded-lg shadow dark:border dark:border-slate-700 dark:bg-slate-900">
+              <h2 className="font-bold dark:text-slate-100">1. LOGIN ✓</h2>
+              <p className="text-gray-600 text-sm mt-1 dark:text-slate-400">
                 Signed in as <span className="font-medium">{session?.user?.name}</span> ({session?.user?.email})
               </p>
             </div>
@@ -941,7 +943,7 @@ const CheckoutContent = () => {
             {/* 2. Delivery Address */}
             {!hasBilling || isEditingBilling ? (
               <div className="space-y-2">
-                <p className="text-sm font-semibold text-gray-500 px-1">
+                <p className="text-sm font-semibold text-gray-500 px-1 dark:text-slate-400">
                   {isEditingBilling ? "2. DELIVERY ADDRESS — Edit" : "2. DELIVERY ADDRESS — Add your address to continue"}
                 </p>
                 <BillingForm
@@ -960,11 +962,11 @@ const CheckoutContent = () => {
             {/* 3. GP Balance — only for GP carts */}
             {(isGPCart || hasMixedGPAndMoney) && (
               <div className="space-y-2">
-                <p className="text-sm font-semibold text-gray-500 px-1">3. GP BALANCE</p>
+                <p className="text-sm font-semibold text-gray-500 px-1 dark:text-slate-400">3. GP BALANCE</p>
                 <GPBalanceBanner gpBalance={gpBalance} requiredGP={gpTotal} isInsufficient={isGPInsufficient} />
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-start gap-2">
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-start gap-2 dark:border-purple-500/40 dark:bg-purple-500/10">
                   <Info className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-purple-800 font-medium">
+                  <p className="text-xs text-purple-800 font-medium dark:text-purple-300">
                     GP items can only be purchased with GP. GP cannot be converted to INR or USD.
                   </p>
                 </div>
@@ -974,19 +976,19 @@ const CheckoutContent = () => {
 
 
             {/* Order Summary */}
-            <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
-              <h2 className="font-bold text-xl mb-5 flex items-center gap-2">
-                <span className="text-gray-400">{isGPCart ? "4" : isMixedCurrency ? "4" : "3"}.</span>
+            <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md dark:border dark:border-slate-700 dark:bg-slate-900">
+              <h2 className="font-bold text-xl mb-5 flex items-center gap-2 dark:text-slate-100">
+                <span className="text-gray-400 dark:text-slate-500">{isGPCart ? "4" : isMixedCurrency ? "4" : "3"}.</span>
                 ORDER SUMMARY
               </h2>
 
               {selectedCurrency && isMixedCurrency && selectedCurrency !== "GP" && (
-                <div className="mb-5 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4">
+                <div className="mb-5 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4 dark:from-green-500/10 dark:to-emerald-500/10 dark:border-green-500/40">
                   <div className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-bold text-green-900 mb-1">Paying in {selectedCurrency}</p>
-                      <p className="text-sm text-green-800">All prices converted using rate: 1 USD = ₹{usdToInrRate?.toFixed(2)}</p>
+                      <p className="font-bold text-green-900 mb-1 dark:text-green-300">Paying in {selectedCurrency}</p>
+                      <p className="text-sm text-green-800 dark:text-green-300">All prices converted using rate: 1 USD = ₹{usdToInrRate?.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>
@@ -1006,7 +1008,7 @@ const CheckoutContent = () => {
                   const isGP = originalCurrency === "GP";
 
                   return (
-                    <div key={item.id} className="flex flex-col sm:flex-row gap-4 pb-5 border-b border-gray-200 last:border-b-0">
+                    <div key={item.id} className="flex flex-col sm:flex-row gap-4 pb-5 border-b border-gray-200 last:border-b-0 dark:border-slate-700">
                       <div className="relative flex-shrink-0">
                         <Image src={item.imageUrl} alt={item.name} width={120} height={120} className="w-full h-full sm:w-28 sm:h-28 object-cover rounded-lg shadow-sm" />
                         <span className={`absolute -top-2 -left-2 inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full shadow-md border-2 ${isGP ? "bg-purple-500 text-white border-purple-600"
@@ -1019,31 +1021,31 @@ const CheckoutContent = () => {
                       </div>
 
                       <div className="flex-1">
-                        <h3 className="font-semibold text-base sm:text-lg mb-1">{item.name}</h3>
-                        <p className="text-sm text-gray-500 mb-3">{item.category.name} • Qty: {parsedCartItems[index].quantity}</p>
+                        <h3 className="font-semibold text-base sm:text-lg mb-1 dark:text-slate-100">{item.name}</h3>
+                        <p className="text-sm text-gray-500 mb-3 dark:text-slate-400">{item.category.name} • Qty: {parsedCartItems[index].quantity}</p>
 
                         <div className="space-y-2">
                           <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className={`text-2xl font-bold ${isGP ? "text-purple-700" : "text-gray-900"}`}>
+                            <span className={`text-2xl font-bold ${isGP ? "text-purple-700 dark:text-purple-300" : "text-gray-900 dark:text-slate-100"}`}>
                               {isGP ? `${Math.ceil(unitPrice)} GP` : `${displayData.symbol}${Number(unitPrice).toFixed(2)}`}
                             </span>
-                            <span className="text-sm text-gray-500">per item</span>
+                            <span className="text-sm text-gray-500 dark:text-slate-400">per item</span>
                           </div>
 
                           {isGP && (
-                            <div className="bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 flex items-center gap-2">
+                            <div className="bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 flex items-center gap-2 dark:border-purple-500/40 dark:bg-purple-500/10">
                               <GPIcon className="w-4 h-4 text-purple-600" />
-                              <p className="text-purple-800 font-medium text-xs">GP item — paid exclusively with Growth Points</p>
+                              <p className="text-purple-800 font-medium text-xs dark:text-purple-300">GP item — paid exclusively with Growth Points</p>
                             </div>
                           )}
 
                           {displayData.isConverted && !isGP && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 dark:border-blue-500/40 dark:bg-blue-500/10">
                               <div className="flex items-center gap-2 text-sm">
                                 <TrendingUp className="w-4 h-4 text-blue-600" />
                                 <div className="flex-1">
-                                  <p className="text-blue-900 font-medium">Converted from {originalCurrency}</p>
-                                  <div className="flex items-center gap-3 mt-1 text-xs text-blue-800">
+                                  <p className="text-blue-900 font-medium dark:text-blue-300">Converted from {originalCurrency}</p>
+                                  <div className="flex items-center gap-3 mt-1 text-xs text-blue-800 dark:text-blue-300">
                                     <span>Original: {getCurrencySymbol(originalCurrency)}{Number(originalUnitPrice).toFixed(2)}</span>
                                     <span className="text-blue-400">→</span>
                                     <span>Now: {displayData.symbol}{Number(unitPrice).toFixed(2)}</span>
@@ -1053,14 +1055,14 @@ const CheckoutContent = () => {
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                            <span className="text-sm text-gray-600 font-medium">
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-700">
+                            <span className="text-sm text-gray-600 font-medium dark:text-slate-400">
                               Subtotal ({parsedCartItems[index].quantity} {parsedCartItems[index].quantity > 1 ? "items" : "item"}):
                             </span>
-                            <span className="text-lg font-bold text-gray-900">
+                            <span className="text-lg font-bold text-gray-900 dark:text-slate-100">
                               {displayData.hasDiscount ? (
                                 <>
-                                  <span className="line-through text-gray-400 mr-2">
+                                  <span className="line-through text-gray-400 dark:text-slate-500 mr-2">
                                     {displayData.symbol}{displayData.originalPrice.toFixed(2)}
                                   </span>
                                   <span className="text-green-600">
@@ -1086,8 +1088,8 @@ const CheckoutContent = () => {
           {/* ── Right Column ──────────────────────────────────── */}
           <div className="lg:col-span-1">
 
-            <div className="bg-white p-4 rounded-lg shadow mb-4">
-              <h3 className="font-semibold mb-2">Apply Coupon</h3>
+            <div className="bg-white p-4 rounded-lg shadow mb-4 dark:border dark:border-slate-700 dark:bg-slate-900">
+              <h3 className="font-semibold mb-2 dark:text-slate-100">Apply Coupon</h3>
 
               <div className="flex gap-2">
                 <input
@@ -1095,7 +1097,7 @@ const CheckoutContent = () => {
                   value={manualCouponCode}
                   onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
                   placeholder="Enter coupon code"
-                  className="border px-3 py-2 rounded-md w-full"
+                  className="border px-3 py-2 rounded-md w-full dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder-slate-500"
                 />
                 <Button
                   onClick={() => applyCouponMutation.mutate(manualCouponCode)}
@@ -1123,28 +1125,28 @@ const CheckoutContent = () => {
               )}
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-lg sticky top-4">
-              <h2 className="text-gray-700 font-bold text-lg mb-5 border-b pb-3">PRICE DETAILS</h2>
+            <div className="bg-white p-6 rounded-xl shadow-lg sticky top-4 dark:border dark:border-slate-700 dark:bg-slate-900">
+              <h2 className="text-gray-700 font-bold text-lg mb-5 border-b pb-3 dark:border-slate-700 dark:text-slate-100">PRICE DETAILS</h2>
 
               <div className="space-y-4 mb-5">
                 {singleTotal ? (
                   <>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-700 font-medium">
+                      <span className="text-gray-700 font-medium dark:text-slate-300">
                         Total ({parsedCartItems.reduce((sum, i) => sum + i.quantity, 0)} items)
                       </span>
-                      <span className={`text-xl font-bold ${singleTotal.currency === "GP" ? "text-purple-700" : "text-gray-900"}`}>
+                      <span className={`text-xl font-bold ${singleTotal.currency === "GP" ? "text-purple-700 dark:text-purple-300" : "text-gray-900 dark:text-slate-100"}`}>
                         {singleTotal.currency === "GP"
                           ? `${Math.ceil(singleTotal.total)} GP`
                           : `${getCurrencySymbol(singleTotal.currency)}${Number(singleTotal.total).toFixed(2)}`}
                       </span>
                     </div>
                     {isMixedCurrency && (
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <p className="text-xs font-semibold text-gray-600 mb-2">Original Breakdown:</p>
+                      <div className="bg-gray-50 rounded-lg p-3 dark:bg-slate-800">
+                        <p className="text-xs font-semibold text-gray-600 mb-2 dark:text-slate-300">Original Breakdown:</p>
                         <div className="space-y-1">
                           {Object.entries(totalsByCurrency).map(([currency, total]) => (
-                            <div key={currency} className="flex justify-between text-xs text-gray-600">
+                            <div key={currency} className="flex justify-between text-xs text-gray-600 dark:text-slate-400">
                               <span className="flex items-center gap-1"><CurrencyIcon currency={currency} className="w-3 h-3" />{currency}</span>
                               <span>{currency === "GP" ? `${Math.ceil(total)} GP` : `${getCurrencySymbol(currency)}${Number(total).toFixed(2)}`}</span>
                             </div>
@@ -1159,16 +1161,16 @@ const CheckoutContent = () => {
                       {Object.entries(totalsByCurrency).map(([currency, total]) => {
                         const count = itemCurrencies.filter((ic) => ic === currency).length;
                         return (
-                          <div key={currency} className="bg-gray-50 rounded-lg p-3">
+                          <div key={currency} className="bg-gray-50 rounded-lg p-3 dark:bg-slate-800">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                              <span className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-slate-300">
                                 <CurrencyIcon currency={currency} className="w-4 h-4" />
                                 {currency} Items ({count})
                               </span>
                             </div>
                             <div className="flex justify-between items-baseline">
-                              <span className="text-xs text-gray-500">Subtotal</span>
-                              <span className="text-lg font-bold text-gray-900">
+                              <span className="text-xs text-gray-500 dark:text-slate-400">Subtotal</span>
+                              <span className="text-lg font-bold text-gray-900 dark:text-slate-100">
                                 {currency === "GP" ? `${Math.ceil(total)} GP` : `${getCurrencySymbol(currency)}${Number(total).toFixed(2)}`}
                               </span>
                             </div>
@@ -1176,8 +1178,8 @@ const CheckoutContent = () => {
                         );
                       })}
                     </div>
-                    <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
-                      <p className="text-xs text-red-800 flex items-start gap-2 font-bold">
+                    <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3 dark:border-red-500/60 dark:bg-red-500/10">
+                      <p className="text-xs text-red-800 flex items-start gap-2 font-bold dark:text-red-300">
                         <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                         <span>Please select a payment currency above to continue</span>
                       </p>
@@ -1185,10 +1187,10 @@ const CheckoutContent = () => {
                   </>
                 ) : (
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-700 font-medium">
+                    <span className="text-gray-700 font-medium dark:text-slate-300">
                       Price ({parsedCartItems.reduce((sum, i) => sum + i.quantity, 0)} items)
                     </span>
-                    <span className={`text-xl font-bold ${uniqueCurrencies[0] === "GP" ? "text-purple-700" : "text-gray-900"}`}>
+                    <span className={`text-xl font-bold ${uniqueCurrencies[0] === "GP" ? "text-purple-700 dark:text-purple-300" : "text-gray-900 dark:text-slate-100"}`}>
                       {uniqueCurrencies[0] === "GP"
                         ? `${Math.ceil(Object.values(totalsByCurrency)[0])} GP`
                         : `${getCurrencySymbol(uniqueCurrencies[0])}${Number(Object.values(totalsByCurrency)[0]).toFixed(2)}`}
@@ -1196,8 +1198,8 @@ const CheckoutContent = () => {
                   </div>
                 )}
 
-                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                  <span className="text-gray-700 font-medium">Delivery Charges</span>
+                <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-slate-700">
+                  <span className="text-gray-700 font-medium dark:text-slate-300">Delivery Charges</span>
                   <span className="text-green-600 font-bold">FREE</span>
                 </div>
                 {appliedCoupon && selectedCurrency && (
@@ -1215,8 +1217,8 @@ const CheckoutContent = () => {
                 )}
                 {isIndianGSTApplicable && selectedCurrency && (
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-700 font-medium">GST (18%)</span>
-                    <span className="text-gray-900 font-bold">
+                    <span className="text-gray-700 font-medium dark:text-slate-300">GST (18%)</span>
+                    <span className="text-gray-900 font-bold dark:text-slate-100">
                       {selectedCurrency ? getCurrencySymbol(selectedCurrency) : " "}{gstAmount.toFixed(2)}
                     </span>
                   </div>
@@ -1232,10 +1234,10 @@ const CheckoutContent = () => {
               </div>
 
               {/* Total Payable */}
-              <div className="pt-4 border-t-2 border-gray-300 mb-5">
+              <div className="pt-4 border-t-2 border-gray-300 mb-5 dark:border-slate-700">
                 {singleTotal ? (
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-gray-900">Total Payable</span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-slate-100">Total Payable</span>
                     <span className={`text-2xl font-bold ${singleTotal.currency === "GP" ? "text-purple-600" : "text-green-600"}`}>
                       {singleTotal.currency === "GP"
                         ? `${Math.ceil(finalPayable)} GP`
@@ -1243,12 +1245,12 @@ const CheckoutContent = () => {
                     </span>
                   </div>
                 ) : isMixedCurrency ? (
-                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                    <p className="text-sm font-bold text-red-900 text-center">Select currency to see total</p>
+                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 dark:border-red-500/60 dark:bg-red-500/10">
+                    <p className="text-sm font-bold text-red-900 text-center dark:text-red-300">Select currency to see total</p>
                   </div>
                 ) : (
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-gray-900">Total Payable</span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-slate-100">Total Payable</span>
                     <span className={`text-2xl font-bold ${uniqueCurrencies[0] === "GP" ? "text-purple-600" : "text-green-600"}`}>
                       {uniqueCurrencies[0] === "GP"
                         ? `${Math.ceil(Object.values(totalsByCurrency)[0])} GP`
@@ -1259,10 +1261,10 @@ const CheckoutContent = () => {
               </div>
               {/* GP Section */}
               {(isGPCart || hasMixedGPAndMoney) && (
-                <div className="pt-4 border-t-2 border-purple-200 mt-4">
-                  <h3 className="font-bold text-purple-700 mb-2">GP PAYMENT</h3>
+                <div className="pt-4 border-t-2 border-purple-200 mt-4 dark:border-purple-500/40">
+                  <h3 className="font-bold text-purple-700 mb-2 dark:text-purple-300">GP PAYMENT</h3>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 dark:text-slate-300">
                     <div className="flex justify-between">
                       <span>GP Items Total</span>
                       <span className="font-bold">{Math.ceil(gpTotal + gpDiscount)} GP</span>
@@ -1275,7 +1277,7 @@ const CheckoutContent = () => {
                       </div>
                     )}
 
-                    <div className="flex justify-between font-bold text-purple-700 border-t pt-2">
+                    <div className="flex justify-between font-bold text-purple-700 border-t pt-2 dark:border-slate-700 dark:text-purple-300">
                       <span>GP Payable</span>
                       <span>{Math.ceil(gpTotal)} GP</span>
                     </div>
@@ -1284,12 +1286,12 @@ const CheckoutContent = () => {
               )}
               <div className="space-y-4">
                 {isGPInsufficient && (
-                  <div className="bg-red-50 border-2 border-red-400 rounded-lg p-3">
+                  <div className="bg-red-50 border-2 border-red-400 rounded-lg p-3 dark:border-red-500/60 dark:bg-red-500/10">
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm text-red-800 font-bold">Insufficient GP Balance</p>
-                        <p className="text-xs text-red-700 mt-0.5">
+                        <p className="text-sm text-red-800 font-bold dark:text-red-300">Insufficient GP Balance</p>
+                        <p className="text-xs text-red-700 mt-0.5 dark:text-red-300">
                           You need {Math.ceil(gpTotal)} GP but only have {Math.floor(gpBalance)} GP.
                         </p>
                       </div>
@@ -1298,40 +1300,40 @@ const CheckoutContent = () => {
                 )}
 
                 {!hasBilling && (
-                  <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-3">
+                  <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-3 dark:border-amber-500/60 dark:bg-amber-500/10">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-amber-800 font-medium">Please add your delivery address above to continue.</p>
+                      <p className="text-sm text-amber-800 font-medium dark:text-amber-300">Please add your delivery address above to continue.</p>
                     </div>
                   </div>
                 )}
 
                 {isEditingBilling && hasBilling && (
-                  <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-3">
+                  <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-3 dark:border-amber-500/60 dark:bg-amber-500/10">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-amber-800 font-medium">Save your address changes to continue.</p>
+                      <p className="text-sm text-amber-800 font-medium dark:text-amber-300">Save your address changes to continue.</p>
                     </div>
                   </div>
                 )}
 
                 {isMixedCurrency && !selectedCurrency && hasBilling && !isEditingBilling && (
-                  <div className="bg-red-50 border-2 border-red-400 rounded-lg p-3 animate-pulse">
+                  <div className="bg-red-50 border-2 border-red-400 rounded-lg p-3 animate-pulse dark:border-red-500/60 dark:bg-red-500/10">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-red-800 font-bold">Select a payment currency above to place your order.</p>
+                      <p className="text-sm text-red-800 font-bold dark:text-red-300">Select a payment currency above to place your order.</p>
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-start gap-3 text-gray-600 text-sm bg-gray-50 rounded-lg p-3">
+                <div className="flex items-start gap-3 text-gray-600 text-sm bg-gray-50 rounded-lg p-3 dark:bg-slate-800 dark:text-slate-400">
                   <Shield className="w-5 h-5 flex-shrink-0 text-green-600 mt-0.5" />
                   <p className="leading-relaxed">
-                    <span className="font-semibold text-gray-900">Safe and Secure Payments.</span> Easy returns. 100% Authentic products.
+                    <span className="font-semibold text-gray-900 dark:text-slate-100">Safe and Secure Payments.</span> Easy returns. 100% Authentic products.
                   </p>
                 </div>
 
-                <p className="text-xs text-gray-500 leading-relaxed">
+                <p className="text-xs text-gray-500 leading-relaxed dark:text-slate-400">
                   By continuing with the order, you confirm that you are above 18 years of age, and you agree to the My Thrive Buddy{" "}
                   <Link href="#" className="text-blue-600 hover:underline font-medium">Terms of Use</Link> and{" "}
                   <Link href="#" className="text-blue-600 hover:underline font-medium">Privacy Policy</Link>
@@ -1341,7 +1343,7 @@ const CheckoutContent = () => {
                   onClick={() => placeOrderMutation.mutate()}
                   disabled={!canProceed || placeOrderMutation.isPending}
                   className={`w-full py-4 text-white font-bold text-lg rounded-xl transition-all duration-200 ${!canProceed || placeOrderMutation.isPending
-                    ? "bg-gray-300 cursor-not-allowed"
+                    ? "bg-gray-300 cursor-not-allowed dark:bg-slate-700 dark:text-slate-400"
                     : "bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
                     }`}
                 >

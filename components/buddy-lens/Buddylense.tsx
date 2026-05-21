@@ -22,7 +22,7 @@ export default function BuddyLensDashboard() {
 
   return (
     <div className="max-w-8xl mx-auto px-4 py-6">
-      <Card className="rounded-2xl shadow-lg p-6 space-y-6">
+      <Card className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 space-y-6 dark:border dark:border-slate-700">
         <Tabs
           value={tabValue}
           onValueChange={(value) =>
@@ -36,11 +36,11 @@ export default function BuddyLensDashboard() {
           }
           className="w-full"
         >
-          <TabsList className="mb-4 grid w-full grid-cols-3 gap-2 bg-gray-100 p-1 rounded-xl">
+          <TabsList className="mb-4 grid w-full grid-cols-3 gap-2 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
             <TabsTrigger
               value="my-requests"
               className="w-full py-2 rounded-lg bg-blue-500 text-white font-medium transition-all 
-                data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:border data-[state=active]:border-blue-600"
+                data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:border data-[state=active]:border-blue-600 data-[state=inactive]:bg-blue-500 data-[state=inactive]:text-white dark:data-[state=active]:bg-slate-900 dark:data-[state=active]:text-blue-400 dark:data-[state=active]:border-blue-400"
             >
               My Request(s)
             </TabsTrigger>
@@ -48,7 +48,7 @@ export default function BuddyLensDashboard() {
             <TabsTrigger
               value="my-claims"
               className="w-full py-2 rounded-lg bg-blue-500 text-white font-medium transition-all 
-                data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:border data-[state=active]:border-blue-600"
+                data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:border data-[state=active]:border-blue-600 data-[state=inactive]:bg-blue-500 data-[state=inactive]:text-white dark:data-[state=active]:bg-slate-900 dark:data-[state=active]:text-blue-400 dark:data-[state=active]:border-blue-400"
             >
               My Claim(s)
             </TabsTrigger>
@@ -56,7 +56,7 @@ export default function BuddyLensDashboard() {
             <TabsTrigger
               value="available request"
               className="w-full py-2 rounded-lg bg-blue-500 text-white font-medium transition-all 
-                data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:border data-[state=active]:border-blue-600"
+                data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:border data-[state=active]:border-blue-600 data-[state=inactive]:bg-blue-500 data-[state=inactive]:text-white dark:data-[state=active]:bg-slate-900 dark:data-[state=active]:text-blue-400 dark:data-[state=active]:border-blue-400"
             >
               Available Request(s)
             </TabsTrigger>

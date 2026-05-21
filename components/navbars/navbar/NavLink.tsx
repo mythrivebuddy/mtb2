@@ -23,7 +23,7 @@ export const NavLink = ({
     <Link
       href={href}
       className={cn(
-        "text-[#333333] hover:text-[#1E2875] text-[16px]",
+        "text-[#333333] hover:text-[#1E2875] text-[16px] dark:text-slate-300 dark:hover:text-brand",
         className,
         isActive && activeClassName
       )}

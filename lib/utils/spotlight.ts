@@ -1,9 +1,8 @@
-import { SpotlightStatus } from "@prisma/client";
+import { NotificationType, SpotlightStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { format } from "date-fns";
-import { createSpotlightActiveNotification } from "./notifications";
-import { sendPushNotificationToUser } from "./pushNotifications"; // Add this import
+import { safeInngestSend } from "./inngest/utils";
 
 const SPOTLIGHT_EXPIREY_MS = 24 * 60 * 60 * 1000;
 // const SPOTLIGHT_EXPIREY_MS = 60 * 1000; //for dev seted to 1 min
@@ -32,22 +31,24 @@ export async function activateNextSpotlight() {
         expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS),
       },
     });
-
-    // Send both in-app and push notifications
-    await Promise.all([
-      // In-app notification
-      createSpotlightActiveNotification(nextSpotlight.userId),
-      // Push notification
-      sendPushNotificationToUser(
-        nextSpotlight.userId,
-        "Spotlight Active",
-        "Your spotlight is now active and visible to other users!",
-        { url: "/dashboard" }
-      ),
-    ]);
-
     const user = await prisma.user.findUnique({
       where: { id: nextSpotlight.userId },
+    });
+    await safeInngestSend({
+      name: "notification/send",
+      data: {
+        types: [NotificationType.SPOTLIGHT_ACTIVE],
+        actorId: nextSpotlight.userId,
+
+        context: {
+          spotlightId: nextSpotlight.id,
+          userName: user?.name || "User",
+        },
+
+        sendToUser: true,
+        sendToAdmin: true,
+        sendToCoach: false,
+      },
     });
 
     if (user?.email && user.name && updatedSpotlight.activatedAt) {
@@ -62,7 +63,7 @@ export async function activateNextSpotlight() {
       });
     } else {
       console.warn(
-        "Missing user info or activatedAt date for spotlight email."
+        "Missing user info or activatedAt date for spotlight email.",
       );
     }
   }
@@ -103,8 +104,6 @@ export async function checkAndRotateSpotlight() {
           expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS),
         },
       });
-      
     }
   }
 }
-

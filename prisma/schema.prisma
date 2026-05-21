@@ -63,6 +63,7 @@ model User {
   affiliatePercent   Float?
   affiliateCommissionType    AffiliateCommissionType?  // "MTB" | "SUBSCRIPTION"
   affiliateEnabledAt DateTime?
+  notificationMode NotificationMode @default(ALL_ON)
 
   ActivityFeedItem              ActivityFeedItem[]
   alignedActions                AlignedAction[]
@@ -153,12 +154,24 @@ model User {
 
  // Affiliate payouts
  affiliatePayouts  AffiliatePayout[] @relation("AffiliatePayouts")
+//  User financial details 
+ userFinancialDetails UserFinancialDetails?
+ notificationPreferences UserNotificationPreference[]
   @@index([name])
+  @@index([jpEarned])
+  @@index([jpBalance])
+  @@index([email])
+
 }
 enum AffiliateCommissionType {
   MTB
   SUBSCRIPTION
 }
+enum NotificationMode {
+  ALL_ON
+  ALL_OFF
+}
+
 model Transaction {
   id         String   @id @default(uuid())
   userId     String
@@ -289,6 +302,54 @@ model UserBusinessProfile {
   @@index([name, businessInfo, missionStatement, goals, achievements, keyOfferings])
 }
 
+model UserFinancialDetails {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+
+
+  // -------- INDIA --------
+  panNumber       String?
+
+  // -------- INTERNATIONAL TAX --------
+  taxId           String?
+  vatNumber       String?
+
+  // taxformtype for US
+  taxFormType     TaxFormType?
+
+  // -------- BANKING --------
+  accountHolderName String?
+  accountNumber     String?
+  ifscCode          String?
+  bankAccountType       BankAccountType?
+  upiId             String?
+
+  // -------- INTERNATIONAL PAYOUT --------
+  bankName          String?
+  swiftCode         String?
+  paypalId    String?
+
+  // -------- CONTACT --------
+  whatsappNumber String?
+
+  // -------- STATUS --------
+  isVerified Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+}
+enum TaxFormType {
+  W8BEN
+  W9
+}
+
+enum BankAccountType {
+  SAVINGS
+  CURRENT
+}
 model BlockedUsers {
   id        String   @id @default(cuid())
   userId    String   @unique
@@ -569,6 +630,16 @@ model UserNotification {
   createdAt DateTime @default(now())
   link      String?
   user      User     @relation("UserNotifications", fields: [userId], references: [id])
+}
+model UserNotificationPreference {
+  id      String           @id @default(cuid())
+  userId  String
+  type    NotificationType
+  enabled Boolean          @default(true)
+
+  user    User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type])
 }
 // legacy plan model do not touch
 
@@ -971,14 +1042,20 @@ model ChallengeCreatorSignature {
 model NotificationSettings {
   id                String           @id @default(uuid())
   notification_type NotificationType @unique
+  name              String?
   title             String
   message           String
   url               String?
+  audiences          NotificationAudience[]
   isDynamic         Boolean          @default(false)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 }
-
+enum NotificationAudience {
+  COACH      // coaches / creators
+  ADMIN        // admins only
+  USER           // NORMAL USER + COACH everyone EXCEPT ADMIN
+}
 model CompletionRecord {
   id          String   @id @default(cuid())
   date        DateTime @db.Date
@@ -1540,6 +1617,7 @@ enum EarningStatus {
   PENDING
   PAID
   REFUNDED
+  REVERSED
 }
 
 model CreatorPayout {
@@ -1715,12 +1793,12 @@ model BillingInformation {
 // userbilling for products
 
 model UserBillingInformation {
-  id           String   @id
+  id           String   @id @default(cuid())
   userId       String   @unique
   phone        String?
   gstNumber     String? 
   addressLine1 String
-  addressLine2 String?
+  addressLine2 String? 
   city         String
   state        String
   postalCode   String
@@ -2629,6 +2707,41 @@ enum NotificationType {
   CMP_ONBOARDING_PENDING
   MMP_DAILY_REMINDER
   AFFILIATE_APPROVED
+  CREATOR_PAYOUT_SUCCESS
+  STORE_PURCHASE
+  STORE_SALE
+  MMP_JOINED
+  MMP_ENROLLMENT_CREATOR
+  MMP_ENROLLMENT_ADMIN
+  CHALLENGE_JOINED
+  CHALLENGE_ENROLLMENT_CREATOR
+  CHALLENGE_ENROLLMENT_ADMIN
+  STORE_ORDER_ADMIN
+  ALIGNED_ACTION_REMINDER
+  ALIGNED_ACTION_START
+  ALIGNED_ACTION_END
+  ACCOUNTABILITY_NUDGE
+  ACCOUNTABILITY_MEMBER_ADDED
+  CHALLENGE_CHAT_MESSAGE
+  CHALLENGE_PENALTY
+  CHALLENGE_NEW_PARTICIPANT
+  ACCOUNTABILITY_NOTES_UPDATED
+  ACCOUNTABILITY_COMMENT_ON_GOAL
+  ACCOUNTABILITY_COMMENT_MENTION
+  ACCOUNTABILITY_COMMENT_REPLY
+  REMINDER
+  AFFILIATE_PAYOUT_SUCCESS
+  SPOTLIGHT_APPLIED_ADMIN
+  CHALLENGE_CREATED_ADMIN
+  MMP_PROGRAM_CREATED_ADMIN
+  STORE_ITEM_CREATED_ADMIN
+  SUBSCRIPTION_ACTIVATED_USER
+  SUBSCRIPTION_RENEWED_USER
+  SUBSCRIPTION_PURCHASED_ADMIN
+ SUBSCRIPTION_RENEWED_ADMIN
+ SPOTLIGHT_ACTIVE_ADMIN
+ MMP_PROGRAM_UPDATED_ADMIN
+ STORE_ITEM_UPDATED_ADMIN
 }
 
 enum BreathWorkType {

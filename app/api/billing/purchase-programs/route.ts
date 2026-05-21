@@ -124,11 +124,9 @@ export async function POST(req: Request) {
     const orderId = `prog_${internalId}_${Date.now()}`;
 
     // 5. Save billing details (FIXED!)
-    await prisma.billingInformation.upsert({
+    await prisma.userBillingInformation.upsert({
       where: { userId },
       update: {
-        fullName: billingDetails.name,
-        email: billingDetails.email,
         phone: billingDetails.phone,
         addressLine1: billingDetails.addressLine1,
         addressLine2: billingDetails.addressLine2 || "",
@@ -140,8 +138,6 @@ export async function POST(req: Request) {
       },
       create: {
         userId,
-        fullName: billingDetails.name,
-        email: billingDetails.email,
         phone: billingDetails.phone,
         addressLine1: billingDetails.addressLine1,
         addressLine2: billingDetails.addressLine2 || "",
@@ -169,7 +165,7 @@ export async function POST(req: Request) {
         purchase_id: internalId,
         payment_order_id: paymentOrder.id,
         return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/program-callback?purchase_id=${internalId}&order_id=${orderId}`,
-        notify_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/webhook/cashfree-programs`,
+        notify_url: `https://1d7d-2402-8100-386d-de01-3792-503a-3564-137e.ngrok-free.app/api/billing/webhook/cashfree-programs`,
       },
       order_note: `Program Purchase: ${plan.program.name}`,
     };

@@ -86,7 +86,7 @@ const ProsperityPage = () => {
 
       <div className="container mx-auto px-4 space-y-6">
         {/* Description Section */}
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader>
             <CardTitle>What is Prosperity Drops?</CardTitle>
           </CardHeader>
@@ -109,7 +109,7 @@ const ProsperityPage = () => {
         </Card>
 
         {/* Requirements Section */}
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Requirements</CardTitle>
           </CardHeader>
@@ -126,7 +126,7 @@ const ProsperityPage = () => {
         </Card>
 
         {/* Terms and Conditions */}
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Terms and Conditions</CardTitle>
           </CardHeader>
@@ -153,7 +153,7 @@ const ProsperityPage = () => {
         </Card>
 
         {/* Application Form */}
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Apply for Prosperity Drop</CardTitle>
             <CardDescription>
@@ -176,6 +176,7 @@ const ProsperityPage = () => {
                 placeholder="Describe your project and how the prosperity drop will help..."
                 error={errors.description}
                 {...register("description")}
+                className="dark:bg-black dark:border-none"
               />
 
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={mutation.isPending}>

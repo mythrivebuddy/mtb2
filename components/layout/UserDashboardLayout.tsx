@@ -77,7 +77,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div
-      className={`w-full min-h-screen  ${shouldUseInheritBg ? "bg-inherit" : "bg-dashboard"} max-w-full`}
+      className={`w-full min-h-screen  ${shouldUseInheritBg ? "bg-inherit" : "bg-dashboard dark:bg-slate-950"} max-w-full text-slate-950 dark:text-slate-100`}
     >
       {isLoggedIn && session.user.role === "USER" && (
         <div className="fixed top-0 left-0 w-64 z-20 m-3">

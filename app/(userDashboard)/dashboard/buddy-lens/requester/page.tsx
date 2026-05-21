@@ -171,8 +171,8 @@ export default function BuddyLensRequestPage() {
               message={upgradeModal.message}
               redirectToPricingUrl={`/pricing?ref=buddy-lens-request`}
             />
-      <Card className="rounded-xl shadow-md border border-gray-200 bg-white p-8 space-y-8">
-        <h2 className="text-3xl font-bold text-center text-gray-800">
+      <Card className="rounded-xl shadow-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 space-y-8">
+        <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-gray-200">
           📋 BuddyLens Review Request
         </h2>
         <form
@@ -181,7 +181,7 @@ export default function BuddyLensRequestPage() {
         >
           <InputWithLabel
             label={
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <LinkIcon className="w-4 h-4" />
                 Social Media / Website URL
               </div>
@@ -193,7 +193,7 @@ export default function BuddyLensRequestPage() {
           />
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               <Code2 className="w-4 h-4" />
               Select Domain
             </label>
@@ -203,8 +203,8 @@ export default function BuddyLensRequestPage() {
                   key={label}
                   className={`flex items-center justify-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-all ${
                     domain === label
-                      ? "bg-indigo-100 border-indigo-500 text-indigo-700 font-semibold"
-                      : "hover:bg-gray-100 text-gray-700"
+                      ? "bg-indigo-100 dark:bg-indigo-800 border-indigo-500 text-indigo-700 dark:text-indigo-400 font-semibold"
+                      : "hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300"
                   }`}
                 >
                   <input
@@ -219,10 +219,10 @@ export default function BuddyLensRequestPage() {
                       });
                       trigger("domain");
                     }}
-                    className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 hidden"
+                    className="h-4 w-4 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-slate-600 focus:ring-indigo-500 hidden"
                   />
                   {DOMAIN_ICONS[label]}
-                  <span className="text-sm text-center">{label}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
                 </label>
               ))}
             </div>
@@ -232,7 +232,7 @@ export default function BuddyLensRequestPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               <Clock className="w-4 h-4" />
               Select Tier
             </label>
@@ -247,9 +247,9 @@ export default function BuddyLensRequestPage() {
                     type="radio"
                     {...register("tier")}
                     value={value}
-                    className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    className="h-4 w-4 text-indigo-600 dark:text-indigo-400 border-gray-300 dark:border-slate-600 focus:ring-indigo-500"
                   />
-                  <span className="text-sm text-gray-700">{label}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
                 </label>
               ))}
             </div>
@@ -260,7 +260,7 @@ export default function BuddyLensRequestPage() {
 
           {domain && (
             <div className="space-y-4">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <FileQuestion className="w-4 h-4" />
                 Choose Questions
               </label>
@@ -288,7 +288,7 @@ export default function BuddyLensRequestPage() {
                         });
                         await trigger("questions");
                       }}
-                      className="w-full border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full border-gray-300 dark:bg-slate-950 dark:border-slate-600 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400"
                     >
                       <option value="">Select a question</option>
                       {domainQuestions.map((q) => (
@@ -342,7 +342,7 @@ export default function BuddyLensRequestPage() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800 font-semibold py-2 rounded-lg transition-all"
           >
             {isSubmitting ? "Submitting..." : "Submit Request"}
           </Button>

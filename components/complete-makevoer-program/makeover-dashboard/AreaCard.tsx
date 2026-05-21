@@ -28,7 +28,7 @@ export interface MakeoverPointsSummary {
 /* ---------------- Skeleton ---------------- */
 const AreaCardSkeleton = () => {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 py-2 px-5 animate-pulse">
+    <div className="bg-white rounded-xl border border-slate-200 py-2 px-5 animate-pulse dark:border-slate-700 dark:bg-slate-900">
       <div className="h-5 w-24 bg-slate-200 rounded mb-4" />
 
       <div className="flex justify-between items-start gap-6 mb-6">
@@ -94,7 +94,7 @@ const AreaCard = ({
     : "#";
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 py-2 px-5 hover:border-[#1183d4]/30 transition-colors group">
+    <div className="bg-white rounded-xl border border-slate-200 py-2 px-5 hover:border-[#1183d4]/30 transition-colors group dark:border-slate-700 dark:bg-slate-900">
       <StaticDataBadge
         label={label}
         className="w-fit relative -top-5 -left-8"
@@ -141,7 +141,7 @@ const AreaCard = ({
             </p>
             <p className="text-xl font-bold text-slate-900 dark:text-white">
               {points}{" "}
-              <span className="text-xs font-normal text-slate-500">pts</span>
+              <span className="text-xs font-normal text-slate-500 dark:text-slate-400">pts</span>
             </p>
           </div>
 

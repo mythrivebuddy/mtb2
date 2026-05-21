@@ -135,10 +135,12 @@ function ShareModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 sm:p-8"
+        className="bg-white dark:bg-slate-950 rounded-2xl shadow-xl w-full max-w-sm p-6 sm:p-8"
       >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-slate-800">Share</h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">
+            Share
+          </h2>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600"
@@ -302,7 +304,7 @@ function EnrollButton({
     <Link
       href={`/dashboard/membership/checkout?mmp_programId=${program.id}&context=MMP_PROGRAM`}
     >
-      <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95 text-sm">
+      <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl flex items-center gap-2 transition-all light:shadow-lg light:shadow-blue-200 active:scale-95 text-sm">
         Enroll Now <ArrowRight size={18} />
       </button>
     </Link>
@@ -391,7 +393,7 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
   const hasCert = !!program.certificateTitle;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 selection:bg-blue-100">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 selection:bg-blue-100 dark:selection:bg-blue-900">
       {/* Share Modal */}
       {isShareModalOpen && (
         <ShareModal
@@ -407,10 +409,13 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-slate-400 hover:text-slate-700 transition-colors group"
+            className="flex items-center gap-2 text-slate-400 dark:text-slate-200 transition-colors group"
           >
-            <div className="w-8 h-8 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center group-hover:shadow-md transition-all">
-              <ArrowLeft size={15} className="text-slate-500" />
+            <div className="w-8 h-8 bg-white dark:bg-slate-900 rounded-full shadow-sm border border-slate-100 flex items-center justify-center group-hover:shadow-md transition-all">
+              <ArrowLeft
+                size={15}
+                className="text-slate-500 dark:text-slate-200"
+              />
             </div>
             <span className="text-xs font-bold uppercase tracking-widest">
               Back
@@ -465,7 +470,7 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
                   ? "Daily Unlock"
                   : "Self-Guided Experience"}
               </div>
-              <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">
                 {program.name}
               </h1>
               {program.description && (
@@ -494,13 +499,13 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
             </div>
 
             {/* Stats Card */}
-            <div className="bg-white border border-slate-100 rounded-[24px] p-6 shadow-sm space-y-5">
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 rounded-[24px] p-6 shadow-sm space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-0.5">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter flex items-center gap-1.5">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-200 uppercase tracking-tighter flex items-center gap-1.5">
                     <Clock size={12} /> Duration
                   </p>
-                  <p className="text-lg font-bold text-slate-800">
+                  <p className="text-lg font-bold text-slate-800 dark:text-slate-200">
                     {program.durationDays ?? "?"} Days
                   </p>
                 </div>
@@ -527,7 +532,7 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                     Modules
                   </p>
-                  <p className="text-lg font-bold text-slate-800">
+                  <p className="text-lg font-bold text-slate-800 dark:text-slate-200">
                     {modules.length}
                   </p>
                 </div>
@@ -535,7 +540,7 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                     Unlock
                   </p>
-                  <p className="text-xs font-bold text-slate-700">
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
                     {program.unlockType === "daily"
                       ? "One per day"
                       : "All at once"}
@@ -548,7 +553,7 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                     Investment
                   </p>
-                  <p className="text-2xl font-black text-slate-900">
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">
                     {formatPrice(program.price, program.currency)}
                   </p>
                 </div>
@@ -571,18 +576,18 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
               <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-100">
                 <Target size={20} />
               </div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">{`What You'll Achieve`}</h2>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{`What You'll Achieve`}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {achievements.map((ach, idx) => (
                 <div
                   key={idx}
-                  className="bg-white border border-slate-100 p-5 rounded-2xl flex items-start gap-4 hover:border-blue-200 transition-colors group shadow-sm"
+                  className="bg-white dark:bg-slate-900 border border-slate-100 p-5 rounded-2xl flex items-start gap-4 hover:border-blue-200 transition-colors group shadow-sm"
                 >
                   <div className="mt-1 bg-blue-50 text-blue-600 p-1.5 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
                     <CheckCircle2 size={16} />
                   </div>
-                  <p className="text-sm font-bold text-slate-800 leading-relaxed">
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-relaxed">
                     {ach}
                   </p>
                 </div>
@@ -598,11 +603,11 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-100">
                   <LayoutPanelLeft size={20} />
                 </div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   Program Structure
                 </h2>
               </div>
-              <span className="text-xs font-bold text-slate-400 italic">
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-200 italic">
                 {modules.length} Modules •{" "}
                 {program.durationDays ?? modules.length} Days
               </span>
@@ -612,13 +617,13 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
               {modules.map((mod, idx) => (
                 <div
                   key={mod.id ?? idx}
-                  className="bg-white border border-slate-100 p-4 rounded-xl flex items-center justify-between group hover:shadow-sm transition-all"
+                  className="bg-white dark:bg-slate-900 border border-slate-100 p-4 rounded-xl flex items-center justify-between group hover:shadow-sm transition-all"
                 >
                   <div className="flex items-center gap-4">
                     <span className="text-[10px] font-black text-blue-300 group-hover:text-blue-600 transition-colors">
                       {String(idx + 1).padStart(2, "0")}
                     </span>
-                    <h4 className="text-sm font-bold text-slate-700">
+                    <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">
                       {mod.title}
                     </h4>
                   </div>

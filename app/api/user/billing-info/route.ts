@@ -7,11 +7,11 @@ export const GET = async () => {
     try {
         const session = await checkRole(["USER", "ADMIN"]);
         let billingInfo = null;
-        billingInfo = await prisma.billingInformation.findUnique({
+        billingInfo = await prisma.userBillingInformation.findUnique({
             where: { userId: session.user.id },
         });
         if (!billingInfo) {
-            billingInfo = await prisma.userBillingInformation.findUnique({
+            billingInfo = await prisma.billingInformation.findUnique({
                 where: { userId: session.user.id },
             });
         }

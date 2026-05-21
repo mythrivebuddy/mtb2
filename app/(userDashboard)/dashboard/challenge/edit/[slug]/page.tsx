@@ -142,31 +142,31 @@ export default function EditChallengePage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-slate-50">
+    <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950">
       <div className="w-full max-w-3xl mx-auto py-12 px-4">
         <div className="mb-8">
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex items-center gap-2 rounded-lg px-4 py-2 font-semibold text-slate-600 transition-colors hover:bg-slate-100"
+            className="flex items-center gap-2 rounded-lg px-4 py-2 font-semibold text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <ArrowLeft size={20} />
             <span>Back to My Challenges</span>
           </button>
         </div>
 
-        <div className="bg-white p-8 rounded-2xl shadow-lg">
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">
+        <div className="bg-white p-8 rounded-2xl shadow-lg dark:border dark:border-slate-700 dark:bg-slate-900">
+          <h1 className="text-3xl font-bold text-slate-800 mb-2 dark:text-slate-50">
             Edit Challenge
           </h1>
-          <p className="text-slate-500 mb-8">
+          <p className="text-slate-500 mb-8 dark:text-slate-400">
             Make changes to your challenge details below.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Form inputs remain the same */}
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
                 Title
               </label>
               <input
@@ -175,12 +175,12 @@ export default function EditChallengePage() {
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 required
               />
             </div>
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
                 Description
               </label>
               <textarea
@@ -189,13 +189,13 @@ export default function EditChallengePage() {
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 required
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="reward" className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="reward" className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
                   Reward (GP)
                 </label>
                 <input
@@ -204,12 +204,12 @@ export default function EditChallengePage() {
                   name="reward"
                   value={formData.reward}
                   onChange={handleChange}
-                  className="w-full p-3 border border-slate-300 rounded-lg"
+                  className="w-full p-3 border border-slate-300 rounded-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="penalty" className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="penalty" className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
                   Penalty (GP, optional)
                 </label>
                 <input
@@ -218,13 +218,13 @@ export default function EditChallengePage() {
                   name="penalty"
                   value={formData.penalty ?? ""}
                   onChange={handleChange}
-                  className="w-full p-3 border border-slate-300 rounded-lg"
+                  className="w-full p-3 border border-slate-300 rounded-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
                   Start Date
                 </label>
                 <input
@@ -233,12 +233,12 @@ export default function EditChallengePage() {
                   name="startDate"
                   value={formData.startDate}
                   onChange={handleChange}
-                  className="w-full p-3 border border-slate-300 rounded-lg"
+                  className="w-full p-3 border border-slate-300 rounded-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="endDate" className="block text-sm font-medium text-slate-700 mb-1">
+                <label htmlFor="endDate" className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
                   End Date
                 </label>
                 <input
@@ -247,13 +247,13 @@ export default function EditChallengePage() {
                   name="endDate"
                   value={formData.endDate}
                   onChange={handleChange}
-                  className="w-full p-3 border border-slate-300 rounded-lg"
+                  className="w-full p-3 border border-slate-300 rounded-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   required
                 />
               </div>
             </div>
             <div>
-              <label htmlFor="mode" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="mode" className="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-200">
                 Mode
               </label>
               <select
@@ -261,7 +261,7 @@ export default function EditChallengePage() {
                 name="mode"
                 value={formData.mode}
                 onChange={handleChange}
-                className="w-full p-3 border border-slate-300 rounded-lg bg-white"
+                className="w-full p-3 border border-slate-300 rounded-lg bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               >
                 <option value="PUBLIC">Public</option>
                 <option value="PERSONAL">Personal</option>

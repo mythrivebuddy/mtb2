@@ -99,7 +99,6 @@ export async function POST(req: NextRequest) {
         gstNumber: gst || null,
       },
       create: {
-        id: crypto.randomUUID(),
         userId: user.id,
         phone: phone || null,
         addressLine1,

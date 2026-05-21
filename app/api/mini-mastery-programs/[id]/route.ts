@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { NotificationType, Prisma } from "@prisma/client";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 // ─── Shared schemas ───────────────────────────────────────────────────────────
 
@@ -93,6 +94,7 @@ export async function GET(
 // ─── PATCH /api/mini-mastery-programs/[id] ───────────────────────────────────
 // Partial auto-save — har step pe call hota hai, loose validation
 // Status DRAFT rakhta hai jab tak final submit na ho
+
 
 export async function PATCH(
   req: NextRequest,
@@ -208,7 +210,35 @@ export async function PUT(
     },
     select: { id: true, name: true, status: true },
   });
+await safeInngestSend({
+  name: "notification/send",
+  data: {
+    types: [NotificationType.MMP_PROGRAM_UPDATED_ADMIN],
+    actorId: userId,
 
+    sendToUser: false,
+    sendToAdmin: true,
+    sendToCoach: false,
+    sendEmailAdmin: true,
+    adminEntityType: "MMP",
+    
+
+    context: {
+      userName: session.user.name ?? "A user",
+      userId: userId,
+      actionType: "updated",
+      programName: updated.name,
+      programId: updated.id,
+      programType:
+        data.price && data.price > 0 ? "Paid" : "Free",
+
+      amountSection:
+        data.price && data.price > 0
+          ? ` for ${data.price} ${data.currency}`
+          : "",
+    },
+  },
+});
   return NextResponse.json({
     message: "Program updated and submitted for review.",
     program: updated,

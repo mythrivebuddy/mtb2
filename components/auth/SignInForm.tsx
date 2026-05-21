@@ -182,7 +182,7 @@ function SignInFormContent() {
   const isLoading = signinMutation.isPending;
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-6 mt-4 sm:mt-8 shadow-sm">
+    <div className="bg-white dark:bg-gray-950  rounded-2xl p-4 sm:p-6 mt-4 sm:mt-8 shadow-sm">
       <div className="space-y-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Email */}
@@ -271,14 +271,14 @@ function SignInFormContent() {
             <label className="flex items-center space-x-2">
               <input
                 type="checkbox"
-                className="rounded border-gray-300"
+                className="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800"
                 {...register("rememberMe")}
               />
               <span>Remember me</span>
             </label>
             <a
               href="/forgot-password"
-              className="text-[#1E2875] hover:underline"
+     className="text-[#1E2875] dark:text-blue-400 hover:underline"
               target="_blank"
             >
               Forgot password?
@@ -287,7 +287,7 @@ function SignInFormContent() {
 
           <Button
             type="submit"
-            className="w-full h-12 text-[16px]"
+            className="w-full h-12 text-[16px] dark:text-black"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -301,28 +301,28 @@ function SignInFormContent() {
         {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center pointer-events-none">
-            <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-gray-200 dark:border-gray-700" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">or</span>
+          <span className="px-2 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">or</span>
           </div>
         </div>
 
         {/* Google sign-in */}
         <Button
           variant="outline"
-          className="w-full h-12 text-[16px] flex items-center justify-center space-x-2"
+          className="w-full h-12 text-[16px] flex items-center justify-center space-x-2 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
           onClick={handleGoogleLogin}
         >
           <GoogleIcon />
           <span>Sign in with Google</span>
         </Button>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
           Don&apos;t have an account?{" "}
           <Link
             href="/signup"
-            className="text-[#1E2875] hover:underline font-medium"
+           className="text-[#1E2875] dark:text-blue-400 hover:underline font-medium"
           >
             Sign up
           </Link>

@@ -142,16 +142,16 @@ export default function BuddyLensApprovePage() {
   if (requestsError) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold text-center">
+        <Card className="p-6 dark:bg-slate-900 dark:border-slate-700">
+          <h2 className="text-2xl font-semibold text-center dark:text-gray-200">
             Error Loading Requests
           </h2>
-          <p className="mt-2 text-center text-gray-600">
+          <p className="mt-2 text-center text-gray-600 dark:text-gray-400">
             {getAxiosErrorMessage(requestsError, "Failed to load request data")}
           </p>
           <Button
             onClick={() => router.push("/dashboard/buddy-lens/requester")}
-            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white"
+            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800"
           >
             Go to Buddy Lens
           </Button>
@@ -163,15 +163,15 @@ export default function BuddyLensApprovePage() {
   // Show UI for requests
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-3xl font-semibold text-center mb-6">
+      <h2 className="text-3xl font-semibold text-center mb-6 dark:text-gray-200">
         Pending Reviewer Claims
       </h2>
       {Array.isArray(requests) && requests.length === 0 && (
-        <Card className="p-6 text-center">
-          <p className="text-gray-600">No pending claims to approve.</p>
+        <Card className="p-6 text-center dark:bg-slate-900 dark:border-slate-700">
+          <p className="text-gray-600 dark:text-gray-400">No pending claims to approve.</p>
           <Button
             onClick={() => router.push("/dashboard/buddy-lens")}
-            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800"
           >
             Go to Buddy lens
           </Button>
@@ -183,7 +183,7 @@ export default function BuddyLensApprovePage() {
           {requests.map((request) => (
             <Card
               key={request.id}
-              className="rounded-2xl shadow-lg p-6 space-y-4"
+              className="rounded-2xl shadow-lg p-6 space-y-4 dark:bg-slate-900 dark:border-slate-700"
             >
               <p>
                 <strong>Reviewer Name:</strong> {request?.reviewer?.name}
@@ -205,7 +205,7 @@ export default function BuddyLensApprovePage() {
                   href={`/profile/${request.reviewerId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 flex items-center gap-1"
+                  className="text-blue-600 dark:text-blue-400 flex items-center gap-1"
                 >
                   {" "}
                   <span>
@@ -236,7 +236,7 @@ export default function BuddyLensApprovePage() {
                     })
                   }
                   disabled={isApproveLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-800"
                 >
                   Approve
                 </Button>
@@ -249,7 +249,7 @@ export default function BuddyLensApprovePage() {
                     })
                   }
                   disabled={isApproveLoading}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-700 dark:hover:bg-red-800"
                 >
                   Reject
                 </Button>
@@ -270,11 +270,11 @@ export default function BuddyLensApprovePage() {
           ))}
         </div>
       ) : (
-        <Card className="p-6 text-center">
-          <p className="text-gray-600">No pending claims to approve.</p>
+        <Card className="p-6 text-center dark:bg-slate-900 dark:border-slate-700">
+          <p className="text-gray-600 dark:text-gray-400">No pending claims to approve.</p>
           <Button
             onClick={() => router.push("/dashboard/buddy-lens")}
-            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800"
           >
             Go to Buddy lens
           </Button>

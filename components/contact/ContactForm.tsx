@@ -136,8 +136,8 @@ export default function ContactForm({type}:{type:string}) {
   return (
     <div className="max-w-3xl mx-auto p-6">
       {session?.user ? (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-          <div className="text-green-700 flex items-center justify-center gap-4 text-xs font-medium">
+        <div className="mb-4 p-3 bg-green-50 dark:bg-slate-900 border border-green-200 dark:border-green-800 rounded-md">
+          <div className="text-green-700 dark:text-green-400 flex items-center justify-center gap-4 text-xs font-medium">
             <span>
               • General{" "}
               <span className="font-bold">
@@ -161,8 +161,8 @@ export default function ContactForm({type}:{type:string}) {
           </div>
         </div>
       ) : (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-yellow-800">
+        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <p className="text-yellow-800 dark:text-yellow-300">
             Sign in to earn Growth Points for your feedback!
           </p>
         </div>
@@ -172,7 +172,7 @@ export default function ContactForm({type}:{type:string}) {
         <div className="space-y-2">
           <label
             htmlFor="name"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Name
           </label>
@@ -190,7 +190,7 @@ export default function ContactForm({type}:{type:string}) {
         <div className="space-y-2">
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Email
           </label>
@@ -218,11 +218,11 @@ export default function ContactForm({type}:{type:string}) {
                 id="general"
                 value="general"
                 {...register("subject")}
-                className="h-4 w-4 text-blue-600 border-gray-300"
+                className="h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-slate-600"
               />
               <label
                 htmlFor="general"
-                className="text-sm text-gray-700 whitespace-nowrap"
+                className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap"
               >
                 General Feedback
               </label>
@@ -234,11 +234,11 @@ export default function ContactForm({type}:{type:string}) {
                 id="feature"
                 value="feature"
                 {...register("subject")}
-                className="h-4 w-4 text-blue-600 border-gray-300"
+                className="h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-slate-600"
               />
               <label
                 htmlFor="feature"
-                className="text-sm text-gray-700 whitespace-nowrap"
+                className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap"
               >
                 Feature Request
               </label>
@@ -250,11 +250,11 @@ export default function ContactForm({type}:{type:string}) {
                 id="bug"
                 value="bug"
                 {...register("subject")}
-                className="h-4 w-4 text-blue-600 border-gray-300"
+                className="h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-slate-600"
               />
               <label
                 htmlFor="bug"
-                className="text-sm text-gray-700 whitespace-nowrap"
+                className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap"
               >
                 Bug Report
               </label>
@@ -265,11 +265,11 @@ export default function ContactForm({type}:{type:string}) {
                 id="affiliate"
                 value="affiliate"
                 {...register("subject")}
-                className="h-4 w-4 text-blue-600 border-gray-300"
+                className="h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-slate-600"
               />
               <label
                 htmlFor="affiliate"
-                className="text-sm text-gray-700 whitespace-nowrap"
+                className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap"
               >
                 Become an Affiliate
               </label>
@@ -284,7 +284,7 @@ export default function ContactForm({type}:{type:string}) {
         <div className="space-y-2">
           <label
             htmlFor="message"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Message
           </label>
@@ -293,7 +293,7 @@ export default function ContactForm({type}:{type:string}) {
             placeholder="Your Message"
             rows={6}
             {...register("message")}
-            className={errors.message ? "border-red-500" : ""}
+            className={`${errors.message} ? "border-red-500  " : "" dark:bg-black dark:border-none`}
           />
           {errors.message && (
             <p className="text-red-500 text-sm">{errors.message.message}</p>
@@ -316,7 +316,7 @@ export default function ContactForm({type}:{type:string}) {
 
         <Button
           type="submit"
-          className="w-full h-12 text-[16px]"
+          className="w-full h-12 text-[16px] dark:bg-white dark:text-slate-950"
           disabled={isLoading}
         >
           {isLoading ? "Sending..." : "Send Message"}

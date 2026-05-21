@@ -126,7 +126,7 @@ export default function EditableProgressCell({
   return (
     <div
       onClick={() => setIsEditing(true)}
-      className="cursor-pointer hover:bg-slate-50 p-2 rounded-md min-h-[40px]"
+      className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-950 p-2 rounded-md min-h-[40px]"
     >
       {isGoalPrivateToAdmin !== "PRIVATE" ? (
         value || <span className="text-muted-foreground">{placeholderText}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -10,12 +10,9 @@ import {
   IndianRupee,
   DollarSign,
   Search,
-  ChevronDown,
-  ChevronUp,
   TrendingUp,
   Wallet,
   Users,
-  ArrowUpDown,
   XCircle,
 } from "lucide-react";
 import {
@@ -56,58 +53,66 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { Pagination } from "@/components/ui/pagination";
 import { useDebounce } from "@/hooks/use-debounce";
 import Link from "next/link";
+import { useServerSort } from "@/hooks/use-server-sort";
+import SortIndicator from "@/components/common/SortIndicator";
+import Image from "next/image";
+import { getInitials } from "@/utils/getInitials";
 
 // ================= TYPES =================
 
-type ApiCreator = {
-  creatorId: string;
+type AnalyticsResponse = {
   creator: {
-    name: string;
-    email: string;
+    totalPayable: number;
+    totalHolding: number;
+    totalCommission: number;
   };
-  currency: string;
-  baseAmount: number;
-  discountAmount: number;
-  netAmount: number;
-  commissionAmount: number;
-  payableAmount: number;
-  holdingAmount: number;
+  affiliate: {
+    totalPayable: number;
+    totalHolding: number;
+  };
+};
+type ApiResponse = {
+  payouts: PayoutItem[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  analytics: AnalyticsResponse;
 };
 
 type PayoutItem = {
-  creatorId: string;
-  creatorName: string;
-  creatorEmail: string;
-  baseAmount: number;
-  netAmount: number;
-  discountAmount: number;
-  commissionAmount: number;
-  pendingBalance: number;
-  currency: string;
-  holdingAmount: number;
-};
+  id: string;
+  name: string;
+  email: string;
+  image?: string;
+  userType: string;
+  type: "CREATOR" | "AFFILIATE";
+  creatorId?: string; // Added
+  affiliateId?: string; // Added
+  creator?: {
+    name: string;
+    email: string;
+    image: string | null;
+    userType: string;
+  };
+  affiliate?: {
+    name: string;
+    email: string;
+    image: string | null;
+    userType: string;
+  };
 
-type PaginationData = {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  baseAmount: number;
+  discountAmount: number;
+  netAmount: number;
+  commissionAmount: number;
+
+  payableAmount: number;
+  holdingAmount: number;
+  currency: string;
 };
-type Analytics = {
-  totalPayableINR: number;
-  totalPayableUSD: number;
-  totalHoldingINR: number;
-  totalHoldingUSD: number;
-  totalCommission: number;
-};
-type SortField =
-  | "creatorName"
-  | "pendingBalance"
-  | "baseAmount"
-  | "commissionAmount"
-  | "discountAmount"
-  | "netAmount";
-type SortDir = "asc" | "desc";
 
 type DatePreset = "ALL" | "TODAY" | "THIS_MONTH" | "CUSTOM";
 
@@ -121,43 +126,15 @@ function CurrencyIcon({ currency }: { currency: string }) {
   return <DollarSign className="w-3.5 h-3.5 inline-block mr-0.5 opacity-70" />;
 }
 
-function fmt(amount: number, decimals = 2) {
-  return amount.toLocaleString("en-IN", {
+function fmt(amount: number | undefined | null, decimals = 2) {
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    return "0.00";
+  }
+
+  return Number(amount).toLocaleString("en-IN", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
-}
-
-function SortButton({
-  field,
-  current,
-  dir,
-  onClick,
-}: {
-  field: SortField;
-  current: SortField;
-  dir: SortDir;
-  onClick: () => void;
-}) {
-  const active = current === field;
-  return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center gap-1 ml-1 transition-opacity ${
-        active ? "opacity-100" : "opacity-30 hover:opacity-60"
-      }`}
-    >
-      {active ? (
-        dir === "asc" ? (
-          <ChevronUp className="w-3 h-3" />
-        ) : (
-          <ChevronDown className="w-3 h-3" />
-        )
-      ) : (
-        <ArrowUpDown className="w-3 h-3" />
-      )}
-    </button>
-  );
 }
 
 // ================= COMPONENT =================
@@ -187,6 +164,9 @@ export default function AdminPayoutsPage() {
   // Pagination state
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState<number>(10);
+  const [roleFilter, setRoleFilter] = useState<"ALL" | "COACH" | "AFFILIATE">(
+    "ALL",
+  );
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -194,10 +174,9 @@ export default function AdminPayoutsPage() {
   }, [debouncedSearch, currencyFilter, fromDate, toDate, limit]);
 
   // Sort state
-  const [sortField, setSortField] = useState<SortField>("pendingBalance");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const { sortBy, sortOrder, handleSort } = useServerSort("payableAmount");
   // ✅ Fetch payouts
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError } = useQuery<ApiResponse>({
     queryKey: [
       "admin-payouts",
       debouncedSearch,
@@ -206,40 +185,35 @@ export default function AdminPayoutsPage() {
       toDate,
       page,
       limit,
+      sortBy,
+      sortOrder,
+      roleFilter,
     ],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
+        sortBy,
+        sortOrder,
       });
 
       if (debouncedSearch) params.append("search", debouncedSearch);
       if (currencyFilter !== "ALL") params.append("currency", currencyFilter);
       if (fromDate) params.append("fromDate", fromDate);
       if (toDate) params.append("toDate", toDate);
+      if (roleFilter !== "ALL") {
+        params.append("userRole", roleFilter);
+      }
 
       const res = await axios.get(`/api/admin/payouts?${params.toString()}`);
 
-      return {
-        creators: res.data.creators.map((c: ApiCreator) => ({
-          creatorId: c.creatorId,
-          creatorName: c.creator?.name || "Unknown",
-          creatorEmail: c.creator?.email || "-",
-          baseAmount: Number(c.baseAmount || 0),
-          discountAmount: Number(c.discountAmount || 0),
-          netAmount: Number(c.netAmount || 0),
-          commissionAmount: Number(c.commissionAmount || 0),
-          pendingBalance: Number(c.payableAmount || 0),
-          holdingAmount: Number(c.holdingAmount || 0),
-          currency: c.currency,
-        })) as PayoutItem[],
-        pagination: res.data.pagination as PaginationData,
-        analytics: res.data.analytics,
-      };
+      return res.data;
     },
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
+  const payouts = data?.payouts || [];
 
-  const payouts = data?.creators || [];
   const pagination = data?.pagination || {
     total: 0,
     page: 1,
@@ -250,7 +224,8 @@ export default function AdminPayoutsPage() {
   // ✅ Process payout
   const processPayoutMutation = useMutation({
     mutationFn: async (payload: {
-      creatorId: string;
+      userId: string;
+      type: "CREATOR" | "AFFILIATE";
       currency: string;
       referenceId: string;
       notes: string;
@@ -267,47 +242,38 @@ export default function AdminPayoutsPage() {
   });
 
   // ================= DERIVED DATA =================
+  const filtered = payouts;
+  const rows = payouts;
+  const handleSortWithReset = (field: string) => {
+    setPage(1);
+    handleSort(field);
+  };
 
-  const filtered = useMemo(() => {
-    const list = [...payouts];
-
-    // Server handles search and currency filters, handle client-side sorting here
-    list.sort((a, b) => {
-      const valA = a[sortField];
-      const valB = b[sortField];
-      const cmp =
-        typeof valA === "string"
-          ? valA.localeCompare(valB as string)
-          : (valA as number) - (valB as number);
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-
-    return list;
-  }, [payouts, sortField, sortDir]);
-
-  const analyticsRef = useRef<Analytics | null>(null);
+  const analyticsRef = useRef<AnalyticsResponse | null>(null);
 
   // After the query
   if (data?.analytics) {
     analyticsRef.current = data.analytics;
   }
 
-  const stats = analyticsRef.current ||
-    data?.analytics || {
-      totalPayableINR: 0,
-      totalPayableUSD: 0,
-      totalHoldingINR: 0,
-      totalHoldingUSD: 0,
-      totalCommission: 0,
-    };
+  const analytics = data?.analytics;
 
-  const toggleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDir("desc");
-    }
+  const stats = {
+    totalPayable:
+      (analytics?.creator?.totalPayable || 0) +
+      (analytics?.affiliate?.totalPayable || 0),
+
+    totalHolding:
+      (analytics?.creator?.totalHolding || 0) +
+      (analytics?.affiliate?.totalHolding || 0),
+
+    totalCommission: analytics?.creator?.totalCommission || 0,
+
+    creatorPayable: analytics?.creator?.totalPayable || 0,
+    affiliatePayable: analytics?.affiliate?.totalPayable || 0,
+
+    creatorHolding: analytics?.creator?.totalHolding || 0,
+    affiliateHolding: analytics?.affiliate?.totalHolding || 0,
   };
 
   const handleOpenModal = (payout: PayoutItem) => {
@@ -364,11 +330,15 @@ export default function AdminPayoutsPage() {
   const handleConfirmPayout = () => {
     if (!selectedPayout) return;
     processPayoutMutation.mutate({
-      creatorId: selectedPayout.creatorId,
+      userId:
+        selectedPayout.type === "AFFILIATE"
+          ? selectedPayout.affiliateId!
+          : selectedPayout.creatorId!,
+      type: selectedPayout.type,
       currency: selectedPayout.currency,
       referenceId,
       notes,
-      amount: selectedPayout.pendingBalance,
+      amount: selectedPayout.payableAmount,
     });
   };
 
@@ -389,9 +359,7 @@ export default function AdminPayoutsPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Creator Payouts
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">Payouts</h1>
             <p className="text-muted-foreground mt-1">
               Review earnings breakdown and process pending payouts
             </p>
@@ -401,37 +369,34 @@ export default function AdminPayoutsPage() {
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <SummaryCard
-            icon={<Users className="w-4 h-4" />}
-            label="Total Creators" // Real total matching current filters
-            value={pagination.total.toString()}
-          />
-          <SummaryCard
-            icon={<IndianRupee className="w-4 h-4" />}
-            label={"Total Pending (INR)"}
-            value={`₹${fmt(stats.totalPayableINR)}`}
+            icon={<Wallet className="w-4 h-4" />}
+            label="Total Payable"
+            value={`₹${fmt(stats.totalPayable)}`}
             highlight
-          />
-          <SummaryCard
-            icon={<DollarSign className="w-4 h-4" />}
-            label={"Total Pending (USD)"}
-            value={`$${fmt(stats.totalPayableUSD)}`}
-            highlight
-          />
-          <SummaryCard
-            icon={<TrendingUp className="w-4 h-4" />}
-            label={"Total Commission"}
-            value={`₹${fmt(stats.totalCommission)}`}
-          />
-          <SummaryCard
-            icon={<IndianRupee className="w-4 h-4" />}
-            label="Total Holding (INR)"
-            value={`₹${fmt(stats.totalHoldingINR)}`}
           />
 
           <SummaryCard
-            icon={<DollarSign className="w-4 h-4" />}
-            label="Total Holding (USD)"
-            value={`$${fmt(stats.totalHoldingUSD)}`}
+            icon={<TrendingUp className="w-4 h-4" />}
+            label="Total Holding"
+            value={`₹${fmt(stats.totalHolding)}`}
+          />
+
+          <SummaryCard
+            icon={<Users className="w-4 h-4" />}
+            label="Coach Payable"
+            value={`₹${fmt(stats.creatorPayable)}`}
+          />
+
+          <SummaryCard
+            icon={<Users className="w-4 h-4" />}
+            label="Affiliate Payable"
+            value={`₹${fmt(stats.affiliatePayable)}`}
+          />
+
+          <SummaryCard
+            icon={<IndianRupee className="w-4 h-4" />}
+            label="MTB Commission"
+            value={`₹${fmt(stats.totalCommission)}`}
           />
         </div>
 
@@ -518,6 +483,21 @@ export default function AdminPayoutsPage() {
                 </div>
               </>
             )}
+            <Select
+              value={roleFilter}
+              onValueChange={(v) =>
+                setRoleFilter(v as "ALL" | "COACH" | "AFFILIATE")
+              }
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="User Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Users</SelectItem>
+                <SelectItem value="COACH">Coach</SelectItem>
+                <SelectItem value="AFFILIATE">Affiliate</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* ✅ Clear Filter Button */}
             {hasActiveFilters && (
@@ -538,70 +518,96 @@ export default function AdminPayoutsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>
-                  Creator
-                  <SortButton
-                    field="creatorName"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("creatorName")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("name")}
+                  className="cursor-pointer group"
+                >
+                  <div className="flex items-center gap-1">
+                    Creator
+                    <SortIndicator
+                      field="name"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead className="whitespace-nowrap text-center">
-                  Base Amount
-                  <SortButton
-                    field="baseAmount"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("baseAmount")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("baseAmount")}
+                  className="cursor-pointer group text-center"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    {/* Base Amount */}
+                    Total Business Referred
+                    <SortIndicator
+                      field="baseAmount"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
-                <TableHead className="text-right text-red-500">
-                  Discount
-                  <SortButton
-                    field="discountAmount"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("discountAmount")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("discountAmount")}
+                  className="cursor-pointer group text-center text-red-500"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    Discount
+                    <SortIndicator
+                      field="discountAmount"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
-                <TableHead className="text-right font-medium">
-                  Net
-                  <SortButton
-                    field="netAmount"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("netAmount")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("netAmount")}
+                  className="cursor-pointer group text-center"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    {/* Net Amount */}
+                    Net Business Referred
+                    <SortIndicator
+                      field="netAmount"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
 
-                <TableHead className="text-right text-orange-500">
-                  Commission
-                  <SortButton
-                    field="commissionAmount"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("commissionAmount")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("commissionAmount")}
+                  className="cursor-pointer group text-center text-orange-500"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    MTB Commission
+                    <SortIndicator
+                      field="commissionAmount"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
-                <TableHead className="text-right text-green-600">
-                  Payable
-                  <SortButton
-                    field="pendingBalance"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("pendingBalance")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("payableAmount")}
+                  className="cursor-pointer group text-center"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    Payable
+                    <SortIndicator
+                      field="payableAmount"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
-                    <Loader2 className="animate-spin mx-auto w-6 h-6 text-muted-foreground" />
+                  <TableCell colSpan={8} className="text-center py-12">
                     <p className="text-sm text-muted-foreground mt-2">
                       Loading payouts…
                     </p>
@@ -626,113 +632,187 @@ export default function AdminPayoutsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((p) => (
-                  <TableRow
-                    key={`${p.creatorId}-${p.currency}`}
-                    className="hover:bg-muted/30 transition-colors"
-                  >
-                    {/* Creator */}
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
-                          {p.creatorName.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{p.creatorName}</p>
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] px-1 py-0 mt-0.5"
-                          >
-                            {p.currency}
-                          </Badge>
-                        </div>
-                      </div>
-                    </TableCell>
+                filtered.map((p) => {
+                  const isCreator = p.type === "CREATOR";
+                  const rowUniqueId = isCreator ? p.creatorId : p.affiliateId;
+                  const userData =
+                    p.type === "CREATOR" ? p.creator : p.affiliate;
 
-                    {/* Email */}
-                    <TableCell className="text-muted-foreground text-sm">
-                      {p.creatorEmail}
-                    </TableCell>
+                  // 2. Get the values safely
+                  const displayName = userData?.name || "Unknown";
+                  const displayImage = userData?.image;
 
-                    {/* Base Amount */}
-                    <TableCell className="text-right text-sm">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-default">
-                            <CurrencyIcon currency={p.currency} />
-                            {fmt(p.baseAmount)}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Gross earnings before any deductions
-                        </TooltipContent>
-                      </Tooltip>
-                    </TableCell>
-                    {/* ✅ Discount Amount */}
-                    <TableCell className="text-right text-sm text-red-500 whitespace-nowrap">
-                      <span className="cursor-default">
-                        {p.discountAmount > 0 ? "-" : ""}{" "}
+                  return (
+                    <TableRow
+                      key={`${rowUniqueId}-${p.currency}-${p.type}`}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      {/* Creator */}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {displayImage ? (
+                            <Image
+                              height={300}
+                              width={300}
+                              className="h-8 w-8 object-cover rounded-full"
+                              src={displayImage}
+                              alt={displayName}
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                              {getInitials(displayName)}
+                            </div>
+                          )}
+
+                          <div>
+                            <Link
+                              href={`/profile/${rowUniqueId}`}
+                              target="_blank"
+                              className="font-medium text-sm hover:underline"
+                            >
+                              {displayName}
+                            </Link>
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] px-1 py-0 mt-0.5"
+                            >
+                              {p.currency}
+                            </Badge>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col items-center gap-1 flex-wrap">
+                          {/* ===== AFFILIATE ===== */}
+                          {p.type === "AFFILIATE" && (
+                            <>
+                              <Badge variant="secondary">AFFILIATE</Badge>
+
+                              {userData?.userType && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] px-1 py-0"
+                                >
+                                  {userData.userType}
+                                </Badge>
+                              )}
+                            </>
+                          )}
+
+                          {/* ===== CREATOR ===== */}
+                          {p.type === "CREATOR" && (
+                            <>
+                              {userData?.userType === "COACH" ? (
+                                // 👉 ONLY show COACH (no CREATOR)
+                                <Badge variant="default">COACH</Badge>
+                              ) : (
+                                // 👉 fallback: show CREATOR
+                                <>
+                                  <Badge variant="default">CREATOR</Badge>
+                                  {userData?.userType && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] px-1 py-0"
+                                    >
+                                      {userData.userType}
+                                    </Badge>
+                                  )}
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Email */}
+                      <TableCell className="text-muted-foreground text-sm">
+                        {userData?.email}
+                      </TableCell>
+
+                      {/* Base Amount */}
+                      <TableCell className="text-center text-sm">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-default whitespace-nowrap">
+                              <CurrencyIcon currency={p.currency} />
+                              {fmt(p.baseAmount)}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Gross earnings before any deductions
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                      {/* ✅ Discount Amount */}
+                      <TableCell className="text-center text-sm text-red-500 whitespace-nowrap">
+                        <span className="cursor-default">
+                          {p.discountAmount > 0 ? "-" : ""}{" "}
+                          <CurrencyIcon currency={p.currency} />
+                          {fmt(p.discountAmount)}
+                        </span>
+                      </TableCell>
+
+                      {/* ✅ Net Amount */}
+                      <TableCell className="text-center text-sm font-medium whitespace-nowrap">
+                        <span className="cursor-default">
+                          <CurrencyIcon currency={p.currency} />
+                          {fmt(p.netAmount)}
+                        </span>
+                      </TableCell>
+                      {/* Commission */}
+                      <TableCell className="text-center text-sm text-orange-500">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            {p.type === "CREATOR" ? (
+                              <span>
+                                − <CurrencyIcon currency={p.currency} />
+                                {fmt(p.commissionAmount)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Platform commission deducted
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+
+                      {/* Payable */}
+                      <TableCell className="text-center font-semibold text-green-600">
                         <CurrencyIcon currency={p.currency} />
-                        {fmt(p.discountAmount)}
-                      </span>
-                    </TableCell>
+                        {fmt(p.payableAmount)}
 
-                    {/* ✅ Net Amount */}
-                    <TableCell className="text-right text-sm font-medium whitespace-nowrap">
-                      <span className="cursor-default">
-                        <CurrencyIcon currency={p.currency} />
-                        {fmt(p.netAmount)}
-                      </span>
-                    </TableCell>
-                    {/* Commission */}
-                    <TableCell className="text-right text-sm text-orange-500">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="cursor-default">
-                            − <CurrencyIcon currency={p.currency} />
-                            {fmt(p.commissionAmount)}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Platform commission deducted
-                        </TooltipContent>
-                      </Tooltip>
-                    </TableCell>
+                        {p.holdingAmount > 0 && (
+                          <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 mt-1 w-fit ml-auto">
+                            🕐 <CurrencyIcon currency={p.currency} />
+                            {fmt(p.holdingAmount)} in holding
+                          </div>
+                        )}
+                      </TableCell>
 
-                    {/* Payable */}
-                    <TableCell className="text-right font-semibold text-green-600">
-                      <CurrencyIcon currency={p.currency} />
-                      {fmt(p.pendingBalance)}
-
-                      {p.holdingAmount > 0 && (
-                        <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 mt-1 w-fit ml-auto">
-                          🕐 <CurrencyIcon currency={p.currency} />
-                          {fmt(p.holdingAmount)} in holding
-                        </div>
-                      )}
-                    </TableCell>
-
-                    {/* Action */}
-                    <TableCell className="text-right space-x-2">
-                      <Link
-                        href={`/admin/payouts/details/${p.creatorId}?currency=${p.currency}`}
-                        target="_blank"
-                      >
-                        <Button size="sm" variant="ghost">
-                          View
+                      {/* Action */}
+                      <TableCell className="text-center space-x-2">
+                        <Link
+                          href={`/admin/payouts/details/${p.affiliateId || p.creatorId}?type=${p.type}&currency=${p.currency}`}
+                          target="_blank"
+                        >
+                          <Button size="sm" variant="ghost">
+                            View
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenModal(p)}
+                          disabled={p.payableAmount <= 0}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                          Pay
                         </Button>
-                      </Link>
-                      <Button
-                        size="sm"
-                        onClick={() => handleOpenModal(p)}
-                        disabled={p.pendingBalance <= 0}
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                        Pay
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -748,7 +828,7 @@ export default function AdminPayoutsPage() {
                 />
               )}
               <p className="text-xs text-muted-foreground">
-                Showing {filtered.length} payout
+                Showing {rows.length} payout
                 {filtered.length !== 1 ? "s" : ""} on this page (Total:{" "}
                 {pagination.total})
               </p>
@@ -766,9 +846,7 @@ export default function AdminPayoutsPage() {
               </DialogTitle>
               <DialogDescription>
                 Paying{" "}
-                <span className="font-medium">
-                  {selectedPayout?.creatorName}
-                </span>
+                <span className="font-medium">{selectedPayout?.name}</span>
               </DialogDescription>
             </DialogHeader>
 
@@ -811,7 +889,7 @@ export default function AdminPayoutsPage() {
                     <span>Payable Amount</span>
                     <span className="flex items-center">
                       <CurrencyIcon currency={selectedPayout.currency} />
-                      {fmt(selectedPayout.pendingBalance)}
+                      {fmt(selectedPayout.payableAmount)}
                     </span>
                   </div>
                 </div>

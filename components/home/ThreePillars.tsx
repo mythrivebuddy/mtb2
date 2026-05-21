@@ -20,7 +20,7 @@ export default function ThreePillars() {
         </div>
 
         <div className="mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8 ">
-          <div className="rounded-3xl border bg-white border-slate-200 px-8 py-10 dark:border-slate-700 text-center">
+          <div className="rounded-3xl border bg-white border-slate-200 px-8 py-10 dark:border-slate-700 dark:bg-slate-900 text-center">
             <h3 className="text-xl font-semibold dark:text-slate-300">
               Tools That Move You Forward
             </h3>
@@ -40,7 +40,7 @@ export default function ThreePillars() {
             </p>
           </div>
 
-          <div className="rounded-3xl border bg-white border-slate-200 p-8 dark:border-slate-700 text-center">
+          <div className="rounded-3xl border bg-white border-slate-200 p-8 dark:border-slate-700 dark:bg-slate-900 text-center">
             <h3 className="text-xl font-semibold dark:text-slate-300">
               Community & Visibility
             </h3>

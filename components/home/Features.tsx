@@ -73,7 +73,7 @@ export default function Features() {
           {features.map((i) => (
             <div
               key={i.title}
-              className="rounded-xl border border-slate-200 dark:border-slate-700 p-6"
+              className="rounded-xl border border-slate-200 bg-white p-6 transition-colors dark:border-slate-700 dark:bg-slate-900"
             >
               <i.icon size={28} className="text-brand" />
               <h3 className="mt-4 text-xl font-bold dark:text-white">
@@ -86,7 +86,7 @@ export default function Features() {
           ))}
 
           {/* FINAL STATIC CARD — Scheduling (Coming Soon) */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-6 opacity-60">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 opacity-60 transition-colors dark:border-slate-700 dark:bg-slate-900">
             <Clock size={28} className="text-slate-500" />
             <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
               Scheduling (Coming Soon)

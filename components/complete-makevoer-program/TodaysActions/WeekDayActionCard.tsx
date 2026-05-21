@@ -63,23 +63,23 @@ export default function WeekdayActionCard({
       <button
         onClick={handlePrev}
         disabled={currentSlideIndex === 0}
-        className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all mr-6 group disabled:opacity-80 disabled:hover:bg-white disabled:hover:text-slate-400 disabled:cursor-not-allowed"
+        className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all mr-6 group disabled:opacity-80 disabled:hover:bg-white disabled:hover:text-slate-400 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:disabled:hover:bg-slate-900"
         aria-label="Previous Slide"
       >
         <ChevronLeft className="w-6 h-6 group-hover:-translate-x-0.5 transition-transform" />
       </button>
 
       {/* Active Card Container */}
-      <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 flex flex-col md:flex-row">
+      <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 flex flex-col md:flex-row dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30">
         {/* Left Side: Visual & High Level Context */}
-        <div className="md:w-1/3 bg-slate-50 p-6 flex flex-col max-sm:gap-4 justify-between border-b md:border-b-0 md:border-r border-slate-100 relative overflow-hidden">
+        <div className="md:w-1/3 bg-slate-50 p-6 flex flex-col max-sm:gap-4 justify-between border-b md:border-b-0 md:border-r border-slate-100 relative overflow-hidden dark:border-slate-700 dark:bg-slate-800">
           {/* Decorative Background element */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1990e6] to-blue-300"></div>
           <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-[#1990e6]/5 rounded-full blur-3xl"></div>
 
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="bg-blue-100 text-[#1990e6] p-1.5 rounded-md">
+              <span className="bg-blue-100 text-[#1990e6] p-1.5 rounded-md dark:bg-blue-500/15">
                 <Heart className="w-5 h-5" />
               </span>
               <span className="text-xs font-bold text-[#1990e6] uppercase tracking-widest">
@@ -105,32 +105,32 @@ export default function WeekdayActionCard({
               </h3>
             </div>
           </div>
-          <p className="text-lg leading-snug line-clamp-5">
+          <p className="text-lg leading-snug line-clamp-5 text-slate-700 dark:text-slate-300">
             {activeSlide.areaDescription}
           </p>
 
           <div className="mt-auto">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Area Progress
               </span>
               <span className="text-xs font-bold text-[#1990e6]">0%</span>
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden dark:bg-slate-700">
               <div className="bg-[#1990e6] h-2 rounded-full w-0 transition-all duration-500"></div>
             </div>
           </div>
         </div>
 
         {/* Right Side: Actionable Content */}
-        <div className="md:w-2/3 p-6 md:p-8 flex flex-col h-full bg-white">
+        <div className="md:w-2/3 p-6 md:p-8 flex flex-col h-full bg-white dark:bg-slate-900">
           {/* Read-Only Context Block */}
-          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-6">
-            <div className="mb-3 pb-3 border-b border-slate-200/50">
+          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-6 dark:border-slate-700 dark:bg-slate-800">
+            <div className="mb-3 pb-3 border-b border-slate-200/50 dark:border-slate-700">
               <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
                 Quarterly Goal
               </p>
-              <p className="text-slate-800 font-medium text-sm leading-relaxed">
+              <p className="text-slate-800 font-medium text-sm leading-relaxed dark:text-slate-200">
                 {activeSlide.goalText}
               </p>
             </div>
@@ -138,7 +138,7 @@ export default function WeekdayActionCard({
               <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
                 Identity Statement
               </p>
-              <p className="text-slate-800 font-medium text-sm leading-relaxed italic">
+              <p className="text-slate-800 font-medium text-sm leading-relaxed italic dark:text-slate-200">
                 "{activeSlide.identityText}"
               </p>
             </div>
@@ -153,7 +153,7 @@ export default function WeekdayActionCard({
               <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
                 Today's Action
               </p>
-              <p className="text-lg font-bold text-slate-900">
+              <p className="text-lg font-bold text-slate-900 dark:text-slate-50">
                 {activeSlide.actionText}
               </p>
             </div>
@@ -164,7 +164,7 @@ export default function WeekdayActionCard({
             {/* Item 1 */}
             <label
               className={`group flex items-start gap-3 p-3 rounded-lg border border-transparent transition-all 
-                     ${isIdentityDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100"}`}
+                     ${isIdentityDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800"}`}
             >
               <div className="relative flex items-center mt-0.5">
                 <input
@@ -182,7 +182,7 @@ export default function WeekdayActionCard({
                 />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors">
+                <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors dark:text-slate-200">
                   Complete Identity Practice
                 </p>
               </div>
@@ -191,7 +191,7 @@ export default function WeekdayActionCard({
             {/* Item 2 */}
             <label
               className={`group flex items-center gap-3 p-3 rounded-lg border border-transparent transition-all
-      ${isActionDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100"}`}
+      ${isActionDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800"}`}
             >
               <div className="relative flex items-center">
                 <input
@@ -209,7 +209,7 @@ export default function WeekdayActionCard({
                 />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors">
+                <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors dark:text-slate-200">
                   Mark Daily Action Done
                 </p>
               </div>
@@ -218,7 +218,7 @@ export default function WeekdayActionCard({
             {/* Item 3: Log Win */}
             <label
               className={`group flex items-start gap-3 p-3 rounded-lg border border-transparent transition-all
-      ${isWinDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100"}`}
+      ${isWinDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800"}`}
             >
               <div className="relative flex items-center mt-0.5">
                 <input
@@ -237,7 +237,7 @@ export default function WeekdayActionCard({
               </div>
 
               <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors">
+                  <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors dark:text-slate-200">
                     Share it in group
                   </p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
@@ -253,7 +253,7 @@ export default function WeekdayActionCard({
       <button
         onClick={handleNext}
         disabled={isLast}
-        className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all ml-6 group disabled:opacity-80 disabled:hover:bg-white disabled:hover:text-slate-400 disabled:cursor-not-allowed"
+        className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all ml-6 group disabled:opacity-80 disabled:hover:bg-white disabled:hover:text-slate-400 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:disabled:hover:bg-slate-900"
         aria-label="Next Slide"
       >
         <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
@@ -261,4 +261,3 @@ export default function WeekdayActionCard({
     </section>
   );
 }
-

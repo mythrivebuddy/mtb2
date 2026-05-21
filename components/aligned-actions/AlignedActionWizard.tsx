@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -181,7 +181,8 @@ export default function AlignedActionWizard({
       timeTo: formData.timeTo ? new Date(formData.timeTo) : end,
     },
   });
-
+  const watchedTimeFrom = step3Form.watch("timeFrom");
+  const isEndTimeManuallyChanged = useRef(false);
   // Create aligned action mutation
   const createAlignedAction = useMutation({
     mutationFn: async (data: {
@@ -336,7 +337,20 @@ export default function AlignedActionWizard({
   };
 
   // Convert time input value to date object
+  useEffect(() => {
+  if (!watchedTimeFrom) return;
 
+  // 🚫 don't override if user already changed end time
+  if (isEndTimeManuallyChanged.current) return;
+
+  const newEnd = new Date(watchedTimeFrom);
+  newEnd.setHours(newEnd.getHours() + 1);
+
+  step3Form.setValue("timeTo", newEnd, {
+    shouldValidate: true,
+    shouldDirty: true,
+  });
+}, [watchedTimeFrom]);
   // Convert date object to time input value
 
   return (
@@ -870,10 +884,13 @@ export default function AlignedActionWizard({
                         <FormLabel>Start Time</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <TimeInput
-                              value={field.value}
-                              onChange={field.onChange}
-                            />
+                           <TimeInput
+  value={field.value}
+  onChange={(date) => {
+    isEndTimeManuallyChanged.current = false; // reset
+    field.onChange(date);
+  }}
+/>
                             {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
                             fill="none"
@@ -902,10 +919,13 @@ export default function AlignedActionWizard({
                         <FormLabel>End Time</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <TimeInput
-                              value={field.value}
-                              onChange={field.onChange}
-                            />
+                          <TimeInput
+  value={field.value}
+  onChange={(date) => {
+    isEndTimeManuallyChanged.current = true; // user override
+    field.onChange(date);
+  }}
+/>
                             {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
                             fill="none"
@@ -954,16 +974,16 @@ export default function AlignedActionWizard({
         )}
 
         {step === 4 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-center text-gray-900">
+          <div className="space-y-4 ">
+            <h2 className="text-xl font-bold text-center text-gray-900 dark:text-gray-200">
               Your Action Plan is Ready!
             </h2>
-            <p className="text-sm text-center text-gray-600">
+            <p className="text-sm text-center text-gray-600 dark:text-gray-200">
               Review and launch your plan to make today count!
             </p>
 
-            <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-100">
-              <CardContent className="pt-6 pb-8">
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-100 ">
+              <CardContent className="pt-6 pb-8 dark:bg-slate-900">
                 <div className="space-y-6">
                   {/* Mood Section */}
                   {/* <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-md">
@@ -989,7 +1009,7 @@ export default function AlignedActionWizard({
 
                   {/* Tasks Section */}
                   <div>
-                    <div className="text-xs font-medium text-gray-500 capitalize tracking-wide mb-2">
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-300 capitalize tracking-wide mb-2">
                       Tasks
                     </div>
                     <ul className="space-y-2">
@@ -999,7 +1019,7 @@ export default function AlignedActionWizard({
                           className={`flex items-center gap-2 text-gray-800 p-2 rounded-md text-sm ${
                             task === formData.selectedTask
                               ? "bg-green-500/10 font-bold text-green-500"
-                              : "bg-gray-50"
+                              : "bg-gray-50 dark:bg-green-500/10 dark:text-green-500"
                           }`}
                         >
                           <span
@@ -1023,11 +1043,11 @@ export default function AlignedActionWizard({
                   </div>
 
                   {/* Category Section */}
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <div className="text-xs font-medium text-gray-500 capitalize tracking-wide mb-1">
+                  <div className="light:bg-gray-50 p-3 rounded-md">
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-300 capitalize tracking-wide mb-1">
                       Category
                     </div>
-                    <div className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    <div className="text-base font-semibold text-gray-900 dark:text-gray-200 flex items-center gap-2">
                       <span className="w-4 h-4 rounded-sm bg-green-500"></span>
                       {formData.category === "creative" && "Creative"}
                       {formData.category === "nurturing" && "Nurturing"}
@@ -1038,11 +1058,11 @@ export default function AlignedActionWizard({
                   </div>
 
                   {/* Time Window Section */}
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <div className="text-xs font-medium text-gray-500 capitalize tracking-wide mb-1">
+                  <div className="light:bg-gray-50 p-3 rounded-md">
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-300 capitalize tracking-wide mb-1">
                       Zone/Flow-Time
                     </div>
-                    <div className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    <div className="text-base font-semibold text-gray-900 dark:text-gray-200 flex items-center gap-2">
                       <span className="w-4 h-4 rounded-full bg-green-500"></span>
                       {formData.timeFrom && formData.timeTo && (
                         <>
@@ -1054,16 +1074,16 @@ export default function AlignedActionWizard({
                   </div>
 
                   {/* What Happens Next */}
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-xl border border-blue-200 shadow-md">
+                  <div className="light:bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-xl border border-blue-200 shadow-md dark:bg-slate-950">
                     <div className="flex items-start">
                       <span className="w-4 h-4 flex-shrink-0 rounded-full bg-blue-700 text-white flex items-center justify-center text-sm font-bold mr-3 mt-2">
                         !
                       </span>
-                      <div className="text-sm text-blue-900">
-                        <p className="text-base font-bold text-blue-950 mb-3">
+                      <div className="text-sm text-blue-900 dark:text-blue-400">
+                        <p className="text-base font-bold text-blue-950  dark:text-blue-500 mb-3">
                           You are one step away from crushing it!
                         </p>
-                        <p className="text-xs text-blue-800 mb-4">
+                        <p className="text-xs mb-4">
                           Your 1% Start action is locked in. Here is how we will
                           help you stay on track and celebrate your success!
                         </p>
@@ -1120,7 +1140,7 @@ export default function AlignedActionWizard({
                             </span>
                           </li>
                         </ul>
-                        <p className="text-xs text-blue-800 mt-4 italic">
+                        <p className="text-xs text-blue-800 dark:text-blue-400 mt-4 italic">
                           Stay focused, and let&apos;s make this task a win!
                         </p>
                       </div>

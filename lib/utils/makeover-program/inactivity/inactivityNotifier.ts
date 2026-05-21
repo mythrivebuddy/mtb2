@@ -1,26 +1,23 @@
 import { prisma } from "@/lib/prisma";
-import { sendPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
+import { NotificationType } from "@prisma/client";
+import { sendDbPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
 
 type InactivityConfig = {
   days: number;
-  notification: {
-    title: string;
-    description: string;
-    url?: string;
-  };
   notifiedField: "inactivity3DayNotified" | "inactivity7DayNotified";
+  type: NotificationType;
 };
 
 export async function runInactivityNotifier({
   days,
-  notification,
   notifiedField,
+  type,
 }: InactivityConfig) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   /* ----------------------------------------------------
-     1️⃣ Fetch user-program states
+     1️⃣ Fetch states
   ---------------------------------------------------- */
   const states = await prisma.userProgramState.findMany({
     where: { onboarded: true },
@@ -37,7 +34,7 @@ export async function runInactivityNotifier({
   }
 
   /* ----------------------------------------------------
-     2️⃣ Fetch last activity
+     2️⃣ Fetch last activity (batched)
   ---------------------------------------------------- */
   const lastActivities = await prisma.makeoverPointsSummary.findMany({
     select: {
@@ -56,7 +53,7 @@ export async function runInactivityNotifier({
   );
 
   /* ----------------------------------------------------
-     3️⃣ Determine who needs notification
+     3️⃣ Compute eligible users
   ---------------------------------------------------- */
   const toNotify: { userId: string; programId: string }[] = [];
 
@@ -69,7 +66,6 @@ export async function runInactivityNotifier({
 
     if (!referenceDate) continue;
 
-    // DAY-BASED comparison
     const refDate = new Date(referenceDate);
     refDate.setHours(0, 0, 0, 0);
 
@@ -90,19 +86,23 @@ export async function runInactivityNotifier({
   }
 
   /* ----------------------------------------------------
-     4️⃣ Send push
+     4️⃣ Unique users
   ---------------------------------------------------- */
   const userIds = [...new Set(toNotify.map((u) => u.userId))];
 
-  await sendPushNotificationMultipleUsers(
+  /* ----------------------------------------------------
+     5️⃣ ✅ DB-driven bulk notification
+  ---------------------------------------------------- */
+  await sendDbPushNotificationMultipleUsers({
+    type,
     userIds,
-    notification.title,
-    notification.description,
-    { url: notification.url }
-  );
+    context: {
+      count: toNotify.length, // optional dynamic usage
+    },
+  });
 
   /* ----------------------------------------------------
-     5️⃣ Update notified date
+     6️⃣ Update notified flags
   ---------------------------------------------------- */
   await prisma.userProgramState.updateMany({
     where: {

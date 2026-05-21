@@ -1,67 +1,97 @@
-// /api/cron/daily-cmp-reminders/primary with get
 import { prisma } from "@/lib/prisma";
 import { getISTEndOfDay, getISTStartOfDay } from "@/lib/utils/dateUtils";
-import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { sendDbPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
 import { NotificationType } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const istStart = getISTStartOfDay();
-  const istEnd = getISTEndOfDay();
-
-  // Fetch onboarded users
-  const users = await prisma.userProgramState.findMany({
-    where: {
-      onboarded: true,
-      OR: [
-        { lastReminderDate: null },
-        { lastReminderDate: { lt: istStart } },
-      ],
-    },
-    select: { userId: true },
-  });
-
-  let sentCount = 0;
-  const notification =
-    await getCMPNotification(NotificationType.CMP_DAILY_PRIMARY);
-  if (!notification) return NextResponse.json({ message: "no_notification_template" });
-
-  for (const { userId } of users) {
-    // Skip if user already completed today
-    const completed = await prisma.makeoverProgressLog.findFirst({
+  try {
+    const istStart = getISTStartOfDay();
+    const istEnd = getISTEndOfDay();
+    const program = await prisma.program.findUnique({
+      where: { slug: "2026-complete-makeover" },
+      select: { id: true },
+    })
+    // 1️⃣ Fetch eligible users (not reminded today)
+    const users = await prisma.userProgramState.findMany({
       where: {
-        userId,
+        onboarded: true,
+        programId:program?.id,
+        OR: [
+          { lastReminderDate: null },
+          { lastReminderDate: { lt: istStart } },
+        ],
+      },
+      select: { userId: true },
+    });
+
+    if (!users.length) {
+      return NextResponse.json({
+        status: "ok",
+        type: "primary",
+        sent: 0,
+      });
+    }
+
+    const userIds = users.map((u) => u.userId);
+
+    // 2️⃣ Fetch today's completions (single query)
+    const completedToday = await prisma.makeoverProgressLog.findMany({
+      where: {
+        userId: { in: userIds },
         date: { gte: istStart, lt: istEnd },
       },
-      select: { id: true },
+      select: { userId: true },
     });
 
-    if (completed) continue;
+    const completedSet = new Set(completedToday.map((c) => c.userId));
 
-    await sendPushNotificationToUser(
-      userId,
-      notification.title,
-      notification.description,
-      { url: notification.url }
+    // 3️⃣ Filter users who still need reminder
+    const eligibleUserIds = userIds.filter(
+      (userId) => !completedSet.has(userId)
     );
 
-    // Mark reminder sent for today
-    await prisma.userProgramState.updateMany({
-      where: { userId },
-      data: { lastReminderDate: new Date() },
+    if (!eligibleUserIds.length) {
+      return NextResponse.json({
+        status: "ok",
+        type: "primary",
+        sent: 0,
+      });
+    }
+
+    // 4️⃣ ✅ Send DB-driven bulk notification
+    await sendDbPushNotificationMultipleUsers({
+      type: NotificationType.CMP_DAILY_PRIMARY,
+      userIds: eligibleUserIds,
+      context: {}, // add dynamic later if needed
     });
 
-    sentCount++;
+    // 5️⃣ ✅ Bulk update reminder timestamp
+    await prisma.userProgramState.updateMany({
+      where: {
+        userId: { in: eligibleUserIds },
+        programId:program?.id,
+      },
+      data: {
+        lastReminderDate: new Date(),
+      },
+    });
+
+    console.log(
+      `[CRON] Primary reminder sent to ${eligibleUserIds.length} users`
+    );
+
+    return NextResponse.json({
+      status: "ok",
+      type: "primary",
+      sent: eligibleUserIds.length,
+    });
+  } catch (error) {
+    console.error("🔥 PRIMARY REMINDER ERROR:", error);
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
-
-  console.log(`[CRON] Primary reminder sent to ${sentCount} users`);
-
-  return NextResponse.json({
-    status: "ok",
-    type: "primary",
-    sent: sentCount,
-  });
 }
-
-

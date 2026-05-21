@@ -8,23 +8,22 @@ export function resolveLevelIcon(icon: string | null): LucideIcon {
   return icons[icon] ?? Icons.Award;
 }
 
-
 export function getBadgeStyles(
   name: string,
   type: "LEVEL" | "MILESTONE" | null,
-  isUnlocked: boolean
+  isUnlocked: boolean,
 ) {
   // 🔒 LOCKED — neutral, matte, no glow
   if (!isUnlocked) {
     return {
-      colorClass: "text-slate-400 dark:text-slate-500",
-      bgClass: "bg-slate-100 dark:bg-slate-800/60",
-      ringClass: "ring-1 ring-slate-200 dark:ring-slate-700",
+      colorClass: "text-slate-500 dark:text-slate-400", // ✅ visible in both
+      bgClass: "bg-slate-200 dark:bg-slate-700", // ✅ darker bg in light mode
+      ringClass: "ring-1 ring-slate-300 dark:ring-slate-600",
     };
   }
 
   // 🧬 LEVEL BADGES — identity, grounded, premium
-  if (type === "LEVEL") { 
+  if (type === "LEVEL") {
     switch (name) {
       case "Initiator Badge":
         return {
@@ -144,9 +143,9 @@ export function getBadgeStyles(
   }
 
   // 🛟 Safe fallback
- return {
-  colorClass: "text-slate-500 dark:text-slate-400",
-  bgClass: "bg-slate-100 dark:bg-slate-800/50",
-  ringClass: "ring-1 ring-slate-300 dark:ring-slate-600",
-};
+  return {
+    colorClass: "text-slate-600 dark:text-slate-400", // ✅ darker in light mode
+    bgClass: "bg-slate-200 dark:bg-slate-700", // ✅ visible in both
+    ringClass: "ring-1 ring-slate-300 dark:ring-slate-600",
+  };
 }

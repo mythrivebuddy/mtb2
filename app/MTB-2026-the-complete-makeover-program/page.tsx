@@ -370,7 +370,7 @@ const joinUrl = !userProgramState
           </section>
 
           {/* IS THIS FOR YOU */}
-          <section className="max-w-6xl mx-auto px-4 rounded-2xl bg-slate-50">
+          <section className="max-w-6xl mx-auto px-4 rounded-2xl ">
             <div className="flex flex-col lg:flex-row-reverse items-center gap-12 bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] px-4 py-8 sm:py-8 rounded-xl">
               <div className="w-full lg:w-1/2 flex justify-center">
                 <img

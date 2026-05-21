@@ -342,10 +342,10 @@ export default function ChallengeDetailView({
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Main Content */}
-        <div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+        <div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-2xl shadow-lg dark:border dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-4xl font-bold text-slate-800">
+            <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-50">
               {challenge.title}
             </h1>
             <div className="flex items-center gap-x-3 my-4">
@@ -369,8 +369,8 @@ export default function ChallengeDetailView({
           )}
 
           {/* Tasks Section */}
-          <div className="border-t border-slate-200 pt-6">
-            <h2 className="text-2xl font-semibold text-slate-700 mb-4">
+          <div className="border-t border-slate-200 pt-6 dark:border-slate-700">
+            <h2 className="text-2xl font-semibold text-slate-700 mb-4 dark:text-slate-100">
               Tasks to Complete
             </h2>
             <ul className="space-y-3">
@@ -378,14 +378,14 @@ export default function ChallengeDetailView({
                 challenge.templateTasks.map((task) => (
                   <li
                     key={task.id}
-                    className="p-4 bg-slate-50 rounded-lg border border-slate-200 flex items-center"
+                    className="p-4 bg-slate-50 rounded-lg border border-slate-200 flex items-center dark:border-slate-700 dark:bg-slate-800"
                   >
                     <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                    <p className="text-slate-800">{task.description}</p>
+                    <p className="text-slate-800 dark:text-slate-200">{task.description}</p>
                   </li>
                 ))
               ) : (
-                <li className="p-4 bg-slate-50 rounded-lg border border-slate-200 text-slate-500">
+                <li className="p-4 bg-slate-50 rounded-lg border border-slate-200 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
                   No tasks have been added to this challenge yet.
                 </li>
               )}
@@ -396,18 +396,18 @@ export default function ChallengeDetailView({
         {/* Right Column: Sticky Card with Stats & Actions */}
         <div className="lg:col-span-1">
           <div className="lg:sticky lg:top-8">
-            <div className="bg-white p-6 rounded-2xl shadow-lg space-y-6">
+            <div className="bg-white p-6 rounded-2xl shadow-lg space-y-6 dark:border dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30">
               {/* Duration */}
               <div className="flex items-center">
                 <Calendar className="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" />
                 <div>
-                  <div className="text-sm text-slate-500">Duration</div>
-                  <div className="font-semibold text-slate-700 flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                  <div className="text-sm text-slate-500 dark:text-slate-400">Duration</div>
+                  <div className="font-semibold text-slate-700 flex flex-col sm:flex-row sm:items-center sm:gap-2 dark:text-slate-200">
                     <span>
                       {formatDate(challenge.startDate)} to{" "}
                       {formatDate(challenge.endDate)}
                     </span>
-                    <span className="text-blue-600 font-medium">
+                    <span className="text-blue-500  font-medium">
                       {getChallengeDuration(
                         challenge.startDate,
                         challenge.endDate,
@@ -418,12 +418,12 @@ export default function ChallengeDetailView({
               </div>
 
               {/* Stats List */}
-              <div className="border-t border-slate-200 pt-6 space-y-4">
+              <div className="border-t border-slate-200 pt-6 space-y-4 dark:border-slate-700">
                 <div className="flex items-center">
                   <Coins className="w-6 h-6 text-green-500 mr-3 flex-shrink-0" />
                   <div>
-                    <div className="text-sm text-slate-500">Joining Cost</div>
-                    <div className="font-semibold text-slate-700">
+                    <div className="text-sm text-slate-500 dark:text-slate-400">Joining Cost</div>
+                    <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {challenge.challengeJoiningType ===
                         ChallengeJoiningType.PAID && (
                         <>
@@ -442,8 +442,8 @@ export default function ChallengeDetailView({
                 <div className="flex items-center">
                   <Award className="w-6 h-6 text-yellow-500 mr-3 flex-shrink-0" />
                   <div>
-                    <div className="text-sm text-slate-500">Reward</div>
-                    <div className="font-semibold text-slate-700">
+                    <div className="text-sm text-slate-500 dark:text-slate-400">Reward</div>
+                    <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {challenge.reward} GP
                     </div>
                   </div>
@@ -453,8 +453,8 @@ export default function ChallengeDetailView({
                     className={`w-6 h-6 mr-3 flex-shrink-0 ${challenge.penalty > 0 ? "text-red-500" : "text-gray-400"}`}
                   />
                   <div>
-                    <div className="text-sm text-slate-500">Penalty</div>
-                    <div className="font-semibold text-slate-700">
+                    <div className="text-sm text-slate-500 dark:text-slate-400">Penalty</div>
+                    <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {challenge.penalty > 0
                         ? `${challenge.penalty} GP`
                         : "None"}
@@ -464,8 +464,8 @@ export default function ChallengeDetailView({
                 <div className="flex items-center">
                   <Users className="w-6 h-6 text-slate-500 mr-3 flex-shrink-0" />
                   <div>
-                    <div className="text-sm text-slate-500">Participants</div>
-                    <div className="font-semibold text-slate-700">
+                    <div className="text-sm text-slate-500 dark:text-slate-400">Participants</div>
+                    <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {challenge._count.enrollments}
                     </div>
                   </div>
@@ -473,8 +473,8 @@ export default function ChallengeDetailView({
                 <div className="flex items-center">
                   <UserCircle className="w-6 h-6 text-gray-500 mr-3 flex-shrink-0" />
                   <div>
-                    <div className="text-sm text-slate-500">Created By</div>
-                    <div className="font-semibold text-slate-700">
+                    <div className="text-sm text-slate-500 dark:text-slate-400">Created By</div>
+                    <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {challenge.creator?.name ?? "Unknown User"}
                     </div>
                   </div>
@@ -482,7 +482,7 @@ export default function ChallengeDetailView({
               </div>
 
               {/* Action Button Section */}
-              <div className="pt-6 border-t border-slate-200">
+              <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
                 {error && (
                   <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 font-medium">
                     <div className="flex items-center">
@@ -619,12 +619,12 @@ export default function ChallengeDetailView({
       {/* Enrollment Success Modal */}
       {isEnrollSuccessModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
+          <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center dark:border dark:border-slate-700 dark:bg-slate-900">
             <PartyPopper className="w-20 h-20 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2 dark:text-slate-50">
               Successfully Joined!
             </h2>
-            <p className="text-slate-500 mb-6">
+            <p className="text-slate-500 mb-6 dark:text-slate-400">
               You are now enrolled in the &quot;{challenge.title}&quot;
               challenge. Good luck!
             </p>

@@ -1,5 +1,12 @@
 "use client";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import usePushNotifications from "@/hooks/usePushNotifications";
 
@@ -11,9 +18,12 @@ export default function FirstVisitNotificationPopup() {
     handleFirstVisitLater,
     isLoading,
   } = usePushNotifications();
-  
+
   return (
-    <Dialog open={showFirstVisitPopup} onOpenChange={(isOpen) => setShowFirstVisitPopup(isOpen)}>
+    <Dialog
+      open={showFirstVisitPopup}
+      onOpenChange={(isOpen) => setShowFirstVisitPopup(isOpen)}
+    >
       <DialogContent
         className="
            max-sm:max-w-xs sm:max-w-sm 
@@ -21,17 +31,17 @@ export default function FirstVisitNotificationPopup() {
           rounded-lg
           [&>button]:hidden
         "
-         onEscapeKeyDown={(e) => e.preventDefault()}
-         onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
       >
         <DialogHeader className="space-y-2">
-           <DialogTitle
-            className="text-base sm:text-lg font-semibold text-center sm:text-left">
-      Enable Notifications
-    </DialogTitle>
-        <DialogDescription className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
-      Stay updated with real-time alerts. Enable browser notifications now.
-    </DialogDescription>
+          <DialogTitle className="text-base sm:text-lg font-semibold text-center sm:text-left">
+            Enable Notifications
+          </DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+            Stay updated with real-time alerts. Enable browser notifications
+            now.
+          </DialogDescription>
         </DialogHeader>
 
         <DialogFooter
@@ -43,7 +53,7 @@ export default function FirstVisitNotificationPopup() {
           <Button
             onClick={handleFirstVisitAllow}
             disabled={isLoading}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto   dark:text-black"
           >
             Allow
           </Button>
