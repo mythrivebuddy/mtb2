@@ -853,6 +853,8 @@ model ChallengeEnrollment {
   longestStreak    Int                 @default(0)
   isCertificateIssued Boolean @default(false)
   lastStreakUpdate DateTime?           @map("last_streak_update")
+  lastPenaltyAt   DateTime?
+  nextPenaltyAt    DateTime?
   challenge        Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   userTasks        UserChallengeTask[]
