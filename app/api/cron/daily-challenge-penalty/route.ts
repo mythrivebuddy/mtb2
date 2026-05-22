@@ -1,17 +1,21 @@
 // app/api/cron/daily-challenge-penalty/route.ts
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deductJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 import { sendPushNotificationFromDBToUser } from "@/lib/utils/pushNotifications";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { isSameDay } from "date-fns";
+import { isAuthorized } from "@/lib/cron/auth";
 
-const ADMIN_TIME = { hour: 19, minute: 30 }; // 7:30 PM LOCAL USER TIME
+const ADMIN_TIME = { hour: 11, minute: 30 };
 
-export async function GET() {
+export async function POST(req:NextRequest) {
   try {
+     if (!isAuthorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
     const now = new Date();
 
     // ✅ FIX 1: Fetch ALL active enrollments (NO filtering by nextPenaltyAt)
@@ -19,6 +23,17 @@ export async function GET() {
       where: {
         status: "IN_PROGRESS",
         challenge: { status: "ACTIVE" },
+        OR: [
+          {
+            nextPenaltyAt: {
+              lte: now,
+              gte: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+            },
+          },
+          {
+            nextPenaltyAt: null, // ✅ include first-time users
+          },
+        ],
       },
       include: {
         user: { include: { plan: true } },
@@ -134,7 +149,7 @@ export async function GET() {
       await prisma.challengeEnrollment.update({
         where: { id: enrollment.id },
         data: {
-          lastPenaltyAt: now,
+          lastPenaltyAt: nextPenaltyAt,
           nextPenaltyAt: next,
         },
       });

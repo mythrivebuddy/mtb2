@@ -855,6 +855,7 @@ model ChallengeEnrollment {
   lastStreakUpdate DateTime?           @map("last_streak_update")
   lastPenaltyAt   DateTime?
   nextPenaltyAt    DateTime?
+  lastNotifiedAt DateTime?
   challenge        Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   userTasks        UserChallengeTask[]
@@ -2219,6 +2220,10 @@ model UserProgramState {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   lastReminderDate DateTime?
+  lastPrimaryReminderAt DateTime?
+  lastNudgeReminderAt   DateTime?
+  lastSundayMorningReminderAt DateTime?
+  lastSundayEveningReminderAt DateTime?
   inactivity3DayNotified  DateTime?
   inactivity7DayNotified  DateTime?
 
