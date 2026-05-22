@@ -22,6 +22,17 @@ export default function AdminDashboardHeader() {
     },
     staleTime: 5 * 60 * 1000,
   });
+  const { data: unreadNotificationsCount } = useQuery<number>({
+    queryKey: ["unreadNotificationsCount"],
+    queryFn: async () => {
+      const { data } = await axios.get<{ unreadCount: number }>(
+        "/api/user/notifications/unread",
+      );
+      return data.unreadCount;
+    },
+
+    staleTime: 1000 * 60, // 1 minute
+  });
 
   useEffect(() => {
     const channel = new BroadcastChannel("payment-config");
@@ -73,9 +84,14 @@ export default function AdminDashboardHeader() {
         <div className="flex items-center space-x-3 sm:space-x-4">
           <button
             onClick={() => router.push("/admin/notifications")}
-            className="p-2 rounded-full hover:bg-gray-100"
+            className="p-2 rounded-full hover:bg-gray-100 relative"
           >
             <BellIcon size={20} />
+            {(unreadNotificationsCount ?? 0) > 0 && (
+              <div className="absolute -top-[0.04rem] -right-[0.09rem] w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
+                {unreadNotificationsCount}
+              </div>
+            )}
           </button>
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
