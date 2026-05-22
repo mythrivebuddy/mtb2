@@ -110,6 +110,10 @@ const Sidebar = () => {
                 label="Accountability hub"
               />
               <NavItem href="/admin/cms" label="CMS" />
+              <NavItem
+                href="/admin/cron-schedules"
+                label="Cron schedules"
+              />
               <NavItem href="/admin/feature-controls" label="Feature Controls" />
                <NavItem
                 href="/admin/invoices"

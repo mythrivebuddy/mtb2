@@ -78,15 +78,23 @@ export async function GET(
 
   // ─── Shared paymentOrder include ──────────────────────────────────────────
   const paymentOrderInclude = {
-    include: {
-      user: { select: { name: true, email: true } },
+   select: {
+      discountApplied: true,
+      programId: true,
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
       plan: { select: { name: true } },
       challenge: { select: { title: true } },
-   
       storeOrder: {
-        include: {
+        select: {
           items: {
-            include: { item: { select: { name: true } } },
+            select: {
+              item: { select: { name: true } },
+            },
           },
         },
       },
@@ -187,7 +195,12 @@ export async function GET(
 
     const isHolding = e.status === "PENDING" && e.createdAt > holdingCutoff;
     const isMatured = e.status === "PENDING" && e.createdAt <= holdingCutoff;
+     const holdingUntil = new Date(
+    new Date(e.createdAt).getTime() +
+      HOLDING_PERIOD_DAYS * 24 * 60 * 60 * 1000
+  );
 
+  
     const platformFee = isAffiliate
       ? 0
       : Number(("platformFee" in e ? e.platformFee : null) ?? 0);
@@ -209,6 +222,7 @@ export async function GET(
       platformFee,
       isHolding,
       isMatured,
+      holdingUntil,
       buyerName: e.paymentOrder?.user?.name || "Unknown Buyer",
       buyerEmail: e.paymentOrder?.user?.email || "N/A",
       itemName,

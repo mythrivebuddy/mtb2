@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PaymentConfigResponse } from "@/types/client/admin/payment-config.types";
 
 type Props = {
   initialData: {
@@ -25,15 +26,34 @@ export function RazorpayEnvironment({ initialData }: Props) {
       return res.data;
     },
 
-    onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: ["payment-config"] });
+ onSuccess: (data) => {
+  const newMode = data.razorpayMode as "live" | "test";
 
-      toast.success(
-        `Razorpay switched to ${
-          updated.razorpayMode === "live" ? "Live" : "Test"
-        } mode`,
-      );
-    },
+  // ✅ update cache instantly
+  queryClient.setQueryData<PaymentConfigResponse>(
+    ["payment-config"],
+    (old) => {
+      if (!old) return old;
+
+      return {
+        ...old,
+        razorpay: {
+          ...old.razorpay,
+          mode: newMode,
+        },
+      };
+    }
+  );
+
+  // ✅ broadcast to other tabs
+  const channel = new BroadcastChannel("payment-config");
+  channel.postMessage({ razorpayMode: newMode });
+  channel.close();
+
+  toast.success(
+    `Razorpay switched to ${newMode === "live" ? "Live" : "Test"} mode`
+  );
+},
   });
 
   function handleToggle() {

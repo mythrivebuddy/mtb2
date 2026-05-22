@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+
 // ================= TYPES =================
 type EarningDetail = {
   id: string;
@@ -55,6 +56,7 @@ type EarningDetail = {
   buyerName: string;
   buyerEmail: string;
   itemName: string;
+  holdingUntil?:string;
   discountApplied: number; //  Added Discount
   netAmount: number;
 };
@@ -533,13 +535,20 @@ export default function CreatorPayoutDetailsPage() {
                         Matured
                       </Badge>
                     ) : (
-                      <Badge
-                        variant="secondary"
-                        className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-none"
-                      >
-                        <Clock className="w-3 h-3 mr-1" />
-                        Holding
-                      </Badge>
+                   <Badge
+  variant="secondary"
+  className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-none flex flex-col items-center py-1 px-2"
+>
+  <span className="flex items-center">
+    <Clock className="w-3 h-3 mr-1" />
+    Holding
+  </span>
+  {e.holdingUntil && (
+    <span className="text-[10px] opacity-80">
+      till {format(new Date(e.holdingUntil), "dd MMM")}
+    </span>
+  )}
+</Badge>
                     )}
                   </TableCell>
                 </TableRow>
