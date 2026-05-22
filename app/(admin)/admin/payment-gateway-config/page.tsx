@@ -3,18 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { CashfreeEnvironment } from "./_components/CashfreeEnvironment";
 import { RazorpayEnvironment } from "./_components/RazorpayEnvironment";
 import axios from "axios";
+import { PaymentConfigResponse } from "@/types/client/admin/payment-config.types";
 
 
-type PaymentConfigResponse = {
-  success: boolean;
-  cashfree: {
-    mode: "prod" | "sandbox";
-    baseUrl: string;
-  };
-  razorpay: {
-    mode: "test" | "live";
-  };
-};
+
 export default function PaymentGatewayEnvironmentPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["payment-config"],

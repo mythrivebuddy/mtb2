@@ -1,15 +1,13 @@
 "use client";
 
-import React from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import AdminSideBar from "@/components/adminDashboard/AdminSideBar";
-import { BellIcon, LogOut } from "lucide-react";
 import { Toaster } from "sonner";
-import { useRouter } from "next/navigation";
+
+import AdminDashboardHeader from "../adminDashboard/AdminDashboardHeader";
 
 const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
-  const router = useRouter()
   if (session.status === "loading") {
     return <div className="p-8 text-center">Loading...</div>;
   }
@@ -22,28 +20,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden lg:px-4 pt-16 lg:pt-0">
         {/* Header */}
-        <header className="h-16 bg-white px-6 sm:px-8 lg:px-10 rounded-lg flex items-center justify-between">
-          <div className="flex justify-between gap-4 sm:gap-8 w-full items-center">
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <button onClick={()=> router.push('/admin/notifications')}  className="p-2 rounded-full hover:bg-gray-100">
-                <BellIcon size={20} />
-              </button>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
-                  {session?.data?.user?.name?.slice(0, 2).toUpperCase()}
-                </div>
-                <span className="font-medium text-sm sm:text-base">
-                  {session?.data?.user?.name}
-                </span>
-              </div>
-            </div>
-            <div className="block">
-              <button onClick={() => signOut()}>
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </header>
+        <AdminDashboardHeader />
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto   bg-transparent pt-4">
