@@ -2,21 +2,13 @@
 
 import { prisma } from "@/lib/prisma";
 import { sendDbPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
-import { NotificationType } from "@prisma/client";
+import { CronKey, NotificationType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { toZonedTime } from "date-fns-tz";
 import { isSameDay } from "date-fns";
 import { isAuthorized } from "@/lib/cron/auth";
 
 /* ================= CONFIG ================= */
-
-// Weekdays
-const PRIMARY_TIME = { hour: 16, minute: 0 }; // 8 PM
-const NUDGE_TIME = { hour: 22, minute: 0 }; // 10 PM
-
-// Sunday
-const SUNDAY_MORNING = { hour: 15, minute: 0 };
-const SUNDAY_EVENING = { hour: 19, minute: 0 };
 
 // Cron window
 const WINDOW_MINUTES = 30;
@@ -41,7 +33,49 @@ export async function POST(req: NextRequest) {
     const testUserId = searchParams.get("userId");
 
     const now = new Date();
+    const cronSchedules = await prisma.cronSchedule.findMany({
+      where: {
+        key: {
+          in: [
+            CronKey.CMP_PRIMARY_REMINDER,
+            CronKey.CMP_NUDGE_REMINDER,
+            CronKey.CMP_SUNDAY_MORNING,
+            CronKey.CMP_SUNDAY_EVENING,
+          ],
+        },
+      },
+      select: {
+        key: true,
+        hour: true,
+        minute: true,
+      },
+    });
 
+    const cronMap = new Map(
+      cronSchedules.map((c) => [c.key, { hour: c.hour, minute: c.minute }]),
+    );
+    console.log({ cronSchedules });
+
+    // ✅ Safe fallback defaults (VERY IMPORTANT)
+    const PRIMARY_TIME = cronMap.get(CronKey.CMP_PRIMARY_REMINDER) ?? {
+      hour: 20,
+      minute: 0,
+    };
+
+    const NUDGE_TIME = cronMap.get(CronKey.CMP_NUDGE_REMINDER) ?? {
+      hour: 22,
+      minute: 0,
+    };
+
+    const SUNDAY_MORNING = cronMap.get(CronKey.CMP_SUNDAY_MORNING) ?? {
+      hour: 10,
+      minute: 0,
+    };
+
+    const SUNDAY_EVENING = cronMap.get(CronKey.CMP_SUNDAY_EVENING) ?? {
+      hour: 20,
+      minute: 0,
+    };
     /* ---------------- PROGRAM ---------------- */
     const program = await prisma.program.findUnique({
       where: { slug: "2026-complete-makeover" },

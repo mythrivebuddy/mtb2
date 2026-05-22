@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationFromDBToUser } from "@/lib/utils/pushNotifications";
-import { ChallengeJoinMode } from "@prisma/client";
+import { ChallengeJoinMode, CronKey } from "@prisma/client";
 import { toZonedTime } from "date-fns-tz";
 import { isSameDay } from "date-fns";
 import { isAuthorized } from "@/lib/cron/auth";
-
-// ✅ Admin notification time (per user timezone)
-const ADMIN_TIME = { hour: 14, minute: 30 };
+import { getCronTime } from "@/lib/cron/getCronTime";
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,7 +14,9 @@ export async function GET(req: NextRequest) {
     }
 
     const now = new Date();
-
+    const { hour, minute } = await getCronTime(
+      CronKey.DAILY_CHALLENGE_REMINDER,
+    );
     // ✅ Fetch enrollments
     const enrollments = await prisma.challengeEnrollment.findMany({
       where: {
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
 
       // ✅ Build today's target time
       const target = new Date(userNow);
-      target.setHours(ADMIN_TIME.hour, ADMIN_TIME.minute, 0, 0);
+      target.setHours(hour, minute, 0, 0);
 
       const isTimePassed = userNow >= target;
 
@@ -114,10 +114,7 @@ export async function GET(req: NextRequest) {
       const alreadyNotifiedToday = enrollments.some(
         (e) =>
           e.lastNotifiedAt &&
-          isSameDay(
-            toZonedTime(e.lastNotifiedAt, timezone),
-            userNow
-          )
+          isSameDay(toZonedTime(e.lastNotifiedAt, timezone), userNow),
       );
 
       console.log({
@@ -171,7 +168,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

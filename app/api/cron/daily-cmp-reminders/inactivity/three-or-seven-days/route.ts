@@ -2,14 +2,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { NotificationType } from "@prisma/client";
+import { CronKey, NotificationType } from "@prisma/client";
 import { sendDbPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
 import { toZonedTime } from "date-fns-tz";
 import { isSameDay } from "date-fns";
 import { isAuthorized } from "@/lib/cron/auth";
 
-// ✅ Admin time (per user timezone)
-const ADMIN_TIME = { hour: 11, minute: 30 };
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,7 +16,37 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date();
+    const cronSchedules = await prisma.cronSchedule.findMany({
+  where: {
+    key: {
+      in: [
+        CronKey.CMP_INACTIVITY_3_DAY,
+        CronKey.CMP_INACTIVITY_7_DAY,
+      ],
+    },
+  },
+  select: {
+    key: true,
+    hour: true,
+    minute: true,
+  },
+});
+  console.log({cronSchedules});
+  
+const cronMap = new Map(
+  cronSchedules.map((c) => [c.key, { hour: c.hour, minute: c.minute }])
+);
 
+// ✅ Separate times
+const TIME_3_DAY = cronMap.get(CronKey.CMP_INACTIVITY_3_DAY) ?? {
+  hour: 22,
+  minute: 0,
+};
+
+const TIME_7_DAY = cronMap.get(CronKey.CMP_INACTIVITY_7_DAY) ?? {
+  hour: 22,
+  minute: 0,
+};
     /* ----------------------------------------------------
        1️⃣ Fetch program states
     ---------------------------------------------------- */
@@ -82,13 +110,17 @@ export async function POST(req: NextRequest) {
       const userNow = toZonedTime(now, timezone);
 
       // ✅ Admin time check
-      const target = new Date(userNow);
-      target.setHours(ADMIN_TIME.hour, ADMIN_TIME.minute, 0, 0);
+  // 3 DAY TIME
+const target3 = new Date(userNow);
+target3.setHours(TIME_3_DAY.hour, TIME_3_DAY.minute, 0, 0);
 
-      const isTimePassed = userNow >= target;
+const is3DayTimePassed = userNow >= target3;
 
-      // ✅ Skip if not time
-      if (!isTimePassed) continue;
+// 7 DAY TIME
+const target7 = new Date(userNow);
+target7.setHours(TIME_7_DAY.hour, TIME_7_DAY.minute, 0, 0);
+
+const is7DayTimePassed = userNow >= target7;
 
       const key = `${state.userId}_${state.programId}`;
       const lastActiveAt = lastActivityMap.get(key);
@@ -117,7 +149,9 @@ export async function POST(req: NextRequest) {
       if (alreadyNotifiedToday) continue;
 
       // 🔥 PRIORITY: 7 DAY FIRST
-      if (diffDays >= 7 && !state.inactivity7DayNotified) {
+      if (  diffDays >= 7 &&
+  !state.inactivity7DayNotified &&
+  is7DayTimePassed) {
         notify7Day.push({
           userId: state.userId,
           programId: state.programId,
@@ -126,7 +160,9 @@ export async function POST(req: NextRequest) {
       }
 
       // 🔥 THEN 3 DAY
-      if (diffDays >= 3 && !state.inactivity3DayNotified) {
+      if (  diffDays >= 3 &&
+  !state.inactivity3DayNotified &&
+  is3DayTimePassed) {
         notify3Day.push({
           userId: state.userId,
           programId: state.programId,

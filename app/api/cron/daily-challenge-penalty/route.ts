@@ -3,21 +3,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { deductJp } from "@/lib/utils/jp";
-import { ActivityType } from "@prisma/client";
+import { ActivityType, CronKey } from "@prisma/client";
 import { sendPushNotificationFromDBToUser } from "@/lib/utils/pushNotifications";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { isSameDay } from "date-fns";
 import { isAuthorized } from "@/lib/cron/auth";
+import { getCronTime } from "@/lib/cron/getCronTime";
 
-const ADMIN_TIME = { hour: 11, minute: 30 };
-
-export async function POST(req:NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-     if (!isAuthorized(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    if (!isAuthorized(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const now = new Date();
-
+    const { hour, minute } = await getCronTime(CronKey.DAILY_CHALLENGE_PENALTY);
     // ✅ FIX 1: Fetch ALL active enrollments (NO filtering by nextPenaltyAt)
     const enrollments = await prisma.challengeEnrollment.findMany({
       where: {
@@ -60,7 +59,7 @@ export async function POST(req:NextRequest) {
       // 🔥 STEP 1: Handle FIRST TIME (migration users)
       if (!nextPenaltyAt) {
         const target = new Date(userNow);
-        target.setHours(ADMIN_TIME.hour, ADMIN_TIME.minute, 0, 0);
+        target.setHours(hour, minute, 0, 0);
 
         if (userNow >= target) {
           shouldRunNow = true;
@@ -142,7 +141,7 @@ export async function POST(req:NextRequest) {
       // 🔥 STEP 6: Schedule NEXT penalty (correct fix)
       const nextLocal = new Date(userNow);
       nextLocal.setDate(nextLocal.getDate() + 1);
-      nextLocal.setHours(ADMIN_TIME.hour, ADMIN_TIME.minute, 0, 0);
+      nextLocal.setHours(hour, minute, 0, 0);
 
       const next = fromZonedTime(nextLocal, timezone);
 
