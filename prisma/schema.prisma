@@ -1829,6 +1829,27 @@ model AdminPaymentGatewayConfig {
   updatedAt     DateTime @updatedAt
 }
 
+model CronSchedule {
+  id String @id @default(cuid())
+
+  key CronKey @unique  
+
+  hour Int
+  minute Int
+  
+  updatedAt DateTime @updatedAt
+}
+enum CronKey {
+  CMP_PRIMARY_REMINDER
+  CMP_NUDGE_REMINDER
+  CMP_SUNDAY_MORNING
+  CMP_SUNDAY_EVENING
+  DAILY_CHALLENGE_PENALTY
+  CMP_INACTIVITY_7_DAY
+  CMP_INACTIVITY_3_DAY
+  DAILY_CHALLENGE_REMINDER
+}
+
 model MtbBusinessProfile {
   id              String   @id @default(uuid())
 
