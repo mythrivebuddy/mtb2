@@ -25,11 +25,7 @@ export default function PushNotificationToggle({
   const { isPushSupported, isSubscribed, isLoading, subscribe, unsubscribe } = usePushNotifications();
   const [processing, setProcessing] = useState(false);
 
-  // Don't render anything if push notifications aren't supported
-  if (!isPushSupported) {
-    return null;
-  }
-
+  console.warn("Push notification  not supported in your browser  status :", isPushSupported);
   // Handle toggling the subscription state
   const handleToggle = async () => {
     try {

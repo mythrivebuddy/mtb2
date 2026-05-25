@@ -1,15 +1,27 @@
+// app/api/cron/daily-cmp-reminders/nudge/route.ts
+//TODO we need to remove this as we are using a combined api for sending primary and nudge cmp reminders (new api /api/cron/daily-cmp-reminders/combined-primary-nudge-sunday)
 import { prisma } from "@/lib/prisma";
-import { getISTEndOfDay, getISTStartOfDay } from "@/lib/utils/dateUtils";
 import { sendDbPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
 import { NotificationType } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { toZonedTime } from "date-fns-tz";
+import { isSameDay } from "date-fns";
+import { isAuthorized } from "@/lib/cron/auth";
 
-export async function GET() {
+// ✅ Admin time (8 PM local for EACH USER)
+const ADMIN_TIME = { hour: 15, minute: 30 };
+
+export async function GET(req: NextRequest) {
   try {
-    const istStart = getISTStartOfDay();
-    const istEnd = getISTEndOfDay();
+    if (!isAuthorized(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // 1️⃣ Get program
+    const now = new Date();
+
+    /* ----------------------------------------------------
+       1️⃣ Get program
+    ---------------------------------------------------- */
     const program = await prisma.program.findUnique({
       where: { slug: "2026-complete-makeover" },
       select: { id: true },
@@ -19,65 +31,133 @@ export async function GET() {
       return NextResponse.json({ message: "Program not found" });
     }
 
-    // 2️⃣ Users who already got primary reminder today
-    const users = await prisma.userProgramState.findMany({
+    /* ----------------------------------------------------
+       2️⃣ Fetch users with timezone
+    ---------------------------------------------------- */
+    const states = await prisma.userProgramState.findMany({
       where: {
         onboarded: true,
         programId: program.id,
-        lastReminderDate: {
-          gte: istStart,
-          lt: istEnd,
+      },
+      select: {
+        userId: true,
+        lastReminderDate: true,
+        user: {
+          select: {
+            timezone: true,
+          },
         },
       },
-      select: { userId: true },
     });
 
-    if (!users.length) {
+    if (!states.length) {
       return NextResponse.json({
         status: "ok",
-        type: "nudge",
         sent: 0,
       });
     }
 
-    const userIds = users.map((u) => u.userId);
-
-    // 3️⃣ Fetch completions in ONE query (fix N+1)
-    const completedToday = await prisma.makeoverProgressLog.findMany({
-      where: {
-        userId: { in: userIds },
-        date: { gte: istStart, lt: istEnd },
+    /* ----------------------------------------------------
+       3️⃣ Fetch completions (GLOBAL query)
+    ---------------------------------------------------- */
+    const completions = await prisma.makeoverProgressLog.findMany({
+      select: {
+        userId: true,
+        date: true,
       },
-      select: { userId: true },
     });
 
-    const completedSet = new Set(completedToday.map((c) => c.userId));
+    // Map: userId -> latest completion
+    const completionMap = new Map<string, Date>();
 
-    // 4️⃣ Filter eligible users
-    const eligibleUserIds = userIds.filter(
-      (userId) => !completedSet.has(userId)
-    );
+    for (const c of completions) {
+      completionMap.set(c.userId, c.date);
+    }
+
+    /* ----------------------------------------------------
+       4️⃣ Process per user (timezone aware)
+    ---------------------------------------------------- */
+    const eligibleUserIds: string[] = [];
+
+    for (const state of states) {
+      const timezone = state.user?.timezone || "UTC";
+
+      const userNow = toZonedTime(now, timezone);
+
+      // ✅ Build 8 PM for that user
+      const target = new Date(userNow);
+      target.setHours(ADMIN_TIME.hour, ADMIN_TIME.minute, 0, 0);
+
+      const isTimePassed = userNow >= target;
+
+      // ✅ Prevent duplicate same-day notification
+      const alreadyNotifiedToday =
+        state.lastReminderDate &&
+        isSameDay(
+          toZonedTime(state.lastReminderDate, timezone),
+          userNow
+        );
+
+      console.log({
+        userId: state.userId,
+        userTime: userNow.toLocaleTimeString(),
+        targetTime: target.toLocaleTimeString(),
+        isTimePassed,
+        alreadyNotifiedToday,
+      });
+
+      if (!isTimePassed || alreadyNotifiedToday) continue;
+
+      // ✅ Check completion TODAY (user timezone safe)
+      const lastCompleted = completionMap.get(state.userId);
+
+      let completedToday = false;
+
+      if (lastCompleted) {
+        const userCompletedTime = toZonedTime(lastCompleted, timezone);
+
+        completedToday = isSameDay(userCompletedTime, userNow);
+      }
+
+      // ❌ Skip if already completed
+      if (completedToday) continue;
+
+      eligibleUserIds.push(state.userId);
+    }
 
     if (!eligibleUserIds.length) {
       return NextResponse.json({
         status: "ok",
-        type: "nudge",
         sent: 0,
       });
     }
 
-    // 5️⃣ ✅ DB-driven bulk notification
+    /* ----------------------------------------------------
+       5️⃣ SEND BULK NOTIFICATION
+    ---------------------------------------------------- */
     await sendDbPushNotificationMultipleUsers({
       type: NotificationType.CMP_DAILY_GENTLE_NUDGE,
       userIds: eligibleUserIds,
-      context: {}, // optional dynamic fields
+      context: {},
     });
 
-    console.log(`[CRON] Gentle nudge sent to ${eligibleUserIds.length} users`);
+    /* ----------------------------------------------------
+       6️⃣ Update lastReminderDate
+    ---------------------------------------------------- */
+    await prisma.userProgramState.updateMany({
+      where: {
+        userId: { in: eligibleUserIds },
+        programId: program.id,
+      },
+      data: {
+        lastReminderDate: now,
+      },
+    });
+
+    console.log(`[CRON] Nudge sent to ${eligibleUserIds.length} users`);
 
     return NextResponse.json({
       status: "ok",
-      type: "nudge",
       sent: eligibleUserIds.length,
     });
   } catch (error) {
