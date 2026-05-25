@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PaymentConfigResponse } from "@/types/client/admin/payment-config.types";
 
 type Props = {
   initialData: {
@@ -26,10 +27,35 @@ export function CashfreeEnvironment({ initialData }: Props) {
       return res.data;
     },
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payment-config"] });
-      toast.success("Cashfree environment updated");
-    },
+   onSuccess: (data) => {
+  const newMode = data.cashfreeMode as "prod" | "sandbox";
+
+  queryClient.setQueryData<PaymentConfigResponse>(
+    ["payment-config"],
+    (old) => {
+      if (!old) return old;
+
+      return {
+        ...old,
+        cashfree: {
+          ...old.cashfree,
+          mode: newMode,
+          baseUrl:
+            newMode === "prod"
+              ? "https://api.cashfree.com/pg"
+              : "https://sandbox.cashfree.com/pg",
+        },
+      };
+    }
+  );
+
+  // ✅ broadcast actual value (not generic flag)
+  const channel = new BroadcastChannel("payment-config");
+  channel.postMessage({ cashfreeMode: newMode });
+  channel.close();
+
+  toast.success("Cashfree environment updated");
+},
   });
 
   function handleToggle() {
@@ -50,7 +76,7 @@ export function CashfreeEnvironment({ initialData }: Props) {
               isProduction ? "text-green-600" : "text-blue-600"
             }`}
           >
-            {isProduction ? "Production" : "Sandbox"}
+            {isProduction ? "Live" : "Test"}
           </span>
         </div>
 
@@ -63,7 +89,11 @@ export function CashfreeEnvironment({ initialData }: Props) {
 
         <div className="flex items-center justify-between pt-2">
           <span className="text-sm font-medium">Toggle Environment</span>
-          <Switch disabled={toggleMutation.isPending} checked={isProduction} onCheckedChange={handleToggle} />
+          <Switch
+            disabled={toggleMutation.isPending}
+            checked={isProduction}
+            onCheckedChange={handleToggle}
+          />
         </div>
       </CardContent>
     </Card>

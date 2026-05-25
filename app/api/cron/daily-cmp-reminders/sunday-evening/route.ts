@@ -1,5 +1,5 @@
 // /api/cron/daily-cmp-reminders/sunday-evening
-
+// Todo we need to remove this api too becuase we are handling using the /api/cron/daily-cmp-reminders/combined-primary-nudge-sunday
 import { prisma } from "@/lib/prisma";
 import { getISTEndOfWeek, getISTStartOfWeek } from "@/lib/utils/dateUtils";
 import { sendDbPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";

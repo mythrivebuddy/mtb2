@@ -1,3 +1,4 @@
+//Todo we need to delete this api as we merge it in single api for handling both three and seven days inactivity (new /api/cron/daily-cmp-reminders/inactivity/three-or-seven-days)
 import { runInactivityNotifier } from "@/lib/utils/makeover-program/inactivity/inactivityNotifier";
 import { NotificationType } from "@prisma/client";
 

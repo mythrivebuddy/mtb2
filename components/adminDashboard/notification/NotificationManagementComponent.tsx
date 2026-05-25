@@ -45,7 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import PushNotificationToggle from "@/components/notifications/PushNotificationToggle";
+
 const placeholderValue = "__placeholder__";
 
 // Schema
@@ -291,21 +291,6 @@ export const NotificationManagementComponent = () => {
 
   return (
     <div className=" mx-auto mt-10 px-4">
-      {/* Push Notification Settings */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border mb-6 dark:bg-slate-900">
-        <h2 className="text-lg font-medium mb-3 dark:text-gray-200">
-          Notification Settings
-        </h2>
-        <div className="space-y-3">
-          <PushNotificationToggle
-            variant="switch"
-            label="Browser Push Notifications"
-          />
-          <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">
-            Receive notifications even when you are not actively using the site
-          </p>
-        </div>
-      </div>
       <div className="flex justify-between items-center mb-4">
         {/* LEFT SIDE */}
         <div className="flex flex-col w-full">

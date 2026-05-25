@@ -142,6 +142,7 @@ export async function POST(req: NextRequest) {
             name: "mmp-challenge-store.notify",
             id: `notify-${existingOrder.id}`,
             data: {
+              userId: existingOrder.userId,
               orderId: existingOrder.id,
               seId: existingOrder.userId,
               isFree: false, // paid flow
