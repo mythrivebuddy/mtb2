@@ -2714,7 +2714,6 @@ enum HostedEventType {
 enum HostedEventFormat {
   IN_PERSON
   ONLINE
-  HYBRID
 }
 
 enum HostedEventResourceVisibility {
