@@ -87,7 +87,7 @@ const Hero = () => (
           >
             Start Your Journey <ArrowRight className="w-5 h-5" />
           </button>
-          <button className="flex items-center gap-2 px-8 py-4 rounded-full font-medium bg-white text-[#2C251F] hover:bg-stone-50 transition-colors shadow-sm">
+          <button className="flex items-center gap-2 px-8 py-4 rounded-full font-medium bg-white text-[#2C251F] hover:bg-stone-50 transition-colors shadow-sm hover:shadow-lg">
             <PlayCircle className="w-5 h-5" /> Explore Inside MTB
           </button>
         </div>

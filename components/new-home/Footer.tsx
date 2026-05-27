@@ -13,7 +13,7 @@ const Footer = () => (
             src="/new-home-assets/new-logo.png"
             className="w-[68px] h-[68.5px]"
           />
-          <span className={`${cormorant.className} text-2xl font-medium `}>
+          <span className={`${cormorant.className} text-4xl font-medium `}>
             My<span className={theme.highLightTextColor}>Thrive</span>Buddy
           </span>
         </Link>
@@ -150,9 +150,9 @@ const Footer = () => (
     </div>
 
     <div
-      className={`border-t  ${theme.hightLightBorderColor}  pt-8 flex items-center justify-between text-2xl tracking-[0.05em]`}
+      className={`border-t  ${theme.hightLightBorderColor}  pt-8 flex items-center justify-between text-xl tracking-[0.05em]`}
     >
-      <h3>© {new Date().getFullYear()} MyThriveBuddy. All rights reserved.</h3>
+      <p>© {new Date().getFullYear()} MyThriveBuddy. All rights reserved.</p>
     </div>
   </footer>
 );

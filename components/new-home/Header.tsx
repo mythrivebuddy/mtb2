@@ -24,7 +24,7 @@ const Header = () => {
     {/* LEFT */}
     <div className="flex items-center gap-2">
       <img src="/new-home-assets/new-logo.png" className="w-[68px] h-[68.5px]" />
-      <span className={`${cormorant.className} text-2xl font-medium text-[#2C251F]`}>
+      <span className={`${cormorant.className} text-4xl font-medium text-[#2C251F]`}>
         My<span className={theme.highLightTextColor}>Thrive</span>Buddy
       </span>
     </div>
