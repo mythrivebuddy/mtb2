@@ -5,15 +5,11 @@
 import React from "react";
 
 import {
-  Sparkles,
   ArrowRight,
   PlayCircle,
-  BookOpen,
   User,
   TrendingDown,
-  Calendar,
   Users,
-  BarChart2,
   Leaf,
   ChevronLeft,
   ChevronRight,
@@ -26,6 +22,7 @@ import Header from "@/components/new-home/Header";
 import { cormorant, instrument } from "@/lib/new-home/fonts/fonts";
 import {
   MtbBarChartIcon,
+  MtbBookOpenIcon,
   MtbCalendarIcon,
   MtbCapIcon,
   MtbCheckIcon,
@@ -33,6 +30,7 @@ import {
   MtbFlameIcon,
   MtbGrowthIcon,
   MtbMessageIcon,
+  MtbSparklesIcon,
   MtbTargetIcon,
   MtbThreeUsersIcon,
 } from "@/icons/mtb-icons";
@@ -47,7 +45,7 @@ const Hero = () => (
       <div className="space-y-8 max-w-xl">
         <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#B87042] text-black text-xs  tracking-widest uppercase shadow-[0px_0px_4px_rgba(255,255,255,1)]">
           {/* Sparkels icon */}
-          <img src="/new-home-assets/Sparkels.svg" />
+          <MtbSparklesIcon className="w-4 h-4" />
           <span
             className={`${cormorant.className} font-semibold text-[16px] whitespace-nowrap`}
           >
@@ -242,7 +240,7 @@ const Hero = () => (
         {
           title: "Structure routines",
           desc: "Build daily habits that fit your life.",
-          icon: <Calendar />,
+          icon: <MtbCalendarIcon />,
         },
         {
           title: "Guided accountability",
@@ -252,19 +250,19 @@ const Hero = () => (
         {
           title: "Track real progress",
           desc: "See your growth with simple insights & analytics.",
-          icon: <BarChart2 />,
+          icon: <MtbBarChartIcon />,
         },
         {
           title: "Supportive community",
           desc: "Grow with people who inspire and support you.",
-          icon: <Users />,
+          icon: <MtbThreeUsersIcon className="" />,
         },
       ].map((feature, i) => (
         <div key={i} className="flex items-start gap-4 flex-1">
           <div
-            className={`p-3 bg-[#FCF9F3] rounded-xl ${theme.highLightTextColor}`}
+            className={`p-3 bg-[#FCF9F3] rounded-full ${theme.highLightTextColor}`}
           >
-            {React.cloneElement(feature.icon, { className: "w-5 h-5" })}
+            {React.cloneElement(feature.icon, { className: "w-7 h-7" })}
           </div>
           <div>
             <h4 className="font-semibold text-[#2C251F] text-sm mb-1">
@@ -347,7 +345,7 @@ const ProblemSection = () => (
         {
           title: "Consuming, not implementing",
           desc: "You read, watch, and learn but struggle to take action consistently.",
-          icon: <BookOpen />,
+          icon: <MtbBookOpenIcon />,
         },
         {
           title: "Doing it alone",
@@ -573,7 +571,7 @@ const FeatureSection = () => (
 
     <div className="bg-white border border-[#B87042] rounded-2xl p-6 flex items-center justify-start pl-20 gap-3">
       <div className={theme.bgTertiary + " rounded-full p-2"}>
-        <img src="/new-home-assets/Sparkels.svg" width={24} height={24} />
+        <MtbSparklesIcon className="h-6 w-6" />
       </div>
       <p className=" text-lg text-[#B87042]">
         All in one Place. All designed to help you stay consistent and grow
@@ -701,7 +699,7 @@ const ProcessSection = () => (
     <div className="bg-white border border-[#B87042] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6  mx-auto">
       <div className="flex items-center gap-4 pl-4">
         <div className="w-12 h-12 bg-[#FCF9F3] rounded-full flex items-center justify-center text-[#B87042]">
-          <img src="/new-home-assets/Sparkels.svg" />
+          <MtbSparklesIcon className="w-5 h-5" />
         </div>
 
         <p className="font-bold text-[#2C251F]">
@@ -792,7 +790,7 @@ const SuccessStoriesSection = () => (
     <div className="bg-white border border-[#B87042] rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 max-w-[1200px] mx-auto px-8">
       <div className="flex items-center gap-6">
         <div className="w-14 h-14 bg-[#FCF9F3] rounded-full flex items-center justify-center text-[#B87042]">
-          <Sparkles className="w-6 h-6" />
+          <MtbSparklesIcon className="w-6 h-6" />
         </div>
         <div>
           <p className="font-serif text-xl text-[#2C251F]">
