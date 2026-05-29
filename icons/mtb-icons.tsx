@@ -257,3 +257,51 @@ export const MtbSparklesIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
+export const MtbMenuIcon = (props: React.SVGProps<SVGSVGElement>) => {
+  return (
+    <svg 
+      width="40" 
+      height="40" 
+      viewBox="0 0 40 40" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      {/* Top Line */}
+      <rect x="8.5" y="11" width="23" height="2" rx="1" fill="#432E1D"/>
+      <rect x="8.5" y="11" width="23" height="2" rx="1" stroke="black"/>
+      <rect x="8.5" y="11" width="23" height="2" rx="1" stroke="black" strokeOpacity="0.2"/>
+      
+      {/* Middle Line */}
+      <rect x="8.5" y="19" width="23" height="2" rx="1" fill="#432E1D"/>
+      <rect x="8.5" y="19" width="23" height="2" rx="1" stroke="black"/>
+      <rect x="8.5" y="19" width="23" height="2" rx="1" stroke="black" strokeOpacity="0.2"/>
+      
+      {/* Bottom Line */}
+      <rect x="8.5" y="27" width="23" height="2" rx="1" fill="#432E1D"/>
+      <rect x="8.5" y="27" width="23" height="2" rx="1" stroke="black"/>
+      <rect x="8.5" y="27" width="23" height="2" rx="1" stroke="black" strokeOpacity="0.2"/>
+    </svg>
+  );
+};
+
+export const MtbCrossIcon = (props: React.SVGProps<SVGSVGElement>) => {
+  return (
+    <svg 
+      width="40" 
+      height="40" 
+      viewBox="0 0 40 40" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <rect x="10.7071" y="27" width="23" height="2" rx="1" transform="rotate(-45 10.7071 27)" fill="#432E1D"/>
+      <rect x="10.7071" y="27" width="23" height="2" rx="1" transform="rotate(-45 10.7071 27)" stroke="black"/>
+      <rect x="10.7071" y="27" width="23" height="2" rx="1" transform="rotate(-45 10.7071 27)" stroke="black" strokeOpacity="0.2"/>
+      <rect x="13" y="10.7071" width="23" height="2" rx="1" transform="rotate(45 13 10.7071)" fill="#432E1D"/>
+      <rect x="13" y="10.7071" width="23" height="2" rx="1" transform="rotate(45 13 10.7071)" stroke="black"/>
+      <rect x="13" y="10.7071" width="23" height="2" rx="1" transform="rotate(45 13 10.7071)" stroke="black" strokeOpacity="0.2"/>
+    </svg>
+  );
+};

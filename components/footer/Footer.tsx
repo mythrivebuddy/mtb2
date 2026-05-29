@@ -17,7 +17,7 @@ export default function Footer() {
             </Link>
 
             <p className="mt-4 text-md text-slate-600 dark:text-slate-400">
-              Your growth home for tools, mindset, visibility, and momentum.
+        Your Personal & Professional Growth Environment
             </p>
           </div>
 

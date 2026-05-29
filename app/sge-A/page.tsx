@@ -49,18 +49,12 @@ const Hero = () => (
           <span
             className={`${cormorant.className} font-semibold text-[16px] whitespace-nowrap`}
           >
-            Personal Growth Platform For Lasting Consistency
+            Your Personal & Professional Growth Environment
           </span>
         </div>
 
         <h1
-          className={`${cormorant.className} 
-  text-[36px] 
-  md:text-[48px] 
-  lg:text-[58px] 
-  leading-[1.2] 
-  font-medium 
-  text-[#2C251F]`}
+          className={theme.typography.h1}
         >
           <span className="whitespace-nowrap"> Growth is easier when your</span>
           <span className={`${cormorant.className} italic text-[#B87042] `}>
