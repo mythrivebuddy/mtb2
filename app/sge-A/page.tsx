@@ -39,31 +39,38 @@ import Footer from "@/components/new-home/Footer";
 // --- Components ---
 
 const Hero = () => (
-  <section className={`max-w-[1440px]  mx-auto px-6 md:px-12 pt-12 pb-24`}>
-    <div className="grid lg:grid-cols-2 gap-8 items-center">
+  <section
+    className={`max-w-[1440px]  mx-auto px-4 sm:px-6 md:px-12 pt-12 pb-24 overflow-hidden`}
+  >
+    {/* from here  */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
       {/* Left Content */}
-      <div className="space-y-8 max-w-xl">
-        <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#B87042] text-black text-xs  tracking-widest uppercase shadow-[0px_0px_4px_rgba(255,255,255,1)]">
+      <div className="space-y-8 ">
+        <div className="inline-flex items-center gap-2 px-2 py-2.5 rounded-full border border-[#B87042] text-black text-xs  sm:tracking-widest uppercase shadow-[0px_0px_4px_rgba(255,255,255,1)]">
           {/* Sparkels icon */}
-          <MtbSparklesIcon className="w-4 h-4" />
+          <MtbSparklesIcon className="w-3 h-3 sm:w-4 sm:h-4" />
           <span
-            className={`${cormorant.className} font-semibold text-[16px] whitespace-nowrap`}
+            className={`${cormorant.className} font-semibold text-[10px] sm:text-[16px] whitespace-nowrap`}
           >
             Your Personal & Professional Growth Environment
           </span>
         </div>
 
         <h1
-          className={theme.typography.h1}
+          className={
+            theme.typography.h1 + " text-[31px] md:text-[48px]  lg:text-[58px] "
+          }
         >
-          <span className="whitespace-nowrap"> Growth is easier when your</span>
+          <span>Growth is easier when your</span>
+          <br className="hidden sm:block" />
+          {"  "}
           <span className={`${cormorant.className} italic text-[#B87042] `}>
             environment
           </span>{" "}
           supports it.
         </h1>
 
-        <p className="text-[24px] text-[#2C251F] leading-[1.4] ">
+        <p className="text-[16px] sm:text-[24px] text-[#2C251F] leading-[1.4] ">
           MTB is a growth environment that helps people struggling with{" "}
           <span className="text-[#B87042]">
             focus, routines, burnout, and inconsistency
@@ -72,21 +79,22 @@ const Hero = () => (
           accountability, and community support.
         </p>
 
-        <div className="flex flex-wrap items-center gap-4 pt-2">
+        <div className="flex flex-col sm:flex-row w-full text-[16px] items-center sm:items-stretch gap-4 pt-2">
           <button
             className={
               theme.buttonDark +
-              ` flex items-center gap-2 px-8 py-4 rounded-full font-medium transition-colors `
+              ` flex items-center justify-center gap-2 w-full sm:w-auto lg:w-full px-6 lg:px-8 py-4 rounded-full font-medium transition-colors whitespace-nowrap`
             }
           >
             Start Your Journey <ArrowRight className="w-5 h-5" />
           </button>
-          <button className="flex items-center gap-2 px-8 py-4 rounded-full font-medium bg-white text-[#2C251F] hover:bg-stone-50 transition-colors shadow-sm hover:shadow-lg">
+
+          <button className="flex items-center justify-center gap-2 w-full sm:w-auto lg:w-full px-6 lg:px-8 py-4 rounded-full font-medium bg-white text-[#2C251F] hover:bg-stone-50 transition-colors shadow-sm hover:shadow-lg whitespace-nowrap">
             <PlayCircle className="w-5 h-5" /> Explore Inside MTB
           </button>
         </div>
 
-        <div className="flex items-center gap-4 pt-6">
+        <div className="flex items-center gap-4 sm:pt-6">
           <div className="flex -space-x-3">
             {[
               "bg-blue-200",
@@ -118,16 +126,16 @@ const Hero = () => (
       </div>
 
       {/* Right Visual Image & Floating Cards */}
-      <div className="relative h-[600px]   rounded-3xl ">
+      <div className="relative w-full max-w-[550px] h-[450px] sm:h-[550px] lg:h-[600px]">
         {/* Placeholder for the aesthetic desk image */}
         <img
           src="/new-home-assets/Hero-image.png"
           alt="Aesthetic desk setup with books and coffee"
-          className="absolute right-0 top-0 w-[448px] h-[525px] object-cover"
+          className="absolute top-0 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0 w-[85%] sm:w-[80%] h-[80%] sm:h-[90%] object-cover rounded-3xl"
         />
 
         {/* Floating Weekly Momentum Card */}
-        <div className="absolute -top-8 -right-12 bg-white p-3 rounded-2xl shadow-xl border border-stone-100 w-[250px] h-[141px] flex flex-col justify-between">
+        <div className="absolute -top-8 right-0 sm:-top-4 sm:-right-4 lg:-top-8 lg:-right-8 bg-white p-3 rounded-2xl shadow-xl border border-stone-100 w-[220px] sm:w-[250px] h-[141px] flex flex-col justify-between z-10">
           {/* Top */}
           <div className="flex justify-between items-center">
             <span className="font-semibold text-[10px] text-[#2C251F]">
@@ -181,7 +189,7 @@ const Hero = () => (
         </div>
 
         {/* Floating Streak Card */}
-        <div className="absolute bottom-6 left-40 bg-white p-4 rounded-2xl shadow-xl border border-stone-100 w-[242px] h-[156px] flex flex-col justify-between select-none">
+        <div className="absolute bottom-0 left-0 sm:bottom-6 sm:left-4 lg:left-8 bg-white p-4 rounded-2xl shadow-xl border border-stone-100 w-[220px] sm:w-[242px] h-[156px] flex flex-col justify-between select-none z-10">
           {/* Header */}
           <div className="text-[13px] font-semibold text-[#2C251F] tracking-wide">
             Current streak
@@ -229,7 +237,7 @@ const Hero = () => (
     </div>
 
     {/* Bottom Feature Bar */}
-    <div className="mt-[42px] bg-white border-2 border-[#B87042] rounded-2xl p-6 md:p-8 flex flex-col md:flex-row justify-between gap-8">
+    <div className="mt-[42px] bg-white border-2 border-[#B87042] rounded-2xl p-3 sm:p-6 md:p-8 flex justify-between gap-2 sm:gap-4 lg:gap-8">
       {[
         {
           title: "Structure routines",
@@ -252,17 +260,22 @@ const Hero = () => (
           icon: <MtbThreeUsersIcon className="" />,
         },
       ].map((feature, i) => (
-        <div key={i} className="flex items-start gap-4 flex-1">
+        <div
+          key={i}
+          className="flex flex-1 flex-col lg:flex-row items-center lg:items-start gap-1.5 sm:gap-3 lg:gap-4 text-center lg:text-left"
+        >
           <div
-            className={`p-3 bg-[#FCF9F3] rounded-full ${theme.highLightTextColor}`}
+            className={`p-2 sm:p-3 bg-[#FCF9F3] rounded-full shrink-0 ${theme.highLightTextColor}`}
           >
-            {React.cloneElement(feature.icon, { className: "w-7 h-7" })}
+            {React.cloneElement(feature.icon, {
+              className: "w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7",
+            })}
           </div>
-          <div>
-            <h4 className="font-semibold text-[#2C251F] text-sm mb-1">
+          <div className="w-full flex flex-col items-center justify-center lg:block mt-1 sm:mt-2 lg:mt-0">
+            <h4 className="font-semibold text-[#2C251F] text-[9px] min-[375px]:text-[10px] sm:text-[12px] lg:text-sm leading-tight mb-1">
               {feature.title}
             </h4>
-            <p className="text-xs text-[#5A5048] leading-relaxed">
+            <p className="text-[11px] lg:text-xs hidden sm:block text-[#5A5048] leading-relaxed">
               {feature.desc}
             </p>
           </div>

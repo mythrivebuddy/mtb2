@@ -18,6 +18,6 @@ export const theme = {
     "bg-[var(--button-dark)] text-white hover:bg-[var(--button-dark-hover)]",
   typography: {
     brandNavbarHeading: `${cormorant.className} text-xl md:text-2xl lg:text-4xl font-medium `,
-   h1: `${cormorant.className} text-[36px] md:text-[48px] lg:text-[58px] leading-[1.2] font-medium`,
+   h1: `${cormorant.className}  leading-[1.2] font-medium`,
   },
 };
