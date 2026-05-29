@@ -45,7 +45,7 @@ const Hero = () => (
     {/* from here  */}
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
       {/* Left Content */}
-      <div className="space-y-8 ">
+      <div className="space-y-4 sm:space-y-8 ">
         <div className="inline-flex items-center gap-2 px-2 py-2.5 rounded-full border border-[#B87042] text-black text-xs  sm:tracking-widest uppercase shadow-[0px_0px_4px_rgba(255,255,255,1)]">
           {/* Sparkels icon */}
           <MtbSparklesIcon className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -58,7 +58,7 @@ const Hero = () => (
 
         <h1
           className={
-            theme.typography.h1 + " text-[31px] md:text-[48px]  lg:text-[58px] "
+            theme.typography.h1 + " text-[30px] md:text-[48px]  lg:text-[58px] "
           }
         >
           <span>Growth is easier when your</span>
@@ -70,7 +70,7 @@ const Hero = () => (
           supports it.
         </h1>
 
-        <p className="text-[16px] sm:text-[24px] text-[#2C251F] leading-[1.4] ">
+        <p className="pt-1 sm:pt-0 text-[16px] sm:text-[24px] text-[#2C251F] leading-[1.4] ">
           MTB is a growth environment that helps people struggling with{" "}
           <span className="text-[#B87042]">
             focus, routines, burnout, and inconsistency
@@ -94,7 +94,7 @@ const Hero = () => (
           </button>
         </div>
 
-        <div className="flex items-center gap-4 sm:pt-6">
+        <div className="flex items-center gap-4 pt-2 sm:pt-6">
           <div className="flex -space-x-3">
             {[
               "bg-blue-200",
