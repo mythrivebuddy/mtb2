@@ -51,7 +51,7 @@ const Header = () => {
 
         {/* RIGHT */}
         <div className="hidden x1260:flex items-center gap-3">
-          <button className="px-6 py-2.5 rounded-full border border-[#432E1D] text-[#432E1D] text-[15px] font-medium hover:bg-[#432E1D] hover:text-white transition-all">
+          <button className="px-6 py-2.5 rounded-full border border-[#432E1D] text-[#432E1D] text-[15px] font-medium hover:text-white transition-all">
             Sign In
           </button>
           <button
