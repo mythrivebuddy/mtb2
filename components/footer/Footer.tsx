@@ -1,19 +1,36 @@
+"use client";
+import { theme } from "@/lib/new-home/theme/theme";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Footer() {
+  const session = useSession();
+    const pathname = usePathname();
+
+const isDashboard = pathname.includes("dashboard");
   return (
     <footer className="mt-6">
       <div className="py-4">
         {/* TOP GRID */}
-        <div className="grid lg:grid-cols-4 gap-12">
+        <div className="grid lg:grid-cols-4 gap-16">
           {/* Logo + description */}
           <div>
-            <Link href="/?from=user-consent" className="flex items-center gap-3">
-              <Image src="/logo.png" height={36} width={36} alt="Logo" />
-              <h2 className="text-xl font-bold dark:text-white">
-                MyThriveBuddy
-              </h2>
+           <Link
+              href="/?from=user-consent"
+              className="flex items-center gap-3"
+            >
+              <Image
+                src="/new-home-assets/new-logo.png"
+                height={68}
+                width={68}
+                alt="Logo"
+                className="h-[40px] w-[40px] md:h-[50px] md:w-[50px] x1260:w-[68px] x1260:h-[68.5px]"
+              />
+              <span className={` ${isDashboard && session.status === "authenticated" ? theme.typography.brandDashboardFooterHeading : theme.typography.brandFooterHeading}`}>
+                My<span className={theme.highLightTextColor}>Thrive</span>Buddy
+              </span>
             </Link>
 
             <p className="mt-4 text-md text-slate-600 dark:text-slate-400">
