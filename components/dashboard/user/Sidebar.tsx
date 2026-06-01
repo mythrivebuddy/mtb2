@@ -21,6 +21,7 @@ import {
   Award,
   BadgePercent,
   Compass,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -333,6 +334,12 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                       </span>
                     </Link>
                   </div>
+                 <NavItem
+                    href="/dashboard/events/create"
+                    icon={<Calendar size={20} />}
+                    label="Create Events"
+                    onLinkClick={toggleSidebar} 
+                  />
                   <NavItem
                     href="/dashboard/manage-store"
                     icon={<ShoppingCartIcon size={20} />}
