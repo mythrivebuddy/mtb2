@@ -18,6 +18,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import { theme } from "@/lib/new-home/theme/theme";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -27,18 +28,26 @@ export default function Navbar() {
     <div className="sticky top-0 z-50 bg-white transition-colors dark:bg-slate-950">
       <div className="flex items-center justify-between relative py-1.5">
         {/* Logo Section */}
-        <Link href="/?from=user-consent" className="flex items-center space-x-2 relative">
+        <Link
+          href="/?from=user-consent"
+          className="flex items-center space-x-2 relative"
+        >
           <Image
-            src="/icon-logo-mtb.png"
+            src="/new-home-assets/new-logo.png"
             alt="MyThriveBuddy"
-            width={50}
-            height={50}
-            className="object-contain"
+            width={68}
+            height={68}
+            // className="object-contain"
+             className="w-[40px] h-[40px] md:w-[50px] md:h-[50px] lg:w-[68px] lg:h-[68.5px]"
           />
-          <span className="font-semibold md:text-[22px] text-black dark:text-slate-50">
-            MyThriveBuddy.com
+          <span
+            className={
+              theme.typography.brandNavbarHeading + " hidden sm:inline-block "
+            }
+          >
+            My<span className={theme.highLightTextColor}>Thrive</span>Buddy
           </span>
-          <span className="md:text-[10px] absolute right-0 -top-3 text-[7px] font-medium px-1.5 sm:px-2 py-0.5 bg-black text-white rounded">
+          <span className="md:text-[10px] absolute right-0 -top-1 text-[7px] font-medium px-1.5 sm:px-2 py-0.5 bg-black text-white rounded">
             BETA
           </span>
         </Link>
@@ -47,9 +56,7 @@ export default function Navbar() {
         <div className="hidden x1260:flex items-center space-x-4 lg:space-x-8">
           {/* {session && <NavLink href="/dashboard">Dashboard</NavLink>} */}
           <div className="group relative">
-            <button
-              className="flex items-center gap-1 text-md font-medium text-slate-700 hover:text-brand dark:text-slate-300 dark:hover:text-brand"
-            >
+            <button className="flex items-center gap-1 text-md font-medium text-slate-700 hover:text-brand dark:text-slate-300 dark:hover:text-brand">
               <span className="text-sm font-medium">Benefits</span>
               <span className="transition-transform duration-300 group-hover:rotate-180">
                 <ChevronDown size={18} />
@@ -86,11 +93,11 @@ export default function Navbar() {
                         link: "/1-percent-progress-vault",
                       },
                       {
-                        icon:Phone,
+                        icon: Phone,
                         title: "Discovery Calls",
                         desc: "Manage calls & follow-ups effortlessly.",
                         link: "/book-discovery-calls",
-                      }
+                      },
                     ].map((item) => (
                       <Link
                         className="group/item flex items-start gap-3"
@@ -344,24 +351,18 @@ export default function Navbar() {
         <div className="absolute top-full left-0 right-0 bg-white mt-0 p-4 rounded-lg shadow-lg x1260:hidden z-50 dark:border dark:border-slate-700 dark:bg-slate-900">
           <div className="flex flex-col space-y-4">
             <NavLink href="/pricing">Pricing</NavLink>
-              <NavLink
-            href="/MTB-2026-the-complete-makeover-program"
-            className="hover:text-brand text-sm font-medium"
-          >
-            Makeover Program 2026
-          </NavLink>
-            <NavLink href="/dashboard/challenge">Challenges</NavLink>
             <NavLink
-            href="/dashboard/mini-mastery-programs"
-          >
-            Mini Mastery Program
-          </NavLink>
-          <NavLink
-            href="/dashboard/store"
-          >
-            Growth Store
-          </NavLink>
-          {session && <NavLink href="/dashboard">Dashboard</NavLink>}
+              href="/MTB-2026-the-complete-makeover-program"
+              className="hover:text-brand text-sm font-medium"
+            >
+              Makeover Program 2026
+            </NavLink>
+            <NavLink href="/dashboard/challenge">Challenges</NavLink>
+            <NavLink href="/dashboard/mini-mastery-programs">
+              Mini Mastery Program
+            </NavLink>
+            <NavLink href="/dashboard/store">Growth Store</NavLink>
+            {session && <NavLink href="/dashboard">Dashboard</NavLink>}
             {/* // Todo will add links on discovey calls and live webinars */}
             {/* <NavLink href="/discovery-calls">Discovery Calls</NavLink>
             <NavLink href="/live-webinars">Live Webinars</NavLink>

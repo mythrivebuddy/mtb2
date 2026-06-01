@@ -1,3 +1,4 @@
+// /lib/new-home/theme/theme.ts
 import { cormorant } from "../fonts/fonts";
 
 export const theme = {
@@ -17,7 +18,9 @@ export const theme = {
   buttonDark:
     "bg-[var(--button-dark)] text-white hover:bg-[var(--button-dark-hover)]",
   typography: {
-    brandNavbarHeading: `${cormorant.className} text-xl md:text-2xl lg:text-4xl font-medium `,
+    brandNavbarHeading: `${cormorant.className} text-2xl x1260:text-3xl font-medium `,
+    brandFooterHeading:`${cormorant.className} text-2xl x1260:text-3xl  font-medium `,
+    brandDashboardFooterHeading: `${cormorant.className} text-lg x1260:text-xl font-medium `,
    h1: `${cormorant.className}  leading-[1.2] font-medium`,
   },
 };

@@ -1,5 +1,4 @@
 import { MtbPlantSeedIcon, MtbThreeUsersIcon } from "@/icons/mtb-icons";
-import { cormorant } from "@/lib/new-home/fonts/fonts";
 import { theme } from "@/lib/new-home/theme/theme";
 import { TrendingUp } from "lucide-react";
 import Link from "next/link";
@@ -8,9 +7,12 @@ const Footer = () => (
   <footer
     className={
       theme.bgPrimary +
-      " py-14 sm:py-24 px-4 sm:px-6 md:px-12 max-w-[1440px] mx-auto"
+      " w-full"
     }
   >
+    <div className="pb-3 sm:pb-6 pt-8 sm:pt-20 px-4 sm:px-6 md:px-12 max-w-[1440px] mx-auto">
+
+    
     <div className="grid md:grid-cols-12 gap-12 mb-10 sm:mb-16">
       <div className="md:col-span-5">
         <Link href="/" className="flex items-center gap-2 mb-7">
@@ -19,7 +21,7 @@ const Footer = () => (
             className="h-[52px] w-[52px] sm:w-[68px] sm:h-[68.5px]"
           />
           <span
-            className={`${cormorant.className} text-2xl sm:text-4xl font-medium `}
+            className={theme.typography.brandFooterHeading}
           >
             My<span className={theme.highLightTextColor}>Thrive</span>Buddy
           </span>
@@ -162,6 +164,7 @@ const Footer = () => (
       className={`border-t  ${theme.hightLightBorderColor}  pt-8 flex items-center justify-between text-sm sm:text-xl tracking-[0.05em]`}
     >
       <p>© {new Date().getFullYear()} MyThriveBuddy. All rights reserved.</p>
+    </div>
     </div>
   </footer>
 );
