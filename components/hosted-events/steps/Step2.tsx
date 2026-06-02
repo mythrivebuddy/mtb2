@@ -111,7 +111,8 @@ export default function Step2() {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="col-span-2">
+                  {/* Meeting platform */}
+                  {/* <div className="col-span-2">
                     <label className="text-sm font-semibold mb-2 block">Meeting Platform</label>
                     <select className={`w-full bg-transparent border-0 border-b ${theme.borderLight} focus:${theme.borderAccent} focus:ring-0 outline-none py-3 transition-all cursor-pointer`}>
                       <option>Zoom (Recommended)</option>
@@ -119,7 +120,7 @@ export default function Step2() {
                       <option>Microsoft Teams</option>
                       <option>Custom Link</option>
                     </select>
-                  </div>
+                  </div> */}
                   
                   <div className="col-span-2">
                     <label className="text-sm font-semibold mb-2 block">Meeting Link / Invite URL</label>

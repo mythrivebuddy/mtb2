@@ -241,7 +241,7 @@ const handleFiles = (selectedFiles: FileList | null) => {
                 <div className="h-56 w-full relative">
                   <img
                     src="https://images.unsplash.com/photo-1545224144-b38cd301e22f?q=80&w=800&h=600&fit=crop"
-                    alt="Experience Image"
+                    alt="Event Image"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-sm">
@@ -299,7 +299,7 @@ const handleFiles = (selectedFiles: FileList | null) => {
                 <div>
                   <p className={`text-sm font-bold `}>Coach's Pro Tip</p>
                   <p className="text-sm  mt-1">
-                    Experiences with at least one high-quality PDF workbook see
+                    Events with at least one high-quality PDF workbook see
                     a 40% higher completion rate. Consider adding a 'Session
                     Zero' guide.
                   </p>
