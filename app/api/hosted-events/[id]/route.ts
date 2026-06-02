@@ -1,10 +1,10 @@
+// /api/hosted-events/[id]/route.ts
 import {
   authErrorResponse,
   errorResponse,
   hostedEventInclude,
   parseJson,
   toHostedEventAgendaCreateManyData,
-  toHostedEventTicketCreateManyData,
   toHostedEventUpdateData,
   validationError,
 } from "@/lib/hosted-event";
@@ -84,11 +84,22 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       });
 
       if (parsed.data.tickets !== undefined) {
-        await tx.hostedEventTicket.deleteMany({ where: { eventId: id } });
+        const ticket = parsed.data.tickets[0];
 
-        if (parsed.data.tickets.length > 0) {
-          await tx.hostedEventTicket.createMany({
-            data: toHostedEventTicketCreateManyData(parsed.data.tickets, id),
+        if (ticket) {
+          await tx.hostedEventTicket.upsert({
+            where: { eventId: id },
+            update: {
+              price: ticket.price,
+              quantity: ticket.quantity,
+              currency: ticket.currency,
+            },
+            create: {
+              eventId: id,
+              price: ticket.price,
+              quantity: ticket.quantity,
+              currency: ticket.currency,
+            },
           });
         }
       }

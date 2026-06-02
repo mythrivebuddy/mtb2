@@ -1,3 +1,4 @@
+// /api/hosted-events/route.ts
 import {
   authErrorResponse,
   errorResponse,
@@ -14,7 +15,6 @@ import { createHostedEventSchema } from "@/schema/hosted-event";
 import { Status } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {

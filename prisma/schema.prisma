@@ -2657,15 +2657,11 @@ model HostedEventEnrollment {
 model HostedEventTicket {
   id        String   @id @default(cuid())
 
-  eventId   String
+  eventId   String  @unique 
 
-  name      String
   price     Float
   quantity  Int
   currency  SubscriptionPlanCurrency
-
-  expiryDate  DateTime?
-  includeTax  Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2675,7 +2671,6 @@ model HostedEventTicket {
   enrollments HostedEventEnrollment[] // back-relation; use _count for sold seats
 
   @@index([eventId])
-  @@unique([eventId, name])
 }
 model HostedEventAgendaSlot {
   id          String   @id @default(cuid())

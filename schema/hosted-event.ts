@@ -23,15 +23,15 @@ const optionalStringSchema = z
   .transform((value) => (value ? value : null));
 
 export const hostedEventTicketSchema = z.object({
-  name: z.string().trim().min(1).max(100),
+   id: z.string().optional(),
   price: z.number().min(0),
   quantity: z.number().int().positive(),
   currency: z.nativeEnum(SubscriptionPlanCurrency),
-  expiryDate: dateSchema.optional().nullable(),
-  includeTax: z.boolean().default(false),
+
 });
 
 export const hostedEventAgendaSlotSchema = z.object({
+    id: z.string().optional(),
   day: z.number().int().positive(),
   time: z.string().trim().min(1).max(50),
   title: z.string().trim().min(1).max(150),
@@ -145,26 +145,12 @@ function validateHostedEventPayload(
   }
 
   if (input.tickets) {
-    const ticketNames = new Set<string>();
 
     input.tickets.forEach((ticket, index) => {
-      const ticketName = ticket.name.toLowerCase();
-
-      if (ticketNames.has(ticketName)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["tickets", index, "name"],
-          message: "Ticket names must be unique per event.",
-        });
-      }
-
-      ticketNames.add(ticketName);
+    
 
       if (
-        ticket.expiryDate &&
-        input.startTime &&
-        ticket.expiryDate > input.startTime
-      ) {
+        input.startTime  ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["tickets", index, "expiryDate"],

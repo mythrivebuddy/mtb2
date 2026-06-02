@@ -201,12 +201,9 @@ export function toHostedEventTicketCreateManyData(
 ): Prisma.HostedEventTicketCreateManyInput[] {
   return tickets.map((ticket) => ({
     eventId,
-    name: ticket.name,
     price: ticket.price,
     quantity: ticket.quantity,
     currency: ticket.currency,
-    expiryDate: ticket.expiryDate ?? null,
-    includeTax: ticket.includeTax,
   }));
 }
 
