@@ -5,21 +5,27 @@ import { ImagePlus } from "lucide-react";
 import { theme } from "@/lib/new-home/theme/theme";
 import { Editor } from "@tinymce/tinymce-react";
 import z from "zod";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import { HostedEventResponse } from "@/types/client/events";
+import Image from "next/image";
 
 const step1Schema = z
   .object({
-    title: z.string().min(5, "Title is required"),
+  title: z
+  .string()
+  .nonempty("Title is required") // 👈 THIS LINE
+  .min(5, "Min 5 characters required")
+  .max(150, "Max 150 characters"),
     description: z.string().min(5, "Description is required"),
     type: z.string().min(1, "Event type is required"),
     isPaid: z.boolean(),
-    coverImage: z.any().refine((val) => val, "Cover photo is required"), 
+    coverImage: z.any().refine((val) => val, "Cover photo is required"),
     ticket: z
       .object({
         price: z.number().optional(),
@@ -78,7 +84,17 @@ const step1Schema = z
 
 type Step1Form = z.infer<typeof step1Schema>;
 
-export default function Step1({ onNext,setIsLoading }: { onNext: () => void; setIsLoading: (loading: boolean) => void }) {
+export default function Step1({
+  onNext,
+  setIsLoading,
+  eventData,
+  eventId,
+}: {
+  onNext: () => void;
+  setIsLoading: (loading: boolean) => void;
+  eventData?: HostedEventResponse;
+  eventId?: string | undefined | null;
+}) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -92,8 +108,6 @@ export default function Step1({ onNext,setIsLoading }: { onNext: () => void; set
     "Other",
   ];
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const eventId = searchParams.get("eventId");
   const queryClient = useQueryClient();
   const {
     register,
@@ -115,14 +129,7 @@ export default function Step1({ onNext,setIsLoading }: { onNext: () => void; set
   });
   const descriptionValue = watch("description");
   const ticketValue = watch("ticket");
-  const { data } = useQuery({
-    queryKey: ["event", eventId],
-    queryFn: async () => {
-      const res = await axios.get(`/api/hosted-events/${eventId}`); // Make sure this GET endpoint exists!
-      return res.data;
-    },
-    enabled: !!eventId,
-  });
+  const data = eventData;
   useEffect(() => {
     if (data?.event) {
       reset({
@@ -190,7 +197,7 @@ export default function Step1({ onNext,setIsLoading }: { onNext: () => void; set
       if (data.ticket) {
         const ticketPayload = {
           ...data.ticket,
-          currency: data.isPaid ? data.ticket.currency : null, 
+          currency: data.isPaid ? data.ticket.currency : null,
           price: data.isPaid ? data.ticket.price : 0, // optional cleanup
         };
 
@@ -219,7 +226,7 @@ export default function Step1({ onNext,setIsLoading }: { onNext: () => void; set
       onNext();
     } catch (err) {
       console.error("❌ Error in onSubmit:", err);
-      toast.error(getAxiosErrorMessage(err))
+      toast.error(getAxiosErrorMessage(err));
     }
   };
   const mapToEnum = (type: string) => {
@@ -269,7 +276,7 @@ export default function Step1({ onNext,setIsLoading }: { onNext: () => void; set
         >
           <section className="p-8 rounded-xl shadow-sm border bg-white space-y-12">
             {/* Title */}
-            <div>
+            <div className="space-y-3 flex flex-col ">
               <label className="text-base font-semibold uppercase tracking-widest">
                 Event Title
               </label>
@@ -505,7 +512,9 @@ export default function Step1({ onNext,setIsLoading }: { onNext: () => void; set
                       </div>
                     </div>
                   ) : (
-                    <img
+                    <Image
+                      width={1600}
+                      height={900}
                       src={previewImage}
                       alt="Event Cover"
                       className="absolute inset-0 w-full h-full object-cover"

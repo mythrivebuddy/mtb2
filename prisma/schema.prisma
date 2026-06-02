@@ -2595,7 +2595,10 @@ model HostedEvent {
 
   // Format & location
   format      HostedEventFormat?
-  location    String?
+  
+  venueName          String?
+  address            String?
+  travelInstructions String?
 
   // Online settings
   meetingLink     String?
@@ -2604,7 +2607,7 @@ model HostedEvent {
   // Schedule
   startTime   DateTime
   endTime     DateTime?
- 
+  timeZone   String?
 
   // Pricing
   isPaid      Boolean   @default(false)
@@ -2616,7 +2619,7 @@ model HostedEvent {
   // Meta
   creatorId   String
   creator     User   @relation("HostedEvents", fields: [creatorId], references: [id])
-  status      Status @default(DRAFT)
+  status      Status @default(UNDER_REVIEW)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -2708,6 +2711,7 @@ enum HostedEventFormat {
 enum HostedEventResourceVisibility {
   PUBLIC
   PRIVATE
+  DRAFT
 }
 
 enum Status {

@@ -6,7 +6,6 @@ import {
   parseHostedEventCreateBody,
   toHostedEventAgendaCreateManyData,
   toHostedEventCreateData,
-  toHostedEventTicketCreateManyData,
   validationError,
 } from "@/lib/hosted-event";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +13,6 @@ import { checkRole } from "@/lib/utils/auth";
 import { createHostedEventSchema } from "@/schema/hosted-event";
 import { Status } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,14 +35,14 @@ export async function POST(req: NextRequest) {
         select: { id: true },
       });
 
-      if (parsed.data.tickets.length > 0) {
-        await tx.hostedEventTicket.createMany({
-          data: toHostedEventTicketCreateManyData(
-            parsed.data.tickets,
-            createdEvent.id,
-          ),
-        });
-      }
+      // if (parsed.data.ticket) {
+      //   await tx.hostedEventTicket.createMany({
+      //     data: toHostedEventTicketCreateManyData(
+      //       parsed.data.tickets,
+      //       createdEvent.id,
+      //     ),
+      //   });
+      // }
 
       if (parsed.data.agendaSlots.length > 0) {
         await tx.hostedEventAgendaSlot.createMany({
