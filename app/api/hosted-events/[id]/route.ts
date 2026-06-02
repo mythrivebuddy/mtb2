@@ -33,8 +33,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
         { status: 404 },
       );
     }
-
-    return NextResponse.json({ event });
+    const ticket = event.tickets?.[0] ?? null;
+    return NextResponse.json({ event,ticket });
   } catch (error) {
     if (error instanceof Error && error.message.includes("authorized")) {
       return authErrorResponse(error);

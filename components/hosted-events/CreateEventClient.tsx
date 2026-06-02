@@ -10,7 +10,8 @@ import Step4 from "./steps/Step4";
 
 export default function CreateEventClient() {
   const [step, setStep] = useState(1);
-
+ 
+  const [isLoading,setIsLoading] = useState(false);
   const steps = ["Basic Info", "Format & Location", "Schedule", "Publish"];
 
   const nextStep = () => {
@@ -90,7 +91,7 @@ export default function CreateEventClient() {
 
       {/* 🔥 STEP CONTENT */}
       <div className="flex-1">
-        {step === 1 && <Step1 />}
+       {step === 1 && <Step1 onNext={nextStep} setIsLoading={setIsLoading}/>}
         {step === 2 && <Step2 />}
         {step === 3 && <Step3 />}
         {step === 4 && <Step4 />}
@@ -113,10 +114,14 @@ export default function CreateEventClient() {
             </p>
 
             <button
-              onClick={nextStep}
+              // onClick={nextStep}
+              form={`step${step}-form`}
+              disabled={isLoading}
               className={`px-8 py-3 rounded-full ${theme.buttonDark} text-sm font-medium shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center gap-2`}
             >
-              Continue
+              {
+              isLoading ? "Saving...":"Continue"
+              }
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

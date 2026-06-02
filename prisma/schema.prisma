@@ -2132,7 +2132,7 @@ model MakeoverArea {
   userAreas     UserMakeoverArea[]
   commitments   UserMakeoverCommitment[]
   progressLogs  MakeoverProgressLog[]
-  hostedEvents HostedEvent[]
+  
 }
 
 // Program → Area → Challenge
@@ -2589,17 +2589,12 @@ model HostedEvent {
 
   type        HostedEventType
 
-  // Category (linked to MakeoverArea)
-  categoryId  Int?
-  category    MakeoverArea? @relation(fields: [categoryId], references: [id])
 
-  // Flexible category (custom)
-  customCategory String?
 
   coverImage  String?
 
   // Format & location
-  format      HostedEventFormat
+  format      HostedEventFormat?
   location    String?
 
   // Online settings
@@ -2631,7 +2626,6 @@ model HostedEvent {
   tickets     HostedEventTicket[]
   agendaSlots HostedEventAgendaSlot[]
 
-  @@index([categoryId])
   @@index([creatorId])
 }
 
@@ -2661,7 +2655,7 @@ model HostedEventTicket {
 
   price     Float
   quantity  Int
-  currency  SubscriptionPlanCurrency
+  currency  SubscriptionPlanCurrency?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
