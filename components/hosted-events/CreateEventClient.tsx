@@ -50,7 +50,12 @@ export default function CreateEventClient() {
               <div key={label} className="flex items-center flex-1">
                 {/* Circle + Label */}
                 <div className="flex flex-col items-center gap-3">
-                  <div
+                  <button
+                    onClick={() => {
+                      if (stepNumber <= step) {
+                        setStep(stepNumber);
+                      }
+                    }}
                     className={`${theme.stepperCircleBase} ${
                       isActive
                         ? theme.stepperCircleActive
@@ -60,7 +65,7 @@ export default function CreateEventClient() {
                     }`}
                   >
                     {stepNumber}
-                  </div>
+                  </button>
 
                   <span
                     className={

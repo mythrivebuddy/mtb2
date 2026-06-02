@@ -236,7 +236,7 @@ const currentId = watch("id");
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
                 <h3 className={`${theme.typography.h1} text-2xl mb-1`}>
-                  Experience Agenda
+                  Event Agenda
                 </h3>
                 <p className="text-sm opacity-70">
                   Design the flow of each day.

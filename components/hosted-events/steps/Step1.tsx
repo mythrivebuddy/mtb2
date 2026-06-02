@@ -9,8 +9,8 @@ export default function Step1() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-   
-  const categories = [
+   const [eventType, setEventType] = useState<"FREE" | "PAID">("PAID");
+  const eventTypes = [
     "Retreat",
     "Webinar",
     "Workshop",
@@ -65,21 +65,21 @@ const handleFile = (file: File) => {
           {/* Category */}
           <div>
             <label className="text-base font-semibold uppercase tracking-widest">
-              Event Category
+              Event Type
             </label>
 
             <div className="flex flex-wrap gap-3 pt-2">
-              {categories.map((cat) => (
+              {eventTypes.map((type) => (
                 <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
+                  key={type}
+                  onClick={() => setActiveCategory(type)}
                   className={`${theme.chip} ${
-                    activeCategory === cat
+                    activeCategory === type
                       ? theme.chipActive
                       : theme.chipInactive
                   }`}
                 >
-                  {cat}
+                  {type}
                 </button>
               ))}
             </div>
@@ -104,29 +104,51 @@ const handleFile = (file: File) => {
             </div>
           </div>
 
-          {/* Pricing */}
-          <div className="space-y-3">
-            <label className="text-base font-semibold uppercase tracking-widest">
-              Pricing & Capacity
-            </label>
+         {/* Pricing & Capacity */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-base font-semibold uppercase tracking-widest">
+                Pricing Type
+              </label>
+              <div className="flex flex-wrap gap-3 pt-2">
+                {["FREE", "PAID"].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setEventType(type as "FREE" | "PAID")}
+                    className={`${theme.chip} ${
+                      eventType === type ? theme.chipActive : theme.chipInactive
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <div className={theme.inputGroup}>
-              <input
-                type="number"
-                placeholder="Price"
-                className={theme.inputBase}
-              />
-
-              <select className={theme.select}>
-                <option>INR (₹)</option>
-                <option>USD ($)</option>
-              </select>
-
-              <input
-                type="number"
-                placeholder="Capacity"
-                className={theme.inputBase}
-              />
+            <div className="pt-2">
+              <label className="text-base font-semibold uppercase tracking-widest">
+                {eventType === "PAID" ? "Pricing & Capacity" : "Capacity"}
+              </label>
+              <div className={`mt-2 ${theme.inputGroup}`}>
+                {eventType === "PAID" && (
+                  <>
+                    <input
+                      type="number"
+                      placeholder="Price"
+                      className={theme.inputBase}
+                    />
+                    <select className={theme.select}>
+                      <option>INR (₹)</option>
+                      <option>USD ($)</option>
+                    </select>
+                  </>
+                )}
+                <input
+                  type="number"
+                  placeholder="Capacity"
+                  className={theme.inputBase}
+                />
+              </div>
             </div>
           </div>
 
