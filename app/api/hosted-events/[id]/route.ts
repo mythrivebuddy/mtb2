@@ -1,10 +1,10 @@
+// /api/hosted-events/[id]/route.ts
 import {
   authErrorResponse,
   errorResponse,
   hostedEventInclude,
-  parseJson,
+  parseHostedEventCreateBody,
   toHostedEventAgendaCreateManyData,
-  toHostedEventTicketCreateManyData,
   toHostedEventUpdateData,
   validationError,
 } from "@/lib/hosted-event";
@@ -33,8 +33,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
         { status: 404 },
       );
     }
-
-    return NextResponse.json({ event });
+    const ticket = event.tickets?.[0] ?? null;
+    return NextResponse.json({ event,ticket });
   } catch (error) {
     if (error instanceof Error && error.message.includes("authorized")) {
       return authErrorResponse(error);
@@ -50,7 +50,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const creatorId = session.user.id;
     const { id } = await context.params;
 
-    const body = await parseJson(req);
+    const body = await parseHostedEventCreateBody(req, id);
     if (!body) {
       return NextResponse.json(
         { message: "Invalid JSON body." },
@@ -70,7 +70,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       if (!existing) return null;
       if (existing.creatorId !== creatorId) return "FORBIDDEN" as const;
 
-      if (parsed.data.tickets !== undefined) {
+      if (parsed.data.ticket !== undefined) {
         const enrollmentCount = await tx.hostedEventEnrollment.count({
           where: { eventId: id },
         });
@@ -83,12 +83,23 @@ export async function PUT(req: NextRequest, context: RouteContext) {
         data: toHostedEventUpdateData(parsed.data),
       });
 
-      if (parsed.data.tickets !== undefined) {
-        await tx.hostedEventTicket.deleteMany({ where: { eventId: id } });
+      if (parsed.data.ticket !== undefined) {
+        const ticket = parsed.data.ticket;
 
-        if (parsed.data.tickets.length > 0) {
-          await tx.hostedEventTicket.createMany({
-            data: toHostedEventTicketCreateManyData(parsed.data.tickets, id),
+        if (ticket) {
+          await tx.hostedEventTicket.upsert({
+            where: { eventId: id },
+            update: {
+              price: ticket.price,
+              quantity: ticket.quantity,
+              currency: ticket.currency,
+            },
+            create: {
+              eventId: id,
+              price: ticket.price,
+              quantity: ticket.quantity,
+              currency: ticket.currency,
+            },
           });
         }
       }
@@ -129,9 +140,10 @@ export async function PUT(req: NextRequest, context: RouteContext) {
         { status: 409 },
       );
     }
-
-    return NextResponse.json({ event });
+    const ticket = event.tickets?.[0] ?? null;
+    return NextResponse.json({ event:{ ...event, tickets: undefined },ticket });
   } catch (error) {
+    console.log(error);
     if (error instanceof Error && error.message.includes("authorized")) {
       return authErrorResponse(error);
     }

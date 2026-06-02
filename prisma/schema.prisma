@@ -2132,7 +2132,7 @@ model MakeoverArea {
   userAreas     UserMakeoverArea[]
   commitments   UserMakeoverCommitment[]
   progressLogs  MakeoverProgressLog[]
-  hostedEvents HostedEvent[]
+  
 }
 
 // Program → Area → Challenge
@@ -2589,18 +2589,16 @@ model HostedEvent {
 
   type        HostedEventType
 
-  // Category (linked to MakeoverArea)
-  categoryId  Int?
-  category    MakeoverArea? @relation(fields: [categoryId], references: [id])
 
-  // Flexible category (custom)
-  customCategory String?
 
   coverImage  String?
 
   // Format & location
-  format      HostedEventFormat
-  location    String?
+  format      HostedEventFormat?
+  
+  venueName          String?
+  address            String?
+  travelInstructions String?
 
   // Online settings
   meetingLink     String?
@@ -2609,7 +2607,7 @@ model HostedEvent {
   // Schedule
   startTime   DateTime
   endTime     DateTime?
- 
+  timeZone   String?
 
   // Pricing
   isPaid      Boolean   @default(false)
@@ -2621,7 +2619,7 @@ model HostedEvent {
   // Meta
   creatorId   String
   creator     User   @relation("HostedEvents", fields: [creatorId], references: [id])
-  status      Status @default(DRAFT)
+  status      Status @default(UNDER_REVIEW)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -2631,7 +2629,6 @@ model HostedEvent {
   tickets     HostedEventTicket[]
   agendaSlots HostedEventAgendaSlot[]
 
-  @@index([categoryId])
   @@index([creatorId])
 }
 
@@ -2657,15 +2654,11 @@ model HostedEventEnrollment {
 model HostedEventTicket {
   id        String   @id @default(cuid())
 
-  eventId   String
+  eventId   String  @unique 
 
-  name      String
   price     Float
   quantity  Int
-  currency  SubscriptionPlanCurrency
-
-  expiryDate  DateTime?
-  includeTax  Boolean  @default(false)
+  currency  SubscriptionPlanCurrency?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2675,7 +2668,6 @@ model HostedEventTicket {
   enrollments HostedEventEnrollment[] // back-relation; use _count for sold seats
 
   @@index([eventId])
-  @@unique([eventId, name])
 }
 model HostedEventAgendaSlot {
   id          String   @id @default(cuid())
@@ -2719,6 +2711,7 @@ enum HostedEventFormat {
 enum HostedEventResourceVisibility {
   PUBLIC
   PRIVATE
+  DRAFT
 }
 
 enum Status {

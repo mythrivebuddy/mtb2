@@ -7,10 +7,25 @@ import Step1 from "./steps/Step1";
 import Step2 from "./steps/Step2";
 import Step3 from "./steps/Step3";
 import Step4 from "./steps/Step4";
+import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
+import axios from "axios";
 
 export default function CreateEventClient() {
   const [step, setStep] = useState(1);
 
+  const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get("eventId");
+
+  const { data } = useQuery({
+    queryKey: ["event", eventId],
+    queryFn: async () => {
+      const res = await axios.get(`/api/hosted-events/${eventId}`);
+      return res.data;
+    },
+    enabled: !!eventId,
+  });
   const steps = ["Basic Info", "Format & Location", "Schedule", "Publish"];
 
   const nextStep = () => {
@@ -90,10 +105,38 @@ export default function CreateEventClient() {
 
       {/* 🔥 STEP CONTENT */}
       <div className="flex-1">
-        {step === 1 && <Step1 />}
-        {step === 2 && <Step2 />}
-        {step === 3 && <Step3 />}
-        {step === 4 && <Step4 />}
+        {step === 1 && (
+          <Step1
+            onNext={nextStep}
+            setIsLoading={setIsLoading}
+            eventData={data}
+            eventId={eventId}
+          />
+        )}
+        {step === 2 && (
+          <Step2
+            onNext={nextStep}
+            setIsLoading={setIsLoading}
+            eventData={data}
+            eventId={eventId}
+          />
+        )}
+        {step === 3 && (
+          <Step3
+            onNext={nextStep}
+            setIsLoading={setIsLoading}
+            eventData={data}
+            eventId={eventId}
+          />
+        )}
+        {step === 4 && (
+          <Step4
+            onNext={nextStep}
+            setIsLoading={setIsLoading}
+            eventData={data}
+            eventId={eventId}
+          />
+        )}
       </div>
 
       {/* 🔥 FOOTER */}
@@ -113,10 +156,12 @@ export default function CreateEventClient() {
             </p>
 
             <button
-              onClick={nextStep}
+              // onClick={nextStep}
+              form={`step${step}-form`}
+              disabled={isLoading}
               className={`px-8 py-3 rounded-full ${theme.buttonDark} text-sm font-medium shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center gap-2`}
             >
-              Continue
+              {isLoading ? "Saving..." : "Continue"}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

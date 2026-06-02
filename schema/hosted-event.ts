@@ -23,15 +23,15 @@ const optionalStringSchema = z
   .transform((value) => (value ? value : null));
 
 export const hostedEventTicketSchema = z.object({
-  name: z.string().trim().min(1).max(100),
+   id: z.string().optional(),
   price: z.number().min(0),
   quantity: z.number().int().positive(),
   currency: z.nativeEnum(SubscriptionPlanCurrency),
-  expiryDate: dateSchema.optional().nullable(),
-  includeTax: z.boolean().default(false),
+
 });
 
 export const hostedEventAgendaSlotSchema = z.object({
+    id: z.string().optional(),
   day: z.number().int().positive(),
   time: z.string().trim().min(1).max(50),
   title: z.string().trim().min(1).max(150),
@@ -47,11 +47,14 @@ const hostedEventBaseSchema = z.object({
   customCategory: optionalStringSchema,
   coverImage: optionalStringSchema,
   format: z.nativeEnum(HostedEventFormat),
-  location: optionalStringSchema,
+  venueName: optionalStringSchema,
+  address: optionalStringSchema,
+  travelInstructions: optionalStringSchema,
   meetingLink: optionalStringSchema,
   meetingPlatform: optionalStringSchema,
   startTime: dateSchema,
   endTime: dateSchema.optional().nullable(),
+  timezone: optionalStringSchema,
   isPaid: z.boolean(),
   resources: optionalStringSchema,
   resourcesVisibility: z
@@ -61,13 +64,13 @@ const hostedEventBaseSchema = z.object({
 });
 
 type HostedEventPayload = Partial<z.infer<typeof hostedEventBaseSchema>> & {
-  tickets?: HostedEventTicketInput[];
+  ticket?: HostedEventTicketInput | null;
   agendaSlots?: HostedEventAgendaSlotInput[];
 };
 
 export const createHostedEventSchema = hostedEventBaseSchema
   .extend({
-    tickets: z.array(hostedEventTicketSchema).optional().default([]),
+    ticket: hostedEventTicketSchema.optional().nullable(),
     agendaSlots: z.array(hostedEventAgendaSlotSchema).optional().default([]),
   })
   .superRefine(validateHostedEventPayload);
@@ -75,7 +78,7 @@ export const createHostedEventSchema = hostedEventBaseSchema
 export const updateHostedEventSchema = hostedEventBaseSchema
   .partial()
   .extend({
-    tickets: z.array(hostedEventTicketSchema).optional(),
+    ticket: hostedEventTicketSchema.optional().nullable(),
     agendaSlots: z.array(hostedEventAgendaSlotSchema).optional(),
   })
   .superRefine(validateHostedEventPayload);
@@ -108,7 +111,7 @@ function validateHostedEventPayload(
     });
   }
 
-  if (input.format === HostedEventFormat.IN_PERSON && !input.location) {
+  if (input.format === HostedEventFormat.IN_PERSON && (!input.venueName || !input.address)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["location"],
@@ -124,54 +127,35 @@ function validateHostedEventPayload(
     });
   }
 
-  if (input.isPaid === true && input.tickets && input.tickets.length === 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["tickets"],
-      message: "At least one ticket is required for paid events.",
-    });
+
+
+  if (input.isPaid === true) {
+    if (!input.ticket) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["ticket"],
+        message: "Ticket is required for paid events.",
+      });
+    } else {
+      if (input.ticket.price <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["ticket", "price"],
+          message: "Price must be greater than 0.",
+        });
+      }
+    }
   }
 
-  if (input.isPaid === false && input.tickets) {
-    input.tickets.forEach((ticket, index) => {
-      if (ticket.price !== 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["tickets", index, "price"],
-          message: "Free events can only have zero-priced tickets.",
-        });
-      }
-    });
-  }
-
-  if (input.tickets) {
-    const ticketNames = new Set<string>();
-
-    input.tickets.forEach((ticket, index) => {
-      const ticketName = ticket.name.toLowerCase();
-
-      if (ticketNames.has(ticketName)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["tickets", index, "name"],
-          message: "Ticket names must be unique per event.",
-        });
-      }
-
-      ticketNames.add(ticketName);
-
-      if (
-        ticket.expiryDate &&
-        input.startTime &&
-        ticket.expiryDate > input.startTime
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["tickets", index, "expiryDate"],
-          message: "Ticket expiryDate cannot be after event startTime.",
-        });
-      }
-    });
+  // ✅ Free event → price must be 0
+  if (input.isPaid === false && input.ticket) {
+    if (input.ticket.price !== 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["ticket", "price"],
+        message: "Free events must have price = 0.",
+      });
+    }
   }
 
   if (input.agendaSlots) {

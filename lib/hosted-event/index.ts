@@ -1,4 +1,4 @@
-import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload";
+import { handleSupabaseFileReplace } from "@/lib/utils/supabase-image-upload";
 import type {
   CreateHostedEventInput,
   HostedEventAgendaSlotInput,
@@ -20,7 +20,7 @@ export const hostedEventInclude = {
     orderBy: [{ day: "asc" }, { order: "asc" }],
   },
   creator: {
-    select: { id: true, name: true, email: true, image: true },
+    select: { id: true, name: true, image: true },
   },
 } satisfies Prisma.HostedEventInclude;
 
@@ -34,7 +34,8 @@ export async function parseJson(req: NextRequest) {
 
 export async function parseHostedEventCreateBody(
   req: NextRequest,
-  creatorId: string,
+  // creatorId?: string,
+  eventId?: string,
 ) {
   const contentType = req.headers.get("content-type") ?? "";
 
@@ -44,31 +45,33 @@ export async function parseHostedEventCreateBody(
 
   const formData = await req.formData();
   const body = readHostedEventFormBody(formData);
-  const coverImage = formData.get("coverImage");
+  // const coverImage = formData.get("coverImage");
   const resources = formData.get("resources") ?? formData.get("resource");
 
-  if (isUploadedFile(coverImage)) {
-    if (!coverImage.type.startsWith("image/")) {
-      throw new Error("coverImage must be an image file.");
-    }
+  // if (isUploadedFile(coverImage)) {
+  //   if (!coverImage.type.startsWith("image/")) {
+  //     throw new Error("coverImage must be an image file.");
+  //   }
 
-    body.coverImage = await handleSupabaseImageUpload(
-      coverImage,
-      "hosted-events",
-      `${creatorId}/cover-images`,
-    );
-  }
+  //   body.coverImage = await handleSupabaseImageUpload(
+  //     coverImage,
+  //     "hosted-events",
+  //     `${creatorId}/cover-images`,
+  //   );
+  // }
 
   if (isUploadedFile(resources)) {
     validateResourceFile(resources);
 
-    body.resources = await handleSupabaseImageUpload(
-      resources,
-      "hosted-events",
-      `${creatorId}/resources`,
-    );
-  }
+    body.resources = await handleSupabaseFileReplace({
+      file: resources,
+      bucket: "events",
+      folder: `${eventId}`,
+      fileName: "resource.pdf", // fixed name
+      upsert: true, // overwrite instead of delete+upload
+    });
 
+  }
   return body;
 }
 
@@ -142,13 +145,12 @@ export function toHostedEventCreateData(
     title: input.title,
     description: input.description,
     type: input.type,
-    category: input.categoryId
-      ? { connect: { id: input.categoryId } }
-      : undefined,
-    customCategory: input.customCategory,
+
     coverImage: input.coverImage,
     format: input.format,
-    location: input.location,
+    venueName: input.venueName,
+    address: input.address,
+    travelInstructions: input.travelInstructions,
     meetingLink: input.meetingLink,
     meetingPlatform: input.meetingPlatform,
     startTime: input.startTime,
@@ -169,22 +171,21 @@ export function toHostedEventUpdateData(
   if (input.title !== undefined) data.title = input.title;
   if (input.description !== undefined) data.description = input.description;
   if (input.type !== undefined) data.type = input.type;
-  if (input.categoryId !== undefined) {
-    data.category = input.categoryId
-      ? { connect: { id: input.categoryId } }
-      : { disconnect: true };
-  }
-  if (input.customCategory !== undefined)
-    data.customCategory = input.customCategory;
+
   if (input.coverImage !== undefined) data.coverImage = input.coverImage;
   if (input.format !== undefined) data.format = input.format;
-  if (input.location !== undefined) data.location = input.location;
+  if (input.venueName !== undefined) data.venueName = input.venueName;
+  if (input.address !== undefined) data.address = input.address;
+  if (input.travelInstructions !== undefined) {
+    data.travelInstructions = input.travelInstructions;
+  }
   if (input.meetingLink !== undefined) data.meetingLink = input.meetingLink;
   if (input.meetingPlatform !== undefined) {
     data.meetingPlatform = input.meetingPlatform;
   }
   if (input.startTime !== undefined) data.startTime = input.startTime;
   if (input.endTime !== undefined) data.endTime = input.endTime;
+  if (input.timezone !== undefined) data.timeZone = input.timezone;
   if (input.isPaid !== undefined) data.isPaid = input.isPaid;
   if (input.resources !== undefined) data.resources = input.resources;
   if (input.resourcesVisibility !== undefined) {
@@ -201,12 +202,9 @@ export function toHostedEventTicketCreateManyData(
 ): Prisma.HostedEventTicketCreateManyInput[] {
   return tickets.map((ticket) => ({
     eventId,
-    name: ticket.name,
     price: ticket.price,
     quantity: ticket.quantity,
     currency: ticket.currency,
-    expiryDate: ticket.expiryDate ?? null,
-    includeTax: ticket.includeTax,
   }));
 }
 
