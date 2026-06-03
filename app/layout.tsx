@@ -15,6 +15,12 @@ export const metadata = {
   title: "My Thrive Buddy",
   description: "MTB with PWA",
   themeColor: "#F1F9FF",
+    icons:{
+      icon: "/new-home-assets/favicon.svg",
+      shortcut: "/new-home-assets/favicon.svg",
+      apple: "/new-home-assets/favicon.svg",
+    },
+  
 };
 
 export default function RootLayout({
@@ -29,7 +35,6 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#F1F9FF" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-
       </head>
       <body
         className={`${inter.className} antialiased`}
@@ -38,13 +43,13 @@ export default function RootLayout({
         <div className="h-screen bg-gradient-to-br from-[#4A90E2] via-[#F8F2FF] to-[#FF69B4] overflow-y-auto">
           <Provider>
             <SupabaseClientProvider>
-            <LoginStreakTracker />
-            
-            {/* Main children */}
-            {children}
+              <LoginStreakTracker />
 
-            {/* Analytics */}
-           <AnalyticsWrapper/>
+              {/* Main children */}
+              {children}
+
+              {/* Analytics */}
+              <AnalyticsWrapper />
             </SupabaseClientProvider>
           </Provider>
         </div>
