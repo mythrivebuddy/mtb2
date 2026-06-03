@@ -30,8 +30,8 @@ export const GET = async () => {
     });
 
     // 3. Initialize aggregation variables
-    let activeRegistrations = 0;
-    let totalRevenue = 0;
+    // let activeRegistrations = 0;
+    // let totalRevenue = 0;
 
     // Filter for events happening in the future
     const upcomingEvents = events.filter((e) => new Date(e.startTime) >= now);
@@ -41,17 +41,17 @@ export const GET = async () => {
     const activeEventsFormatted = upcomingEvents.slice(0, 3).map((event) => {
       // Get counts and ticket info based on schema relations
       const regCount = event._count?.enrollments || 0;
-      activeRegistrations += regCount;
+    //   activeRegistrations += regCount;
 
       // Extract ticket configuration (unique per event based on schema)
       const ticket = event.tickets?.[0];
-      const price = ticket?.price || 0;
+    //   const price = ticket?.price || 0;
       const maxCapacity = ticket?.quantity || 0;
 
       // Calculate Revenue
-      if (event.isPaid) {
-        totalRevenue += price * regCount;
-      }
+    //   if (event.isPaid) {
+    //     totalRevenue += price * regCount;
+    //   }
 
       // Calculate days until the event for the UI badge
       const timeDiff = new Date(event.startTime).getTime() - now.getTime();

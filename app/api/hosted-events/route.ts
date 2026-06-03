@@ -71,12 +71,12 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    await checkRole(["USER", "ADMIN"]);
+    // await checkRole(["USER", "ADMIN"]);
 
     const events = await prisma.hostedEvent.findMany({
       where: {
         status: Status.PUBLISHED,
-        startTime: { gt: new Date() },
+        // startTime: { gt: new Date() },
       },
       include: hostedEventInclude,
       orderBy: { startTime: "asc" },

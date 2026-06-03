@@ -45,6 +45,7 @@ type PageSkeletonProps = {
     | "coach-profile"
     | "mmp-home"
     | "events"
+    | "events-discovery-page"
 };
 
 export default function PageSkeleton({ type }: PageSkeletonProps) {
@@ -1541,6 +1542,69 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+if (type === "events-discovery-page") {
+  return (
+    <div className="animate-pulse min-h-screen w-full">
+      {/* HERO */}
+      <div className="relative h-[600px] md:h-[700px]">
+        <Skeleton className="absolute inset-0 w-full h-full" />
+
+        <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 space-y-6">
+          <Skeleton className="h-10 w-[280px] md:w-[500px]" />
+          <Skeleton className="h-4 w-[220px] md:w-[400px]" />
+
+          {/* search */}
+          <div className="w-full max-w-xl bg-white rounded-full p-3 flex gap-3">
+            <Skeleton className="h-10 flex-1 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+          </div>
+        </div>
+      </div>
+
+      {/* FILTER */}
+      <div className="flex overflow-x-auto py-6 px-4 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 w-24 rounded-full" />
+        ))}
+      </div>
+
+      {/* FEATURED */}
+      <div className="px-4 space-y-6">
+        <Skeleton className="h-8 w-48" />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* main */}
+          <Skeleton className="h-[400px] md:col-span-2 rounded-2xl" />
+
+          {/* side */}
+          <div className="flex flex-col gap-6">
+            <Skeleton className="h-[180px] rounded-2xl" />
+            <Skeleton className="h-[180px] rounded-2xl" />
+          </div>
+        </div>
+      </div>
+
+      {/* TRENDING */}
+      <div className="px-4 py-12 space-y-6">
+        <Skeleton className="h-8 w-56" />
+
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <Skeleton className="h-6 w-6" />
+              <Skeleton className="h-16 w-16 rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+              <Skeleton className="h-4 w-12" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
