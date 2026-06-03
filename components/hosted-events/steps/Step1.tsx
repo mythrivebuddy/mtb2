@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ImagePlus } from "lucide-react";
 import { theme } from "@/lib/new-home/theme/theme";
 import { Editor } from "@tinymce/tinymce-react";
@@ -17,11 +17,11 @@ import Image from "next/image";
 
 const step1Schema = z
   .object({
-  title: z
-  .string()
-  .nonempty("Title is required") // 👈 THIS LINE
-  .min(5, "Min 5 characters required")
-  .max(150, "Max 150 characters"),
+    title: z
+      .string()
+      .nonempty("Title is required") 
+      .min(5, "Min 5 characters required in title")
+      .max(150, "Max 150 characters"),
     description: z.string().min(5, "Description is required"),
     type: z.string().min(1, "Event type is required"),
     isPaid: z.boolean(),
@@ -109,6 +109,19 @@ export default function Step1({
   ];
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const fieldRefs: Record<
+    keyof Step1Form,
+    React.RefObject<HTMLDivElement | null>
+  > = {
+    title: useRef<HTMLDivElement>(null),
+    type: useRef<HTMLDivElement>(null),
+    description: useRef<HTMLDivElement>(null),
+    isPaid: useRef<HTMLDivElement>(null),
+    ticket: useRef<HTMLDivElement>(null),
+    coverImage: useRef<HTMLDivElement>(null),
+  };
+
   const {
     register,
     handleSubmit,
@@ -174,6 +187,7 @@ export default function Step1({
       return res.data;
     },
     onSuccess: (data) => {
+      toast.success("Step 1 saved")
       queryClient.setQueryData(["event", data.event.id], data);
     },
     onSettled: () => {
@@ -269,14 +283,34 @@ export default function Step1({
         <form
           id="step1-form"
           // form={`step${step}-form`}
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, (errors) => {
+            const fieldOrder: (keyof Step1Form)[] = [
+              "title",
+              "type",
+              "description",
+              "ticket",
+              "coverImage",
+            ];
+
+            for (const field of fieldOrder) {
+              if (errors[field]) {
+              toast.error(errors[field]?.message as string);
+                fieldRefs[field].current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+                // fieldRefs[field].current?.focus();
+                break;
+              }
+            }
+          })}
           onKeyDown={(e) => {
             if (e.key === "Enter") e.preventDefault();
           }}
         >
           <section className="p-8 rounded-xl shadow-sm border bg-white space-y-12">
             {/* Title */}
-            <div className="space-y-3 flex flex-col ">
+            <div ref={fieldRefs.title} className="space-y-3 flex flex-col ">
               <label className="text-base font-semibold uppercase tracking-widest">
                 Event Title
               </label>
@@ -292,8 +326,8 @@ export default function Step1({
               )}
             </div>
 
-            {/* Category */}
-            <div>
+            {/* Type */}
+            <div ref={fieldRefs.type}>
               <label className="text-base font-semibold uppercase tracking-widest">
                 Event Type
               </label>
@@ -318,16 +352,16 @@ export default function Step1({
                     {type}
                   </button>
                 ))}
-                {errors.type && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.type.message}
-                  </p>
-                )}
               </div>
+              {errors.type && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.type.message}
+                </p>
+              )}
             </div>
 
             {/* Editor */}
-            <div>
+            <div ref={fieldRefs.description}>
               <label className="text-base font-semibold uppercase tracking-widest">
                 Description
               </label>
@@ -355,7 +389,7 @@ export default function Step1({
             </div>
 
             {/* Pricing & Capacity */}
-            <div className="space-y-4">
+            <div ref={fieldRefs.ticket} className="space-y-4">
               <div>
                 <label className="text-base font-semibold uppercase tracking-widest">
                   Pricing Type
@@ -468,7 +502,7 @@ export default function Step1({
 
             {/* Image */}
             {/* Image */}
-            <div className="space-y-3">
+            <div ref={fieldRefs.coverImage} className="space-y-3">
               <label className="text-[11px] font-semibold uppercase tracking-widest opacity-70">
                 Cover Photo
               </label>
@@ -502,8 +536,8 @@ export default function Step1({
 
                       <div className="text-center">
                         <p className="text-sm font-medium">
-                          Drag and drop or{" "}
-                          <span className="underline">browse files</span>
+                          {/* Drag and drop or{" "} */}
+                          <span className="underline">Browse files</span>
                         </p>
 
                         <p className="text-xs opacity-70 mt-1">

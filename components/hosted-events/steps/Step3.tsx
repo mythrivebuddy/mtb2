@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   Calendar,
@@ -24,12 +24,17 @@ import {
 } from "@/components/ui/dialog";
 
 import { theme } from "@/lib/new-home/theme/theme";
-import { AgendaSlot, AgendaSlotPayload, HostedEventResponse } from "@/types/client/events";
+import {
+  AgendaSlot,
+  AgendaSlotPayload,
+  HostedEventResponse,
+} from "@/types/client/events";
 import z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { fromZonedTime } from "date-fns-tz";
+import { TimeSelect } from "@/components/ui/TimeSelect24based";
 
 const step3Schema = z.object({
   dateRange: z
@@ -92,8 +97,8 @@ export default function Step3({
 }) {
   const [activeDay, setActiveDay] = useState(1);
   const [timezone, setTimezone] = useState(
-  eventData?.event?.timeZone ?? "Asia/Kolkata"
-);
+    eventData?.event?.timeZone ?? "Asia/Kolkata",
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [range, setRange] = useState<DateRange | undefined>(() => {
     if (eventData?.event?.startTime && eventData?.event?.endTime) {
@@ -130,21 +135,21 @@ export default function Step3({
         1: [
           {
             id: "1",
-            time: "09:00 AM",
+            time: "09:00",
             title: "Opening Ceremony & Tea",
             description:
               "Settle into the space with a traditional silent tea ceremony and intention setting.",
           },
           {
             id: "2",
-            time: "10:30 AM",
+            time: "10:30",
             title: "The Art of Stillness",
             description:
               "Guided workshop on modern mindfulness and the neurobiology of calm.",
           },
           {
             id: "3",
-            time: "01:00 PM",
+            time: "13:00",
             title: "Nourishing Community Lunch",
             description:
               "Farm-to-table organic lunch served in the garden pavilion.",
@@ -159,6 +164,7 @@ export default function Step3({
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -169,6 +175,9 @@ export default function Step3({
     },
   });
   const queryClient = useQueryClient();
+
+  const dateRef = useRef<HTMLDivElement>(null);
+  const agendaRef = useRef<HTMLDivElement>(null);
 
   const updateStep3 = useMutation({
     mutationFn: async (payload: Step3Payload) => {
@@ -181,8 +190,13 @@ export default function Step3({
       toast.success("Step 3 saved");
       onNext();
     },
-    onError: () => {
-      toast.error("Failed to save agenda");
+    onError: (err) => {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.errors
+          ? Object.values(err.response.data.errors).flat().join(", ")
+          : err.response?.data?.message
+        : "Failed to save agenda";
+      toast.error(message);
     },
     onSettled: () => setIsLoading(false),
   });
@@ -195,20 +209,21 @@ export default function Step3({
   const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1);
 
   // --- Handlers ---
- const handleOpenAdd = () => {
-  reset({ id: "", time: "", title: "", description: "" });
-  setIsDialogOpen(true);
-};
+  const handleOpenAdd = () => {
+    reset({ id: "", time: "", title: "", description: "" });
+    setIsDialogOpen(true);
+  };
 
-const handleOpenEdit = (item: AgendaItem) => {
-  reset({ // use reset instead of setValue to also clear errors
-    id: item.id,
-    time: item.time,
-    title: item.title,
-    description: item.description,
-  });
-  setIsDialogOpen(true);
-};
+  const handleOpenEdit = (item: AgendaItem) => {
+    reset({
+      // use reset instead of setValue to also clear errors
+      id: item.id,
+      time: item.time,
+      title: item.title,
+      description: item.description,
+    });
+    setIsDialogOpen(true);
+  };
 
   const handleDelete = (id: string) => {
     setAgendaData((prev) => ({
@@ -245,85 +260,139 @@ const handleOpenEdit = (item: AgendaItem) => {
     reset({ id: "", time: "", title: "", description: "" });
   };
 
-const buildAgendaPayload = () => {
-  const slots: AgendaSlotPayload[] = [];
+  const buildAgendaPayload = () => {
+    const slots: AgendaSlotPayload[] = [];
 
-  const parseTime = (timeStr: string): number => {
-    const [time, meridiem] = timeStr.trim().split(" ");
-    const [h, minutes] = time.split(":").map(Number);
-    let hours = h;
-    if (meridiem?.toUpperCase() === "PM" && hours !== 12) hours += 12;
-    if (meridiem?.toUpperCase() === "AM" && hours === 12) hours = 0;
-    return hours * 60 + minutes;
-  };
+    const parseTime = (timeStr: string): number => {
+      const [h, minutes] = timeStr.split(":").map(Number);
+      return h * 60 + minutes;
+    };
 
-  Object.entries(agendaData).forEach(([day, items]) => {
-    const sorted = [...items].sort(
-      (a, b) => parseTime(a.time) - parseTime(b.time)
-    );
-    sorted.forEach((item, index) => {
-      slots.push({
-        id: item.id?.startsWith("temp-") ? undefined : item.id,
-        day: Number(day),
-        time: item.time,
-        title: item.title,
-        description: item.description || null,
-        order: index, // now chronologically correct
+    Object.entries(agendaData).forEach(([day, items]) => {
+      const sorted = [...items].sort(
+        (a, b) => parseTime(a.time) - parseTime(b.time),
+      );
+      sorted.forEach((item, index) => {
+        slots.push({
+          id: item.id?.startsWith("temp-") ? undefined : item.id,
+          day: Number(day),
+          time: item.time,
+          title: item.title,
+          description: item.description || null,
+          order: index, // now chronologically correct
+        });
       });
     });
-  });
 
-  return slots;
-};
+    return slots;
+  };
 
-const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
-  // Find first slot of day 1 (sorted by time string isn't reliable, use order)
-  const day1Slots = agendaData[1] ?? [];
-  const lastDaySlots = agendaData[totalDays] ?? [];
-
-  // Get first slot time of day 1 and last slot time of last day
-  const firstSlotTime = day1Slots[0]?.time;        // e.g. "09:00 AM"
-  const lastSlotTime = lastDaySlots[lastDaySlots.length - 1]?.time; // e.g. "08:00 PM"
-
-  const parseSlotTime = (date: Date, timeStr: string): Date => {
-    const [time, meridiem] = timeStr.split(" ");
-    const [h, minutes] = time.split(":").map(Number);
+  const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
+    // Find first slot of day 1 (sorted by time string isn't reliable, use order)
+const parseTimeMinutes = (timeStr: string): number => {
+  if (timeStr.includes("AM") || timeStr.includes("PM")) {
+    const [time, meridiem] = timeStr.trim().split(" ");
+    const [h, m] = time.split(":").map(Number);
     let hours = h;
     if (meridiem?.toUpperCase() === "PM" && hours !== 12) hours += 12;
     if (meridiem?.toUpperCase() === "AM" && hours === 12) hours = 0;
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes, 0);
-  };
-
-  const startLocal = firstSlotTime
-    ? parseSlotTime(values.dateRange.from, firstSlotTime)
-    : new Date(values.dateRange.from.getFullYear(), values.dateRange.from.getMonth(), values.dateRange.from.getDate(), 0, 0, 0);
-
-  const endLocal = lastSlotTime
-    ? parseSlotTime(values.dateRange.to, lastSlotTime)
-    : new Date(values.dateRange.to.getFullYear(), values.dateRange.to.getMonth(), values.dateRange.to.getDate(), 23, 59, 59);
-
-  // Convert local time in selected timezone → UTC
-  const startUTC = fromZonedTime(startLocal, timezone);
-  const endUTC = fromZonedTime(endLocal, timezone);
-
-  await updateStep3.mutateAsync({
-    startTime: startUTC.toISOString(),
-    endTime: endUTC.toISOString(),
-    timeZone:timezone,
-    agendaSlots: values.agendaSlots,
-  });
+    return hours * 60 + m;
+  }
+  const [h, m] = timeStr.split(":").map(Number);
+  return h * 60 + m;
 };
+
+    const day1Slots = [...(agendaData[1] ?? [])].sort(
+      (a, b) => parseTimeMinutes(a.time) - parseTimeMinutes(b.time),
+    );
+    const lastDaySlots = [...(agendaData[totalDays] ?? [])].sort(
+      (a, b) => parseTimeMinutes(a.time) - parseTimeMinutes(b.time),
+    );
+
+    const firstSlotTime = day1Slots[0]?.time;
+    const lastSlotTime = lastDaySlots[lastDaySlots.length - 1]?.time;
+
+   const parseSlotTime = (date: Date, timeStr: string): Date => {
+  let hours: number;
+  let minutes: number;
+
+  if (timeStr.includes("AM") || timeStr.includes("PM")) {
+    // Legacy AM/PM format e.g. "09:00 AM"
+    const [time, meridiem] = timeStr.trim().split(" ");
+    const [h, m] = time.split(":").map(Number);
+    hours = h;
+    minutes = m;
+    if (meridiem?.toUpperCase() === "PM" && hours !== 12) hours += 12;
+    if (meridiem?.toUpperCase() === "AM" && hours === 12) hours = 0;
+  } else {
+    // 24h format e.g. "14:30"
+    const [h, m] = timeStr.split(":").map(Number);
+    hours = h;
+    minutes = m;
+  }
+
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes, 0);
+};
+
+    const startLocal = firstSlotTime
+      ? parseSlotTime(values.dateRange.from, firstSlotTime)
+      : new Date(
+          values.dateRange.from.getFullYear(),
+          values.dateRange.from.getMonth(),
+          values.dateRange.from.getDate(),
+          0,
+          0,
+          0,
+        );
+
+    const endLocal = lastSlotTime
+      ? parseSlotTime(values.dateRange.to, lastSlotTime)
+      : new Date(
+          values.dateRange.to.getFullYear(),
+          values.dateRange.to.getMonth(),
+          values.dateRange.to.getDate(),
+          23,
+          59,
+          59,
+        );
+
+    // Convert local time in selected timezone → UTC
+    if (isNaN(startLocal.getTime()) || isNaN(endLocal.getTime())) {
+      console.log({ firstSlotTime, lastSlotTime, startLocal, endLocal, totalDays });
+      toast.error("Invalid date or time — please check your agenda slots");
+      return;
+    }
+
+    const startUTC = fromZonedTime(startLocal, timezone);
+    const endUTC = fromZonedTime(endLocal, timezone);
+
+    await updateStep3.mutateAsync({
+      startTime: startUTC.toISOString(),
+      endTime: endUTC.toISOString(),
+      timeZone: timezone,
+      agendaSlots: values.agendaSlots,
+    });
+  };
   const prepareAndSubmit = async () => {
     const daysWithMissingAgenda = daysArray.filter(
       (day) => !agendaData[day] || agendaData[day].length === 0,
     );
-
+    if (!range?.from || !range?.to) {
+      toast.error("Select event date range");
+      dateRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     if (daysWithMissingAgenda.length > 0) {
       toast.error(
         `Please add at least one agenda slot for Day ${daysWithMissingAgenda.join(", Day ")}`,
       );
+
       // Jump to first incomplete day
       setActiveDay(daysWithMissingAgenda[0]);
+      agendaRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
       return;
     }
     const payload = {
@@ -338,8 +407,16 @@ const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
 
       if (error.path.includes("agendaSlots")) {
         toast.error("Add at least one agenda slot");
+        agendaRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       } else if (error.path.includes("dateRange")) {
         toast.error("Select event date range");
+        dateRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       } else {
         toast.error(error.message);
       }
@@ -376,7 +453,7 @@ const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
           {/* LEFT COLUMN: Dates & Timezone */}
-          <div className="lg:col-span-4 flex flex-col gap-8 ">
+          <div ref={dateRef} className="lg:col-span-4 flex flex-col gap-8 ">
             <section
               className={`bg-white p-8 rounded-xl shadow-sm border ${theme.borderLight}`}
             >
@@ -385,36 +462,6 @@ const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
               </h3>
 
               <div className="space-y-6">
-                {/* Date Input */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold opacity-80">
-                    Date Range
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 opacity-50" />
-                    <input
-                      type="text"
-                      readOnly
-                      value={
-                        range?.from
-                          ? range.to
-                            ? `${format(range.from, "MMM dd")} — ${format(
-                                range.to,
-                                "MMM dd, yyyy",
-                              )}`
-                            : format(range.from, "MMM dd, yyyy")
-                          : "Select date range"
-                      }
-                      className={`w-full pl-10 pr-4 py-3 bg-gray-50 border ${theme.borderLight} rounded-lg focus:ring-0 focus:${theme.borderAccent} outline-none transition-all cursor-pointer`}
-                    />
-                  </div>
-                  {!range && (
-                    <p className="text-red-500 text-xs mt-2">
-                      Date range is required
-                    </p>
-                  )}
-                </div>
-
                 {/* Timezone */}
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold opacity-80">
@@ -424,7 +471,7 @@ const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
                     <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 opacity-50" />
                     <select
                       value={timezone}
-  onChange={(e) => setTimezone(e.target.value)}
+                      onChange={(e) => setTimezone(e.target.value)}
                       className={`w-full pl-10 pr-10 py-3 bg-gray-50 border ${theme.borderLight} focus:ring-0 focus:${theme.borderAccent} rounded-lg outline-none appearance-none cursor-pointer`}
                     >
                       {TIMEZONES.map((tz) => (
@@ -436,10 +483,27 @@ const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 opacity-50 pointer-events-none" />
                   </div>
                 </div>
+                {/* Date Input */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold opacity-80">
+                    Date Range
+                  </label>
+                  {range?.from && range?.to && (
+                    <div
+                      className={`flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg border ${theme.borderLight}`}
+                    >
+                      <Calendar className="w-4 h-4 opacity-50 shrink-0" />
+                      <span className="text-sm font-medium">
+                        {format(range.from, "MMM dd")} —{" "}
+                        {format(range.to, "MMM dd, yyyy")}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Calendar Widget */}
-              <div className={`mt-8 pt-8 border-t ${theme.borderLight}`}>
+              <div className={`mt-6 pt-8 border-t ${theme.borderLight}`}>
                 <DayPicker
                   mode="range"
                   selected={range}
@@ -447,12 +511,17 @@ const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
                   defaultMonth={new Date()}
                   disabled={{ before: new Date() }}
                 />
+                {!range && (
+                  <p className="text-red-500 text-xs mt-2">
+                    Date range is required
+                  </p>
+                )}
               </div>
             </section>
           </div>
 
           {/* RIGHT COLUMN: Agenda */}
-          <div className="lg:col-span-8">
+          <div ref={agendaRef} className="lg:col-span-8">
             <section
               className={`bg-white p-8 rounded-xl shadow-sm border ${theme.borderLight} h-full`}
             >
@@ -498,7 +567,7 @@ const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
                 {currentAgenda.map((item) => (
                   <div
                     key={item.id}
-                 className="relative z-10 flex flex-col sm:grid sm:grid-cols-[80px_1fr] gap-2 sm:gap-6 items-start group"
+                    className="relative z-10 flex flex-col sm:grid sm:grid-cols-[80px_1fr] gap-2 sm:gap-6 items-start group"
                   >
                     <div className="pt-0 sm:pt-4 text-left sm:text-right pr-0 sm:pr-2">
                       <span className={`text-sm font-bold ${theme.textAccent}`}>
@@ -542,7 +611,7 @@ const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
 
                 {/* Add New Slot Button */}
                 <div className="relative z-10 flex flex-col sm:grid sm:grid-cols-[80px_1fr] gap-2 sm:gap-6 items-start mt-8">
-                 <div className="hidden sm:block"></div>
+                  <div className="hidden sm:block"></div>
                   <button
                     type="button"
                     onClick={handleOpenAdd}
@@ -571,19 +640,19 @@ const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
 
             <div className="grid gap-4 py-4">
               <input type="hidden" {...register("id")} />
-
+              <input
+                type="hidden"
+                {...register("time", { required: "Time is required" })}
+              />
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold">Time</label>
-                <input
-                  {...register("time", {
-                    required: "Time is required",
-                    pattern: {
-                      value: /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i,
-                      message: "Use format like 09:00 AM or 2:30 PM",
-                    },
-                  })}
-                  placeholder="e.g., 09:00 AM"
-                  className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:${theme.borderAccent}`}
+                <TimeSelect
+                  value={watch("time")}
+                  onChange={(val) =>
+                    setValue("time", val, { shouldValidate: true })
+                  }
+                  placeholder="Select time"
+                  className="w-full"
                 />
                 {errors.time && (
                   <p className="text-red-500 text-xs">{errors.time.message}</p>
@@ -603,24 +672,29 @@ const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
                   placeholder="e.g., Opening Ceremony"
                   className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:${theme.borderAccent}`}
                 />
-                 {errors.title && (
-      <p className="text-red-500 text-xs">{errors.title.message}</p>
-    )}
+                {errors.title && (
+                  <p className="text-red-500 text-xs">{errors.title.message}</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold">Description</label>
                 <textarea
                   {...register("description", {
-        required: "Description is required",
-        minLength: { value: 10, message: "Description must be at least 10 characters" },
-      })}
+                    required: "Description is required",
+                    minLength: {
+                      value: 10,
+                      message: "Description must be at least 10 characters",
+                    },
+                  })}
                   placeholder="Describe what will happen..."
                   className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:${theme.borderAccent} resize-none h-24`}
                 />
-                   {errors.description && (
-      <p className="text-red-500 text-xs">{errors.description.message}</p>
-    )}
+                {errors.description && (
+                  <p className="text-red-500 text-xs">
+                    {errors.description.message}
+                  </p>
+                )}
               </div>
             </div>
 

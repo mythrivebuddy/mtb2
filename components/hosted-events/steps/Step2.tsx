@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   MapPin,
   Video,
@@ -106,6 +106,12 @@ export default function Step2({
   });
   const format = watch("format");
   const queryClient = useQueryClient();
+  // 2. Add refs inside the component (after useForm)
+  const fieldRefs: Record<string, React.RefObject<HTMLDivElement | null>> = {
+    venueName: useRef<HTMLDivElement>(null),
+    address: useRef<HTMLDivElement>(null),
+    meetingLink: useRef<HTMLDivElement>(null),
+  };
 
   const updateStep2 = useMutation({
     mutationFn: async (data: Step2Form) => {
@@ -162,7 +168,19 @@ export default function Step2({
         {/* Format Selection & Dynamic Forms */}
         <form
           id="step2-form"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, (errors) => {
+             const fieldOrder = ["venueName", "address", "meetingLink"];
+            for (const field of fieldOrder) {
+              if (errors[field as keyof Step2Form]) {
+                toast.error(errors[field as keyof Step2Form]?.message);
+                fieldRefs[field].current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+                break;
+              }
+            }
+          })}
           className="md:col-span-8 space-y-8 mb-12"
         >
           {/* Format Choice Card */}
@@ -249,9 +267,9 @@ export default function Step2({
                     In-Person Logistics
                   </h3>
                 </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="col-span-2">
+                <div  className="grid grid-cols-2 gap-6">
+                {/* Venue name */}
+                  <div ref={fieldRefs.venueName}  className="col-span-2">
                     <label className="text-sm font-semibold mb-2 block">
                       Venue Name
                     </label>
@@ -267,11 +285,11 @@ export default function Step2({
                     )}
                   </div>
 
-                  <div className="col-span-2">
+                  <div  ref={fieldRefs.address} className="col-span-2">
                     <label className="text-sm font-semibold mb-2 block">
                       Full Address
                     </label>
-                    <div className="relative">
+                    <div  className="relative">
                       <Map className="absolute left-0 top-3 w-5 h-5 opacity-50" />
                       <input
                         {...register("address")}
@@ -325,7 +343,7 @@ export default function Step2({
                     </select>
                   </div> */}
 
-                  <div className="col-span-2">
+                  <div ref={fieldRefs.meetingLink} className="col-span-2">
                     <label className="text-sm font-semibold mb-2 block">
                       Meeting Link / Invite URL
                     </label>

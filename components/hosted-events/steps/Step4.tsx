@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   FileText,
   Trash2,
@@ -83,6 +83,8 @@ export default function Step4({
   const resourceFile = watch("resource");
   const queryClient = useQueryClient();
 
+  const resourceRef = useRef<HTMLDivElement>(null);
+
   const updateStep4 = useMutation({
     mutationFn: async (formData: FormData) => {
       setIsLoading(true);
@@ -153,22 +155,30 @@ export default function Step4({
       }),
     );
     if (data.resource) formData.append("resources", data.resource);
-     else if (existingResource) {
-    formData.append("resources", existingResource);
-  }
+    else if (existingResource) {
+      formData.append("resources", existingResource);
+    }
     await updateStep4.mutateAsync(formData);
   };
   return (
     <form
       id="step4-form"
-      onSubmit={handleSubmit(onFinalSubmit)}
+      onSubmit={handleSubmit(onFinalSubmit, (errors) => {
+        if (errors.resource) {
+          toast.error(errors.resource.message);
+          resourceRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+      })}
       className="mx-auto px-4 sm:px-6 mt-8 relative"
     >
       <h2 className={`${theme.typography.h1} text-2xl`}>Finalize & Launch</h2>
       <div className=" mx-auto mt-2 mb-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Configuration Columns */}
-          <div className="lg:col-span-7 space-y-8">
+          <div ref={resourceRef} className="lg:col-span-7 space-y-8">
             {/* Resources Section */}
             <section
               className={`bg-white p-6 md:p-8 rounded-xl shadow-sm border ${theme.borderLight}`}
@@ -229,7 +239,9 @@ export default function Step4({
                           <p className="text-xs opacity-70 flex flex-col">
                             <span>{resourceFile?.name}</span>
                             <span>
-                              {Number((resourceFile.size / (1024 * 1024)).toFixed(2))}{" "}
+                              {Number(
+                                (resourceFile.size / (1024 * 1024)).toFixed(2),
+                              )}{" "}
                               MB • Ready
                             </span>
                           </p>
@@ -244,16 +256,18 @@ export default function Step4({
                         )}
                       </div>
                     </div>
-                  <button
-  type="button"
-  onClick={() => {
-    setValue("resource", undefined, { shouldValidate: true });
-    setExistingResource(null); // Clear the existing database URL so it actually deletes
-  }}
-  className="opacity-40 hover:opacity-100 hover:text-red-600 transition-colors p-2"
->
-  <Trash2 className="w-5 h-5" />
-</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setValue("resource", undefined, {
+                          shouldValidate: true,
+                        });
+                        setExistingResource(null); // Clear the existing database URL so it actually deletes
+                      }}
+                      className="opacity-40 hover:opacity-100 hover:text-red-600 transition-colors p-2"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
                 )}
               </div>
@@ -277,7 +291,6 @@ export default function Step4({
                     checked={watch("resourcesVisibility") === "PUBLIC"}
                     onChange={() => {
                       setValue("resourcesVisibility", "PUBLIC");
-                     
                     }}
                   />
                   <div
@@ -302,7 +315,6 @@ export default function Step4({
                     checked={watch("resourcesVisibility") === "PRIVATE"}
                     onChange={() => {
                       setValue("resourcesVisibility", "PRIVATE");
-                    
                     }}
                   />
                   <div
@@ -326,7 +338,6 @@ export default function Step4({
                     className="peer sr-only"
                     checked={watch("resourcesVisibility") === "DRAFT"}
                     onChange={() => {
-                
                       setValue("resourcesVisibility", "DRAFT");
                     }}
                   />
@@ -402,12 +413,12 @@ export default function Step4({
                   </h3>
 
                   <div className="flex items-center gap-3 mb-6">
-                    <img
+                    <Image
                       src={previewData.hostImage}
                       alt={previewData.hostName}
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover"
+                      width={48}
+                      height={48}
+                      className="rounded-full w-12 h-12 object-cover"
                     />
                     <span className="text-xs opacity-70 font-medium">
                       Hosted by {previewData.hostName}
@@ -482,7 +493,7 @@ export default function Step4({
                 className={`w-full py-4 border ${theme.borderLight} rounded-xl text-sm font-semibold transition-colors hover:bg-gray-50 flex items-center justify-center gap-2`}
               >
                 {/* <Share className="w-4 h-4" /> */}
-                {/* Share Link */}
+              {/* Share Link */}
               {/* </button> */}
             </div>
           </div>
