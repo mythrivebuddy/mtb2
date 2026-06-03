@@ -335,7 +335,7 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                     </Link>
                   </div>
                  <NavItem
-                    href="/dashboard/events/create"
+                    href="/dashboard/events/coach"
                     icon={<Calendar size={20} />}
                     label="Create Events"
                     onLinkClick={toggleSidebar} 
