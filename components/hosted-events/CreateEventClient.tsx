@@ -8,10 +8,11 @@ import Step2 from "./steps/Step2";
 import Step3 from "./steps/Step3";
 import Step4 from "./steps/Step4";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 
 export default function CreateEventClient() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -54,14 +55,14 @@ export default function CreateEventClient() {
       {/* 🔥 HEADER */}
       <header className="flex items-center gap-4 px-6 py-4">
         {/* Back Button */}
-        {step > 1 && (
+        {/* {step > 1 && ( */}
           <button
-            onClick={prevStep}
+           onClick={() => (step > 1 ? prevStep() : router.back())}
             className={`transition-colors hover:${theme.textAccent}`}
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
-        )}
+        {/* )} */}
 
         <h2 className={`${theme.typography.h1} text-xl`}>Create Event</h2>
       </header>

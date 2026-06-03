@@ -43,7 +43,9 @@ type PageSkeletonProps = {
     | "buddylens"
     | "spotlight"
     | "coach-profile"
-    | "mmp-home";
+    | "mmp-home"
+    | "events"
+    | "events-discovery-page"
 };
 
 export default function PageSkeleton({ type }: PageSkeletonProps) {
@@ -1480,7 +1482,133 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         </div>
       </div>
     );
+    
   }
+  if (type === "events") {
+  return (
+    <div className="animate-pulse px-4 sm:px-6 py-6 md:p-10 lg:p-12 space-y-10">
+      
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between gap-6">
+        <div className="space-y-3">
+          <div className="h-10 w-64 bg-gray-200 rounded" />
+          <div className="h-5 w-96 bg-gray-100 rounded" />
+        </div>
+        <div className="h-12 w-40 bg-gray-200 rounded-full" />
+      </div>
+
+      {/* STATS GRID */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="bg-white border rounded-2xl p-6 space-y-4"
+          >
+            <div className="h-3 w-24 bg-gray-100 rounded" />
+            <div className="h-8 w-20 bg-gray-200 rounded" />
+            <div className="h-3 w-32 bg-gray-100 rounded" />
+          </div>
+        ))}
+      </div>
+
+      {/* ACTIVE EVENTS */}
+      <div className="space-y-6">
+        <div className="h-6 w-40 bg-gray-200 rounded" />
+
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div
+            key={i}
+            className="bg-white border rounded-2xl overflow-hidden flex flex-col md:flex-row"
+          >
+            {/* Image */}
+            <div className="h-48 md:h-auto md:w-64 bg-gray-200" />
+
+            {/* Content */}
+            <div className="p-6 flex-1 space-y-4">
+              <div className="flex justify-between">
+                <div className="h-5 w-48 bg-gray-200 rounded" />
+                <div className="h-5 w-20 bg-gray-100 rounded" />
+              </div>
+
+              <div className="h-4 w-64 bg-gray-100 rounded" />
+
+              {/* Progress */}
+              <div className="space-y-2">
+                <div className="h-3 w-full bg-gray-100 rounded" />
+                <div className="h-2 w-full bg-gray-200 rounded" />
+              </div>
+
+              <div className="h-10 w-32 bg-gray-200 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+if (type === "events-discovery-page") {
+  return (
+    <div className="animate-pulse min-h-screen w-full">
+      {/* HERO */}
+      <div className="relative h-[600px] md:h-[700px]">
+        <Skeleton className="absolute inset-0 w-full h-full" />
+
+        <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 space-y-6">
+          <Skeleton className="h-10 w-[280px] md:w-[500px]" />
+          <Skeleton className="h-4 w-[220px] md:w-[400px]" />
+
+          {/* search */}
+          <div className="w-full max-w-xl bg-white rounded-full p-3 flex gap-3">
+            <Skeleton className="h-10 flex-1 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+          </div>
+        </div>
+      </div>
+
+      {/* FILTER */}
+      <div className="flex overflow-x-auto py-6 px-4 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 w-24 rounded-full" />
+        ))}
+      </div>
+
+      {/* FEATURED */}
+      <div className="px-4 space-y-6">
+        <Skeleton className="h-8 w-48" />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* main */}
+          <Skeleton className="h-[400px] md:col-span-2 rounded-2xl" />
+
+          {/* side */}
+          <div className="flex flex-col gap-6">
+            <Skeleton className="h-[180px] rounded-2xl" />
+            <Skeleton className="h-[180px] rounded-2xl" />
+          </div>
+        </div>
+      </div>
+
+      {/* TRENDING */}
+      <div className="px-4 py-12 space-y-6">
+        <Skeleton className="h-8 w-56" />
+
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <Skeleton className="h-6 w-6" />
+              <Skeleton className="h-16 w-16 rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+              <Skeleton className="h-4 w-12" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
   // fallback default
   return (
     <div className="p-4">

@@ -75,3 +75,4 @@ export type HostedEventResponse = {
     updatedAt: string;
   } | null;
 };
+
