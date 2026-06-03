@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { theme } from "@/lib/new-home/theme/theme";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import Step1 from "./steps/Step1";
@@ -36,8 +36,21 @@ export default function CreateEventClient() {
     if (step > 1) setStep((prev) => prev - 1);
   };
 
+  const topRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      topRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 120); // sweet spot
+
+    return () => clearTimeout(timeout);
+  }, [step]);
   return (
-    <div className="min-h-screen flex flex-col">
+    <div  className="min-h-screen flex flex-col">
+     <div ref={topRef} />
       {/* 🔥 HEADER */}
       <header className="flex items-center gap-4 px-6 py-4">
         {/* Back Button */}
@@ -104,7 +117,7 @@ export default function CreateEventClient() {
       </div>
 
       {/* 🔥 STEP CONTENT */}
-      <div className="flex-1">
+      <div  className="flex-1">
         {step === 1 && (
           <Step1
             onNext={nextStep}

@@ -103,13 +103,7 @@ function validateHostedEventPayload(
   input: HostedEventPayload,
   ctx: z.RefinementCtx,
 ) {
-  if (input.startTime && input.endTime && input.endTime <= input.startTime) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["endTime"],
-      message: "endTime must be after startTime.",
-    });
-  }
+
 
   if (input.format === HostedEventFormat.IN_PERSON && (!input.venueName || !input.address)) {
     ctx.addIssue({
