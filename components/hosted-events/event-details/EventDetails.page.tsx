@@ -16,7 +16,6 @@ import Share from "@/components/common/ShareModal";
 import { AgendaSlot, HostedEvent } from "@/types/client/events";
 import { isSameDay } from "date-fns";
 
-
 type EventDetailResponse = {
   event: HostedEvent & {
     ticket: {
@@ -52,38 +51,36 @@ async function fetchEventDetail(id: string): Promise<EventDetail> {
 }
 
 // ── sub-components ─────────────────────────────────────────────────────────
-const HeroSection = ({ event }: { event: EventDetail }) =>{
-   const eventUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/dashboard/events/${event.id}`
-    : `/dashboard/events/${event.id}`;
+const HeroSection = ({ event }: { event: EventDetail }) => {
+  const eventUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/dashboard/events/${event.id}`
+      : `/dashboard/events/${event.id}`;
   return (
-  <section
-    className="relative h-[60vh] min-h-[500px] w-full bg-cover bg-center flex items-end pb-16"
-    style={{ backgroundImage: `url('${event.coverImage ?? ""}')` }}
-  >
-    {/* <div className="absolute inset-0 bg-black/40" /> */}
+    <section
+      className="relative h-[60vh] min-h-[500px] w-full bg-cover bg-center flex items-end pb-16"
+      style={{ backgroundImage: `url('${event.coverImage ?? ""}')` }}
+    >
+      {/* <div className="absolute inset-0 bg-black/40" /> */}
       {/* Share button top-right */}
-    <div className="absolute top-4 right-4 z-20">
-      <Share
-        url={eventUrl}
-        title={event.title}
-        buttonLabel="Share"
-      />
-    </div>
-    <div className="relative z-10 max-w-7xl mx-auto w-full px-6 md:px-12">
-      <div
-        className={`${cormorant.className} ${theme.chip} ${theme.bgSecondary} ${theme.textAccent} border-2 ${theme.hightLightBorderColor} inline-flex items-center gap-2 mb-4 border-none`}
-      >
-        <Leaf className="w-4 h-4" /> {event.type.replace(/_/g, " ")}
+      <div className="absolute top-4 right-4 z-20">
+        <Share url={eventUrl} title={event.title} buttonLabel="Share" />
       </div>
-      <h1
-        className={`${theme.typography.h1} text-white text-4xl md:text-5xl max-w-2xl`}
-      >
-        {event.title}
-      </h1>
-    </div>
- </section>
-)};
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 md:px-12">
+        <div
+          className={`${cormorant.className} ${theme.chip} ${theme.bgSecondary} ${theme.textAccent} border-2 ${theme.hightLightBorderColor} inline-flex items-center gap-2 mb-4 border-none`}
+        >
+          <Leaf className="w-4 h-4" /> {event.type.replace(/_/g, " ")}
+        </div>
+        <h1
+          className={`${theme.typography.h1} text-white text-4xl md:text-5xl max-w-2xl`}
+        >
+          {event.title}
+        </h1>
+      </div>
+    </section>
+  );
+};
 
 const GuideCard = ({ event }: { event: EventDetail }) => {
   const bp = event.creator.businessProfile;
@@ -117,14 +114,11 @@ const GuideCard = ({ event }: { event: EventDetail }) => {
 
 const JourneyTimeline = ({ slots }: { slots: AgendaSlot[] }) => {
   // Group slots by day
-  const grouped = slots.reduce<Record<number, AgendaSlot[]>>(
-    (acc, slot) => {
-      if (!acc[slot.day]) acc[slot.day] = [];
-      acc[slot.day].push(slot);
-      return acc;
-    },
-    {},
-  );
+  const grouped = slots.reduce<Record<number, AgendaSlot[]>>((acc, slot) => {
+    if (!acc[slot.day]) acc[slot.day] = [];
+    acc[slot.day].push(slot);
+    return acc;
+  }, {});
 
   const days = Object.entries(grouped).map(([day, events]) => ({
     dayNumber: String(day).padStart(2, "0"),
@@ -221,9 +215,9 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
       month: "short",
       year: "numeric",
     });
-    const sameDay = event.endTime
-  ? isSameDay(new Date(event.startTime), new Date(event.endTime))
-  : true;
+  const sameDay = event.endTime
+    ? isSameDay(new Date(event.startTime), new Date(event.endTime))
+    : true;
   return (
     <div className="sticky top-24 space-y-6">
       <div
@@ -237,9 +231,7 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
               {event.isPaid ? "Starting From" : "Free Event"}
             </span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span
-                className={`text-3xl  ${theme.textDark}`}
-              >
+              <span className={`text-3xl  ${theme.textDark}`}>
                 {event.isPaid && ticket
                   ? `${ticket.currency === "INR" ? "₹" : "$"} ${ticket.price}`
                   : "Free"}
@@ -260,7 +252,9 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
             <Calendar className="w-5 h-5 opacity-50" />
             <span>
               {formatDate(event.startTime)}
-              {event.endTime && !sameDay ? ` — ${formatDate(event.endTime)}` : ""}
+              {event.endTime && !sameDay
+                ? ` — ${formatDate(event.endTime)}`
+                : ""}
             </span>
           </div>
         </div>
@@ -276,10 +270,8 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
   );
 };
 
-
 // ── main export ────────────────────────────────────────────────────────────
-export default function EventDetailsPage({eventId}:{eventId:string}) {
-
+export default function EventDetailsPage({ eventId }: { eventId: string }) {
   const { data, isLoading, isError } = useQuery<EventDetail>({
     queryKey: ["event-detail", eventId],
     queryFn: () => fetchEventDetail(eventId),
@@ -302,10 +294,12 @@ export default function EventDetailsPage({eventId}:{eventId:string}) {
       <div className="min-h-screen">
         <HeroSection event={data} />
         <main className="mx-auto px-4 md:px-6 py-16">
-          <div className="flex flex-col lg:flex-row gap-12 xl:gap-20">
-            <div className="flex-1 max-w-3xl order-2 lg:order-1">
+          <div className="flex flex-col lg:flex-row gap-8 xl:gap-12">
+            <div className="flex-1 min-w-0 order-2 lg:order-1">
               <section>
-                <h2 className={`text-2xl sm:text-4xl mb-6 ${theme.textDark} ${cormorant.className} font-medium`}>
+                <h2
+                  className={`text-2xl sm:text-4xl mb-6 ${theme.textDark} ${cormorant.className} font-medium`}
+                >
                   Nurture Your Flourishing
                 </h2>
                 <div
@@ -318,9 +312,11 @@ export default function EventDetailsPage({eventId}:{eventId:string}) {
                 <PricingSidebar event={data} />
               </div>
               <JourneyTimeline slots={data.agendaSlots} />
-              {data.format === "IN_PERSON" && <SanctuaryLocation event={data} />}
+              {data.format === "IN_PERSON" && (
+                <SanctuaryLocation event={data} />
+              )}
             </div>
-            <aside className="w-full lg:w-[400px] shrink-0 order-1 lg:order-2 hidden lg:block">
+            <aside className="w-full lg:w-[340px] shrink-0 order-1 lg:order-2 hidden lg:block">
               <PricingSidebar event={data} />
             </aside>
           </div>
@@ -329,5 +325,9 @@ export default function EventDetailsPage({eventId}:{eventId:string}) {
     );
   })();
 
-  return authStatus === "authenticated" ? content : <AppLayout>{content}</AppLayout>;
+  return authStatus === "authenticated" ? (
+    content
+  ) : (
+    <AppLayout>{content}</AppLayout>
+  );
 }
