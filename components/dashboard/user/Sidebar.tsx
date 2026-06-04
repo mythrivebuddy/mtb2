@@ -21,6 +21,7 @@ import {
   Award,
   BadgePercent,
   Compass,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -275,6 +276,12 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                   label="Join Mini Mastery Programs"
                   onLinkClick={toggleSidebar}
                 />
+                <NavItem
+                  href="/dashboard/events"
+                  icon={<Calendar size={20} />}
+                  label="Join Events"
+                  onLinkClick={toggleSidebar}
+                />
                 <div className="flex items-center ">
                   <Link href="/MTB-2026-the-complete-makeover-program">
                     <span className="flex items-center gap-3 py-2 cursor-pointer text-[#6C7894] dark:text-slate-300 ">
@@ -333,6 +340,12 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                       </span>
                     </Link>
                   </div>
+                  <NavItem
+                    href="/dashboard/events/coach"
+                    icon={<Calendar size={20} />}
+                    label="Create Events"
+                    onLinkClick={toggleSidebar}
+                  />
                   <NavItem
                     href="/dashboard/manage-store"
                     icon={<ShoppingCartIcon size={20} />}
