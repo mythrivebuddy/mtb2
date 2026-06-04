@@ -9,7 +9,9 @@ import AppLayout from "@/components/layout/AppLayout";
 import { useSession } from "next-auth/react";
 import PageSkeleton from "@/components/PageSkeleton";
 import { HostedEvent } from "@prisma/client";
-
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
 // --- CATEGORY DATA ---
 const CATEGORIES = [
@@ -148,6 +150,7 @@ const FeaturedSection = ({
 }: {
   events: HostedEventWithTickets[];
 }) => {
+  const router = useRouter();
   if (!events || events.length === 0) return null;
 
   // For the sake of preserving the layout with limited data,
@@ -181,10 +184,13 @@ const FeaturedSection = ({
             <h3 className={`${theme.typography.h1} text-3xl text-white mb-3`}>
               {mainEvent.title}
             </h3>
-          <p className="text-gray-200 text-sm max-w-md mb-6 line-clamp-2">
-  {stripHtml(mainEvent?.description || "")}
-</p>
-            <button className="bg-white text-black px-6 py-2.5 rounded-full text-sm font-medium w-max hover:bg-gray-100 transition">
+            <p className="text-gray-200 text-sm max-w-md mb-6 line-clamp-2">
+              {stripHtml(mainEvent?.description || "")}
+            </p>
+            <button
+              onClick={() => router.push(`/dashboard/events/${mainEvent.id}`)}
+              className="bg-white text-black px-6 py-2.5 rounded-full text-sm font-medium w-max hover:bg-gray-100 transition"
+            >
               View Event
             </button>
           </div>
@@ -225,9 +231,9 @@ const FeaturedSection = ({
                   +12
                 </div> */}
               </div>
-              <button className="text-sm font-medium text-amber-900 hover:underline">
+              <Link href={`/dashboard/events/${topSideEvent.id}`} className="text-sm font-medium text-amber-900 hover:underline">
                 Learn More →
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -249,9 +255,11 @@ const FeaturedSection = ({
                 {bottomSideEvent.venueName || bottomSideEvent.address}
               </p>
             </div>
+            <ComingSoonWrapper>
             <button className="w-full bg-white text-black py-3 rounded-full text-sm font-medium mt-4 hover:bg-gray-100 transition">
               Enroll Now - {getPrice(bottomSideEvent)}
             </button>
+            </ComingSoonWrapper>
           </div>
         </div>
       </div>
@@ -316,9 +324,9 @@ const TrendingSection = ({
               </div>
 
               <div className="flex items-center gap-3">
-                <span className={theme.highLightTextColor}>
+                <Link href={`/dashboard/events/${item.id}`} className={theme.highLightTextColor}>
                   {getPrice(item)}
-                </span>
+                </Link>
                 <ChevronRight size={20} />
               </div>
             </div>
