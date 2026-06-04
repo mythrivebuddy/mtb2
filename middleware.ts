@@ -99,7 +99,9 @@ export default withAuth(
         if (path === "/dashboard/store") {
           return true;
         }
-
+        if (path === "/dashboard/events") {
+          return true;
+        }
         // ✅ MFA pages publicly accessible (session hone ke baad bhi)
         if (path.startsWith("/mfa-verify")) return true;
         if (path.startsWith("/mfa-setup")) return true;

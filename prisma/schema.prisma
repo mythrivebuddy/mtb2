@@ -157,6 +157,10 @@ model User {
 //  User financial details 
  userFinancialDetails UserFinancialDetails?
  notificationPreferences UserNotificationPreference[]
+  
+ // HostedEvent reverse relations
+ hostedEvents                  HostedEvent[]                     @relation("HostedEvents")
+ hostedEventEnrollments        HostedEventEnrollment[]           @relation("HostedEventEnrollments")
   @@index([name])
   @@index([jpEarned])
   @@index([jpBalance])
@@ -2128,6 +2132,7 @@ model MakeoverArea {
   userAreas     UserMakeoverArea[]
   commitments   UserMakeoverCommitment[]
   progressLogs  MakeoverProgressLog[]
+  
 }
 
 // Program → Area → Challenge
@@ -2573,6 +2578,148 @@ model FeaturePlanConfig {
   @@index([featureId, membership, userType])
 }
 
+
+// Hosted event starts
+model HostedEvent {
+  id          String   @id @default(cuid())
+
+  // Basic info
+  title       String
+  description String?
+
+  type        HostedEventType
+
+
+
+  coverImage  String?
+
+  // Format & location
+  format      HostedEventFormat?
+  
+  venueName          String?
+  address            String?
+  travelInstructions String?
+
+  // Online settings
+  meetingLink     String?
+  meetingPlatform String?
+
+  // Schedule
+  startTime   DateTime
+  endTime     DateTime?
+  timeZone   String?
+
+  // Pricing
+  isPaid      Boolean   @default(false)
+
+  // Resources
+  resources            String?
+  resourcesVisibility  HostedEventResourceVisibility  @default(PUBLIC)
+
+  // Meta
+  creatorId   String
+  creator     User   @relation("HostedEvents", fields: [creatorId], references: [id])
+  status      Status @default(UNDER_REVIEW)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  enrollments HostedEventEnrollment[]
+  tickets     HostedEventTicket[]
+  agendaSlots HostedEventAgendaSlot[]
+
+  @@index([creatorId])
+}
+
+model HostedEventEnrollment {
+  id        String   @id @default(cuid())
+
+  userId    String
+  user      User   @relation("HostedEventEnrollments", fields: [userId], references: [id])
+  eventId   String
+  ticketId  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  event     HostedEvent       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticket    HostedEventTicket @relation(fields: [ticketId], references: [id])
+
+  @@unique([userId, eventId])
+  @@index([ticketId])
+}
+
+model HostedEventTicket {
+  id        String   @id @default(cuid())
+
+  eventId   String  @unique 
+
+  price     Float
+  quantity  Int
+  currency  SubscriptionPlanCurrency?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  event       HostedEvent             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  enrollments HostedEventEnrollment[] // back-relation; use _count for sold seats
+
+  @@index([eventId])
+}
+model HostedEventAgendaSlot {
+  id          String   @id @default(cuid())
+
+  eventId     String
+  day         Int      // Day number: 1, 2, 3...
+  
+  time        String   // e.g. "09:00 AM"
+  title       String
+  description String?
+
+  order       Int      // controls order within same day
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relation
+  event HostedEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([eventId])
+  @@index([eventId, day])
+  @@index([eventId, day, order])
+
+  // Prevent duplicate ordering in same day
+  @@unique([eventId, day, order])
+}
+enum HostedEventType {
+  RETREAT
+  WEBINAR
+  WORKSHOP
+  ONE_ON_ONE
+  COURSE
+}
+
+enum HostedEventFormat {
+  IN_PERSON
+  ONLINE
+}
+
+enum HostedEventResourceVisibility {
+  PUBLIC
+  PRIVATE
+  DRAFT
+}
+
+enum Status {
+  DRAFT
+  UNDER_REVIEW
+  PUBLISHED
+}
+// Hosted event ends
 // ----------------------------------------------------------------------
 // AUDIT LOG
 // ----------------------------------------------------------------------

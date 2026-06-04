@@ -6,6 +6,24 @@ module.exports = {
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
+  ],
+  safelist: [
+    'bg-[var(--bg-primary)]',
+    'bg-[var(--bg-secondary)]',
+'bg-[var(--bg-tertiary)]',
+    'bg-[var(--highlight-bg)]',
+    'text-[var(--highlight-text)]',
+    'border-[var(--highlight-border)]',
+
+    'text-[var(--text-dark)]',
+    'text-[var(--text-accent)]',
+
+    'border-[var(--border-light)]',
+    'border-[var(--border-accent)]',
+
+    'bg-[var(--button-dark)]',
+    'hover:bg-[var(--button-dark-hover)]',
   ],
   theme: {
     container: {

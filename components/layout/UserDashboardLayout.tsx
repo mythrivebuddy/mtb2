@@ -40,7 +40,8 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     pathname.startsWith("/dashboard/challenge/") ||
     pathname === "/dashboard/store" ||
     pathname.startsWith("/dashboard/store/") ||
-    pathname === "/dashboard/mini-mastery-programs";
+    pathname === "/dashboard/mini-mastery-programs"
+    ||  pathname === "/dashboard/events";
   const shouldUseInheritBg = isChallengeRoute && isGuest && !isLoading;
 
   useEffect(() => {
