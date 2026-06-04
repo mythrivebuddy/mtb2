@@ -17,6 +17,7 @@ export const theme = {
 
   buttonDark:
     "bg-[var(--button-dark)] text-white hover:bg-[var(--button-dark-hover)]",
+    buttonLight: "bg-[var(--button-dark-hover)] hover:bg-[var(--button-dark)]",
   typography: {
     brandNavbarHeading: `${cormorant.className} text-2xl x1260:text-3xl font-medium `,
     brandFooterHeading: `${cormorant.className} text-2xl x1260:text-3xl  font-medium `,
@@ -55,7 +56,7 @@ export const theme = {
   stepperCircleBase:
     "w-10 h-10 rounded-full flex items-center justify-center font-bold",
 
-  stepperCircleActive: "bg-[var(--button-dark-hover)] text-white shadow-lg",
+  stepperCircleActive: "bg-[var(--button-dark)] text-white shadow-lg",
 
   stepperCircleInactive:
     "border-2 border-[var(--border-light)] bg-white opacity-60",

@@ -19,6 +19,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { HostedEventResponse } from "@/types/client/events";
+import { useRouter } from "next/navigation";
 
 const step2Schema = z
   .object({
@@ -77,12 +78,21 @@ export default function Step2({
   setIsLoading,
   eventData,
   eventId,
+  isDraft,
+  setIsDraft,
+  setIsDraftLoading,
 }: {
   onNext: () => void;
   setIsLoading: (loading: boolean) => void;
   eventData?: HostedEventResponse;
   eventId?: string | undefined | null;
+  isDraft?: boolean;
+  setIsDraft?: (v: boolean) => void;
+  setIsDraftLoading?: (v: boolean) => void;
 }) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
   type Step2Form = z.infer<typeof step2Schema>;
 
   const {
@@ -105,7 +115,7 @@ export default function Step2({
     },
   });
   const format = watch("format");
-  const queryClient = useQueryClient();
+
   // 2. Add refs inside the component (after useForm)
   const fieldRefs: Record<string, React.RefObject<HTMLDivElement | null>> = {
     venueName: useRef<HTMLDivElement>(null),
@@ -115,7 +125,8 @@ export default function Step2({
 
   const updateStep2 = useMutation({
     mutationFn: async (data: Step2Form) => {
-      setIsLoading(true);
+      if (isDraft) setIsDraftLoading?.(true);
+      else setIsLoading(true);
 
       const payload =
         data.format === "ONLINE"
@@ -139,13 +150,22 @@ export default function Step2({
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["event", eventId], data);
+      if (isDraft) {
+        toast.success("Event saved as Draft");
+        setIsDraft?.(false);
+        router.push(`/dashboard/events/coach`);
+        return;
+      }
       toast.success("Step 2 saved");
       onNext();
     },
     onError: (err) => {
       toast.error(getAxiosErrorMessage(err));
     },
-    onSettled: () => setIsLoading(false),
+    onSettled: () => {
+  setIsLoading(false);
+  setIsDraftLoading?.(false);
+},
   });
   const onSubmit = async (data: Step2Form) => {
     await updateStep2.mutateAsync(data);
@@ -169,7 +189,7 @@ export default function Step2({
         <form
           id="step2-form"
           onSubmit={handleSubmit(onSubmit, (errors) => {
-             const fieldOrder = ["venueName", "address", "meetingLink"];
+            const fieldOrder = ["venueName", "address", "meetingLink"];
             for (const field of fieldOrder) {
               if (errors[field as keyof Step2Form]) {
                 toast.error(errors[field as keyof Step2Form]?.message);
@@ -267,9 +287,9 @@ export default function Step2({
                     In-Person Logistics
                   </h3>
                 </div>
-                <div  className="grid grid-cols-2 gap-6">
-                {/* Venue name */}
-                  <div ref={fieldRefs.venueName}  className="col-span-2">
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Venue name */}
+                  <div ref={fieldRefs.venueName} className="col-span-2">
                     <label className="text-sm font-semibold mb-2 block">
                       Venue Name
                     </label>
@@ -285,11 +305,11 @@ export default function Step2({
                     )}
                   </div>
 
-                  <div  ref={fieldRefs.address} className="col-span-2">
+                  <div ref={fieldRefs.address} className="col-span-2">
                     <label className="text-sm font-semibold mb-2 block">
                       Full Address
                     </label>
-                    <div  className="relative">
+                    <div className="relative">
                       <Map className="absolute left-0 top-3 w-5 h-5 opacity-50" />
                       <input
                         {...register("address")}

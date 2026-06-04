@@ -19,7 +19,7 @@ const step1Schema = z
   .object({
     title: z
       .string()
-      .nonempty("Title is required") 
+      .nonempty("Title is required")
       .min(5, "Min 5 characters required in title")
       .max(150, "Max 150 characters"),
     description: z.string().min(5, "Description is required"),
@@ -89,11 +89,17 @@ export default function Step1({
   setIsLoading,
   eventData,
   eventId,
+  isDraft,
+  setIsDraft,
+  setIsDraftLoading,
 }: {
   onNext: () => void;
   setIsLoading: (loading: boolean) => void;
   eventData?: HostedEventResponse;
   eventId?: string | undefined | null;
+  isDraft?: boolean;
+  setIsDraft?: (v: boolean) => void;
+  setIsDraftLoading?: (v: boolean) => void;
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -182,16 +188,17 @@ export default function Step1({
 
   const createDraft = useMutation({
     mutationFn: async (data: FormData) => {
-      setIsLoading(true);
+      if (isDraft) setIsDraftLoading?.(true);
+      else setIsLoading(true);
       const res = await axios.post("/api/hosted-events/draft", data);
       return res.data;
     },
     onSuccess: (data) => {
-      toast.success("Step 1 saved")
       queryClient.setQueryData(["event", data.event.id], data);
     },
     onSettled: () => {
       setIsLoading(false);
+      setIsDraftLoading?.(false);
     },
   });
 
@@ -236,6 +243,13 @@ export default function Step1({
         coverImage: res.event.coverImage,
       });
 
+      if (isDraft) {
+        toast.success("Event saved as Draft");
+        setIsDraft?.(false);
+        router.push(`/dashboard/events/coach`);
+        return;
+      }
+      toast.success("Step 1 saved");
       router.replace(`?eventId=${res.event.id}`, { scroll: false });
       onNext();
     } catch (err) {
@@ -294,7 +308,7 @@ export default function Step1({
 
             for (const field of fieldOrder) {
               if (errors[field]) {
-              toast.error(errors[field]?.message as string);
+                toast.error(errors[field]?.message as string);
                 fieldRefs[field].current?.scrollIntoView({
                   behavior: "smooth",
                   block: "center",
