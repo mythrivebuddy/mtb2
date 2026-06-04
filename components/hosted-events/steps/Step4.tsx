@@ -50,11 +50,17 @@ export default function Step4({
   setIsLoading,
   eventData,
   eventId,
+  isDraft,
+  setIsDraft,
+  setIsDraftLoading,
 }: {
   onNext: () => void;
   setIsLoading: (loading: boolean) => void;
   eventData?: HostedEventResponse;
   eventId?: string | null;
+  isDraft?: boolean;
+  setIsDraft?: (v: boolean) => void;
+  setIsDraftLoading?: (v: boolean) => void;
 }) {
   const {
     handleSubmit,
@@ -87,7 +93,9 @@ export default function Step4({
 
   const updateStep4 = useMutation({
     mutationFn: async (formData: FormData) => {
-      setIsLoading(true);
+      if (isDraft) setIsDraftLoading?.(true);
+      else setIsLoading(true);
+
       const res = await axios.put(`/api/hosted-events/${eventId}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -95,11 +103,20 @@ export default function Step4({
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["event", eventId], data);
+      if (isDraft) {
+        toast.success("Event saved as Draft");
+        setIsDraft?.(false);
+        router.push(`/dashboard/events/coach`);
+        return;
+      }
       toast.success("Event submitted for review");
       setShowSuccessModal(true);
     },
     onError: () => toast.error("Failed to publish event"),
-    onSettled: () => setIsLoading(false),
+    onSettled: () => {
+      setIsLoading(false);
+      setIsDraftLoading?.(false);
+    },
   });
 
   //   const [isPublishing, setIsPublishing] = useState(false);
@@ -145,13 +162,14 @@ export default function Step4({
       (1000 * 60 * 60 * 24);
     return `${Math.ceil(diff)} Days`;
   };
+
   const onFinalSubmit = async (data: Step4FormData) => {
     const formData = new FormData();
     formData.append(
       "data",
       JSON.stringify({
         resourcesVisibility: data.resourcesVisibility,
-        // status: data.status,
+         ...(!isDraft && { status: "UNDER_REVIEW" }),
       }),
     );
     if (data.resource) formData.append("resources", data.resource);

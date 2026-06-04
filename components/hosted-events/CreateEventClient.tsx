@@ -13,12 +13,13 @@ import axios from "axios";
 
 export default function CreateEventClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get("eventId");
   const [step, setStep] = useState(1);
 
   const [isLoading, setIsLoading] = useState(false);
-  const searchParams = useSearchParams();
-  const eventId = searchParams.get("eventId");
-
+  const [isDraft, setIsDraft] = useState(false);
+  const [isDraftLoading, setIsDraftLoading] = useState(false);
   const { data } = useQuery({
     queryKey: ["event", eventId],
     queryFn: async () => {
@@ -50,18 +51,18 @@ export default function CreateEventClient() {
     return () => clearTimeout(timeout);
   }, [step]);
   return (
-    <div  className="min-h-screen flex flex-col">
-     <div ref={topRef} />
+    <div className="min-h-screen flex flex-col">
+      <div ref={topRef} />
       {/* 🔥 HEADER */}
       <header className="flex items-center gap-4 px-6 py-4">
         {/* Back Button */}
         {/* {step > 1 && ( */}
-          <button
-           onClick={() => (step > 1 ? prevStep() : router.back())}
-            className={`transition-colors hover:${theme.textAccent}`}
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
+        <button
+          onClick={() => (step > 1 ? prevStep() : router.back())}
+          className={`transition-colors hover:${theme.textAccent}`}
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
         {/* )} */}
 
         <h2 className={`${theme.typography.h1} text-xl`}>Create Event</h2>
@@ -118,13 +119,16 @@ export default function CreateEventClient() {
       </div>
 
       {/* 🔥 STEP CONTENT */}
-      <div  className="flex-1">
+      <div className="flex-1">
         {step === 1 && (
           <Step1
             onNext={nextStep}
             setIsLoading={setIsLoading}
             eventData={data}
             eventId={eventId}
+            isDraft={isDraft}
+            setIsDraft={setIsDraft}
+            setIsDraftLoading={setIsDraftLoading}
           />
         )}
         {step === 2 && (
@@ -133,6 +137,9 @@ export default function CreateEventClient() {
             setIsLoading={setIsLoading}
             eventData={data}
             eventId={eventId}
+            isDraft={isDraft}
+            setIsDraft={setIsDraft}
+                    setIsDraftLoading={setIsDraftLoading}
           />
         )}
         {step === 3 && (
@@ -141,6 +148,9 @@ export default function CreateEventClient() {
             setIsLoading={setIsLoading}
             eventData={data}
             eventId={eventId}
+            isDraft={isDraft}
+            setIsDraft={setIsDraft}
+                    setIsDraftLoading={setIsDraftLoading}
           />
         )}
         {step === 4 && (
@@ -149,6 +159,9 @@ export default function CreateEventClient() {
             setIsLoading={setIsLoading}
             eventData={data}
             eventId={eventId}
+            isDraft={isDraft}
+            setIsDraft={setIsDraft}
+                    setIsDraftLoading={setIsDraftLoading}
           />
         )}
       </div>
@@ -158,9 +171,21 @@ export default function CreateEventClient() {
         <div className="mx-auto px-6 flex items-center justify-between">
           {/* Left */}
           <button
+            type="button"
+              disabled={isDraftLoading || isLoading}
+            onClick={() => {
+              setIsDraft(true);
+              console.log("from the button call the value of isDraft : ",isDraft)
+              // Trigger the current step's form submission
+              document
+                .getElementById(`step${step}-form`)
+                ?.dispatchEvent(
+                  new Event("submit", { cancelable: true, bubbles: true }),
+                );
+            }}
             className={`px-4 sm:px-8 py-3 rounded-full border ${theme.borderAccent} ${theme.textAccent} text-sm font-medium hover:opacity-80 transition-all`}
           >
-            Save as Draft
+           {isDraftLoading ? "Saving..." : "Save as Draft"}
           </button>
 
           {/* Right */}
@@ -172,7 +197,7 @@ export default function CreateEventClient() {
             <button
               // onClick={nextStep}
               form={`step${step}-form`}
-              disabled={isLoading}
+              disabled={isLoading || isDraftLoading}
               className={`px-8 py-3 rounded-full ${theme.buttonDark} text-sm font-medium shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center gap-2`}
             >
               {isLoading ? "Saving..." : "Continue"}
