@@ -46,6 +46,7 @@ type PageSkeletonProps = {
     | "mmp-home"
     | "events"
     | "events-discovery-page"
+    | "events-detail-page"
 };
 
 export default function PageSkeleton({ type }: PageSkeletonProps) {
@@ -1608,6 +1609,76 @@ if (type === "events-discovery-page") {
       </div>
     </div>
   );
+}
+if(type === "events-detail-page") {
+  return (
+     <div className="min-h-screen animate-pulse">
+    {/* HERO */}
+    <div className="h-[60vh] min-h-[500px] bg-gray-200 relative">
+      <div className="absolute bottom-10 left-6 md:left-12 space-y-3 w-1/2">
+        <div className="h-4 w-32 bg-gray-300 rounded" />
+        <div className="h-10 w-full bg-gray-300 rounded" />
+      </div>
+    </div>
+
+    {/* MAIN */}
+    <div className="mx-auto px-4 md:px-6 py-16">
+      <div className="flex flex-col lg:flex-row gap-12 xl:gap-20">
+
+        {/* LEFT CONTENT */}
+        <div className="flex-1 space-y-8">
+          {/* Title */}
+          <div className="h-8 w-1/2 bg-gray-200 rounded" />
+
+          {/* Description */}
+          <div className="space-y-3">
+            <div className="h-4 w-full bg-gray-200 rounded" />
+            <div className="h-4 w-5/6 bg-gray-200 rounded" />
+            <div className="h-4 w-3/4 bg-gray-200 rounded" />
+          </div>
+
+          {/* Guide Card */}
+          <div className="flex gap-4 items-center mt-6">
+            <div className="w-16 h-16 bg-gray-200 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <div className="h-5 w-40 bg-gray-200 rounded" />
+              <div className="h-4 w-full bg-gray-200 rounded" />
+            </div>
+          </div>
+
+          {/* Timeline */}
+          <div className="mt-10 space-y-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-3">
+                <div className="h-6 w-32 bg-gray-200 rounded" />
+                <div className="space-y-2">
+                  <div className="h-4 w-full bg-gray-200 rounded" />
+                  <div className="h-4 w-4/5 bg-gray-200 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT SIDEBAR */}
+        <div className="w-full lg:w-[400px] space-y-6">
+          <div className="p-6 border rounded-2xl space-y-4">
+            <div className="h-4 w-24 bg-gray-200 rounded" />
+            <div className="h-10 w-32 bg-gray-200 rounded" />
+
+            <div className="space-y-3 pt-4 border-t">
+              <div className="h-4 w-full bg-gray-200 rounded" />
+              <div className="h-4 w-3/4 bg-gray-200 rounded" />
+            </div>
+
+            <div className="h-12 w-full bg-gray-300 rounded-xl mt-4" />
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  )
 }
   // fallback default
   return (

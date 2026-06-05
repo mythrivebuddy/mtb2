@@ -9,6 +9,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import PageSkeleton from "@/components/PageSkeleton";
 import { getGreetingData } from "@/lib/utils/utils";
+import Link from "next/link";
+import Share from "@/components/common/ShareModal";
 
 // 1. DEFINE TYPES MATCED TO THE API PAYLOAD
 interface DashboardStats {
@@ -130,12 +132,11 @@ export default function CoachDashboard() {
                   <h2 className={`${theme.typography.h1} text-2xl`}>
                     Active Event
                   </h2>
-                  <a
-                    href="#"
+                  <p
                     className={`text-sm ${theme.textAccent} hover:underline`}
                   >
                     View all
-                  </a>
+                  </p>
                 </div>
 
                 <div className="space-y-6">
@@ -158,6 +159,7 @@ export default function CoachDashboard() {
                     data?.activeEvents?.map((event) => (
                       <EventCard
                         key={event.id}
+                        id={event.id}
                         title={event.title}
                         date={event.date}
                         progress={event.progress}
@@ -206,6 +208,7 @@ function StatCard({
 }
 
 function EventCard({
+  id,
   title,
   date,
   progress,
@@ -214,6 +217,7 @@ function EventCard({
   badgeLight,
   imgSrc,
 }: {
+  id:string
   title: string;
   date: string;
   progress: number;
@@ -224,9 +228,11 @@ function EventCard({
 }) {
   const safeTotal = total > 0 ? total : 1;
   const percentage = (progress / safeTotal) * 100;
-
+    const eventUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/dashboard/events/${id}`
+    : `/dashboard/events/${id}`;
   return (
-    <div
+    <Link href={`/dashboard/events/${id}`}
       className={`bg-white rounded-2xl border ${theme.borderLight} overflow-hidden flex flex-col md:flex-row group cursor-pointer hover:shadow-md transition-shadow`}
     >
       <div className="h-48 md:h-auto md:w-64 bg-gray-200 relative shrink-0">
@@ -236,15 +242,24 @@ function EventCard({
         <div>
           <div className="flex justify-between items-start mb-2">
             <h3 className={`${theme.typography.h1} text-2xl`}>{title}</h3>
+            <div className="flex flex-col items-end gap-4">
+                     {/* Stop propagation so share click doesn't navigate */}
+              <div onClick={(e) => e.preventDefault()}>
+                <Share url={eventUrl} title={title} />
+              </div>
+
             <span
               className={`text-[10px] font-bold px-2 py-1 rounded tracking-wider ${
                 badgeLight
-                  ? "bg-gray-200 text-gray-700"
+                ? "bg-gray-200 text-gray-700"
                   : "bg-[#C47D55] text-white"
               }`}
-            >
+              >
               {badge}
             </span>
+      
+                </div>
+                
           </div>
           <p className={theme.highLightTextColor + " text-sm mb-6"}>{date}</p>
         </div>
@@ -269,7 +284,7 @@ function EventCard({
           </button> */}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
