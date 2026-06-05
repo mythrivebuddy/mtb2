@@ -8,13 +8,15 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 import Image from "next/image";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import AppLayout from "@/components/layout/AppLayout";
 import { useSession } from "next-auth/react";
 import PageSkeleton from "@/components/PageSkeleton";
 import Share from "@/components/common/ShareModal";
 import { AgendaSlot, HostedEvent } from "@/types/client/events";
 import { isSameDay } from "date-fns";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 type EventDetailResponse = {
   event: HostedEvent & {
@@ -37,6 +39,7 @@ type EventDetailResponse = {
         profilePhoto: string | null;
       } | null;
     };
+    isEnrolled?: boolean;
   };
 };
 
@@ -208,7 +211,9 @@ const SanctuaryLocation = ({ event }: { event: EventDetail }) => (
 );
 
 const PricingSidebar = ({ event }: { event: EventDetail }) => {
+  const router = useRouter();
   const ticket = event.ticket;
+  const isEnrolled = event.isEnrolled;
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("en-IN", {
       day: "numeric",
@@ -238,7 +243,7 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
               </span>
             </div>
           </div>
-          {ticket && ticket.spotsLeft <= 10 && (
+          {ticket && (
             <span
               className={`${theme.highLightBgColor} text-white text-xs px-3 py-1 rounded-full`}
             >
@@ -258,13 +263,27 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
             </span>
           </div>
         </div>
-        <ComingSoonWrapper>
-          <button
-            className={`${theme.buttonDark} w-full py-4 rounded-xl font-medium text-lg flex items-center justify-center gap-2 transition-colors ease-linear`}
-          >
-            Enroll Now <ArrowRight className="w-5 h-5" />
-          </button>
-        </ComingSoonWrapper>
+
+        <button
+          disabled={isEnrolled}
+          onClick={() =>
+            !isEnrolled &&
+            router.push(
+              `/dashboard/membership/checkout?eventId=${event.id}&context=HOSTED_EVENT`,
+            )
+          }
+          className={`${theme.buttonDark} w-full py-4 rounded-xl font-medium text-lg flex items-center justify-center gap-2 transition-colors ease-linear ${
+            isEnrolled ? "opacity-75 cursor-not-allowed" : ""
+          }`}
+        >
+          {isEnrolled ? (
+            "You are enrolled"
+          ) : (
+            <>
+              Enroll Now <ArrowRight className="w-5 h-5" />
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
@@ -272,6 +291,11 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
 
 // ── main export ────────────────────────────────────────────────────────────
 export default function EventDetailsPage({ eventId }: { eventId: string }) {
+
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+
   const { data, isLoading, isError } = useQuery<EventDetail>({
     queryKey: ["event-detail", eventId],
     queryFn: () => fetchEventDetail(eventId),
@@ -279,7 +303,17 @@ export default function EventDetailsPage({ eventId }: { eventId: string }) {
     staleTime: 1000 * 60 * 5,
   });
   const { status: authStatus } = useSession();
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    const orderId = searchParams.get("orderId");
 
+    if (payment === "success" && orderId) {
+      toast.success("Payment successful! You are now enrolled.");
+      
+      // Clean up the URL so the toaster doesn't refire on refresh
+      router.replace(pathname, { scroll: false });
+    }
+  }, [searchParams, pathname, router]);
   const content = (() => {
     if (isLoading) return <PageSkeleton type="events-detail-page" />;
     if (isError || !data)

@@ -8,6 +8,8 @@ import {
   Status,
   SubscriptionPlanCurrency,
 } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 
 
@@ -63,6 +65,7 @@ type RouteContext = { params: Promise<{ id: string }> };
   ticket: PublicEventTicket | null;
   agendaSlots: PublicEventAgendaSlot[];
   creator: PublicEventCreator;
+  isEnrolled: boolean;
 }
 
  type GetEventDetailResponse = {
@@ -72,7 +75,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_req: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-
+    const session = await getServerSession(authOptions);
+    const userId = session?.user.id;
     const event = await prisma.hostedEvent.findUnique({
       where: { id },
       select: {
@@ -136,6 +140,19 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       return NextResponse.json({ message: "Event not found." }, { status: 404 });
     }
 
+    let isEnrolled = false;
+    if (userId) {
+      const enrollment = await prisma.hostedEventEnrollment.findUnique({
+        where: {
+          userId_eventId: {
+            userId: userId,
+            eventId: id,
+          },
+        },
+      });
+      isEnrolled = !!enrollment;
+    }
+
     const rawTicket = event.tickets[0] ?? null;
     const ticket: PublicEventTicket | null = rawTicket
       ? {
@@ -158,6 +175,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
           ...event.creator,
           businessProfile: event.creator.userBusinessProfile,
         },
+        isEnrolled,
       },
     };
 

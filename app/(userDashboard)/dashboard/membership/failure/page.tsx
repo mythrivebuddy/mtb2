@@ -29,7 +29,9 @@ export default function FailurePage() {
           ? "Program Purchase Failed"
           : typeParam === "store_product"
             ? "Product Purchase Failed"
-            : "Payment Failed";
+            : typeParam === "hosted_event"
+              ? "Event Registration Failed"
+              : "Payment Failed";
 
   const description =
     typeParam === "subscription"
@@ -40,12 +42,15 @@ export default function FailurePage() {
           ? "Your purchase of this Mini Mastery Program could not be completed."
           : typeParam === "store_product"
             ? "Your product purchase could not be completed."
-            : "Your payment could not be completed.";
+            : typeParam === "hosted_event"
+              ? "Your registration for this event could not be completed."
+              : "Your payment could not be completed.";
 
   const reference = typeParam === "subscription" ? subId : orderId;
   const challengeId = searchParams.get("challengeId");
   const programId = searchParams.get("mmp_programId");
   const storeOrderId = searchParams.get("storeOrderId");
+  const eventId = searchParams.get("eventId");
 
   const retryUrl =
     typeParam === "challenge"
@@ -60,7 +65,11 @@ export default function FailurePage() {
           ? storeOrderId
             ? `/dashboard/store/product/${storeOrderId}`
             : "/dashboard/store"
-          : "/pricing";
+          : typeParam === "hosted_event" // ← ADD
+            ? eventId
+              ? `/dashboard/membership/checkout?context=HOSTED_EVENT&eventId=${eventId}`
+              : "/dashboard/events"
+            : "/pricing";
   const referenceLabel =
     typeParam === "subscription" ? "Subscription ID" : "Order ID";
   useEffect(() => {
@@ -133,7 +142,8 @@ export default function FailurePage() {
               {!(
                 typeParam == "challenge" ||
                 typeParam == "store_product" ||
-                typeParam === "mmp_program"
+                typeParam === "mmp_program" ||
+                typeParam === "hosted_event"
               ) && (
                 <Button asChild variant="outline" className="text-sm">
                   <Link href="/pricing">
