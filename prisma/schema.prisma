@@ -1708,6 +1708,7 @@ model Coupon {
   applicableMmpPrograms Program[] @relation("ProgramCoupons")
   applicableCurrencies  SubscriptionPlanCurrency[] // INR | USD 
   applicableStoreProducts Item[] @relation("CouponStoreProducts")
+  applicableHostedEvents HostedEvent[] @relation("CouponHostedEvents")
   firstCycleOnly        Boolean @default(false)
   multiCycle            Boolean @default(false)
 
@@ -2634,6 +2635,7 @@ model HostedEvent {
   tickets     HostedEventTicket[]
   agendaSlots HostedEventAgendaSlot[]
   paymentOrders  PaymentOrder[] 
+  coupons Coupon[] @relation("CouponHostedEvents")
   @@index([creatorId])
 }
 

@@ -14,7 +14,7 @@ export const theme = {
   hoverTextAccent: "hover:text-[var(--text-accent)]",
   borderLight: "border-[var(--border-light)]",
   borderAccent: "border-[var(--border-accent)]",
-
+  bgDark: "bg-[var(--button-dark)]",
   buttonDark:
     "bg-[var(--button-dark)] text-white hover:bg-[var(--button-dark-hover)]",
     buttonLight: "bg-[var(--button-dark-hover)] hover:bg-[var(--button-dark)]",

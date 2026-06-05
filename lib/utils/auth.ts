@@ -17,11 +17,12 @@ import { getServerSession, Session } from "next-auth";
 
 export async function checkRole(
   role: Role | Role[],
-  msg: string = "You are not authorized for this action"
+  msg: string = "You are not authorized for this action",
+  notLoggedInMessage?: string
 ): Promise<Session> {
   const session = await getServerSession(authConfig);
   if (!session) {
-    throw new Error("Unauthorized");
+    throw new Error(notLoggedInMessage ?? "Unauthorized");
   }
 
   const allowedRoles = Array.isArray(role) ? role : [role];

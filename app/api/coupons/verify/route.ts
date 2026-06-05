@@ -22,13 +22,14 @@ export async function POST(req: Request) {
       currency: SubscriptionPlanCurrency | "GP";
       challengeId?: string;
       mmp_programId?: string;
+      eventId?: string
       storeItemIds?: string[];
     };
 
-    const { code, planId, currency, challengeId, mmp_programId, storeItemIds } =
+    const { code, planId, currency, challengeId, mmp_programId,eventId, storeItemIds } =
       body;
 
-    if (!code || (!planId && !challengeId && !mmp_programId && !storeItemIds)) {
+    if (!code || (!planId && !challengeId && !mmp_programId && !storeItemIds &&  !eventId)) {
       return NextResponse.json(
         { valid: false, message: "Missing code or details." },
         { status: 400 },
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
         applicableChallenges: { select: { id: true } },
         applicableMmpPrograms: { select: { id: true } },
         applicableStoreProducts: { select: { id: true } },
+        applicableHostedEvents: { select: { id: true } },
         _count: { select: { redemptions: true } },
       },
     });
@@ -82,6 +84,12 @@ export async function POST(req: Request) {
         message: "This coupon is only valid for store products",
       });
     }
+    if (coupon.scope === "HOSTED_EVENT" && !eventId) {
+  return NextResponse.json({
+    valid: false,
+    message: "This coupon is only valid for events",
+  });
+}
 
     //  Ownership Validation via User Role
     let resourceCreatorId: string | null = null;
@@ -118,7 +126,18 @@ export async function POST(req: Request) {
       resourceCreatorId = program?.createdBy || null;
       resourceCreatorRole = program?.creator?.role || null;
     }
+    if (eventId) {
+  const event = await prisma.hostedEvent.findUnique({
+    where: { id: eventId },
+    select: {
+      creatorId: true,
+      creator: { select: { role: true } },
+    },
+  });
 
+  resourceCreatorId = event?.creatorId || null;
+  resourceCreatorRole = event?.creator?.role || null;
+}
     // Store Product
     const validItems: string[] = [];
 
@@ -305,7 +324,21 @@ export async function POST(req: Request) {
         );
       }
     }
+    if (eventId && coupon.applicableHostedEvents?.length > 0) {
+  const isEventValid = coupon.applicableHostedEvents.some(
+    (e) => e.id === eventId
+  );
 
+  if (!isEventValid) {
+    return NextResponse.json(
+      {
+        valid: false,
+        message: "Coupon not applicable for this event.",
+      },
+      { status: 400 }
+    );
+  }
+}
     // 5. Currency applicability
     // Currency applicability
     // 5. Currency applicability

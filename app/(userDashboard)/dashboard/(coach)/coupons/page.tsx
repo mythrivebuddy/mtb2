@@ -35,7 +35,10 @@ const createCouponApi = async (payload: CouponFormPayload): Promise<Coupon> => {
     const { data } = await axios.post("/api/coupons/coach", payload);
     return data;
 };
-
+const fetchHostedEvents = async () => {
+  const res = await axios.get("/api/hosted-events/me");
+  return res.data;
+};
 const updateCouponApi = async ({ id, data }: { id: string; data: UpdateCouponPayload }): Promise<Coupon> => {
     const res = await axios.put(`/api/coupons/coach/${id}`, data);
     return res.data;
@@ -62,6 +65,7 @@ const INITIAL_FORM: CouponFormPayload = {
     applicableChallengeIds: [],
     applicableMmpProgramIds: [],
     applicableStoreProductIds: [],
+    applicableHostedEventIds:[],
     scope: "CHALLENGE",
     firstCycleOnly: false,
     multiCycle: false,
@@ -101,14 +105,17 @@ export default function CoachCouponsPage() {
         queryKey: ["store-products"],
         queryFn: fetchStoreProducts,
     });
-
+    const { data: hostedEventsData, isLoading: isHostedEventsLoading } = useQuery({
+  queryKey: ["hosted-events"],
+  queryFn: fetchHostedEvents,
+});
 
     const challenges = coachData?.challenges ?? [];
     const mmpPrograms = mmpProgramsData ?? [];
     const storeProducts = storeProductsData ?? [];
+    const hostedEvents = hostedEventsData?.activeEvents ?? [];
     const coupons = coachData?.coupons ?? [];
-    const isLoading = isCoachDataLoading || isMmpLoading;
-
+    const isLoading = isCoachDataLoading || isMmpLoading || isHostedEventsLoading;
     /* ---- Mutations ---- */
 
     const createMutation = useMutation({
@@ -189,6 +196,7 @@ export default function CoachCouponsPage() {
             applicableChallengeIds: coupon.applicableChallenges?.map((c) => c.id) ?? [],
             applicableMmpProgramIds: coupon.applicableMmpPrograms?.map((m) => m.id) ?? [],
             applicableStoreProductIds: coupon.applicableStoreProducts?.map((p) => p.id) ?? [],
+            applicableHostedEventIds:coupon.applicableHostedEvents?.map((e) => e.id) ?? [],
             scope: coupon.scope,
             firstCycleOnly: coupon.firstCycleOnly ?? false,
             multiCycle: coupon.multiCycle ?? false,
@@ -330,6 +338,7 @@ export default function CoachCouponsPage() {
                 challenges={challenges}
                 mmpPrograms={mmpPrograms}
                 storeProducts={storeProducts}
+                hostedEvents={hostedEvents}
                 editingId={editingId}
             />
 
