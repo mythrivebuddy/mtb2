@@ -35,6 +35,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { fromZonedTime } from "date-fns-tz";
 import { TimeSelect } from "@/components/ui/TimeSelect24based";
+import { useRouter } from "next/navigation";
 
 const step3Schema = z.object({
   dateRange: z
@@ -75,7 +76,7 @@ type FormData = {
 type Step3Payload = {
   startTime: string;
   endTime: string;
-  timeZone: string;
+  timezone: string;
   agendaSlots: AgendaSlotPayload[];
 };
 
@@ -89,12 +90,19 @@ export default function Step3({
   setIsLoading,
   eventData,
   eventId,
+   isDraft,
+  setIsDraft,
+  setIsDraftLoading
 }: {
   onNext: () => void;
   setIsLoading: (loading: boolean) => void;
   eventData?: HostedEventResponse;
   eventId?: string | undefined | null;
+  isDraft?: boolean;
+setIsDraft?: (v: boolean) => void;
+setIsDraftLoading?: (v: boolean) => void;
 }) {
+  const router = useRouter()
   const [activeDay, setActiveDay] = useState(1);
   const [timezone, setTimezone] = useState(
     eventData?.event?.timeZone ?? "Asia/Kolkata",
@@ -181,12 +189,19 @@ export default function Step3({
 
   const updateStep3 = useMutation({
     mutationFn: async (payload: Step3Payload) => {
-      setIsLoading(true);
+        if (isDraft) setIsDraftLoading?.(true);
+  else setIsLoading(true);
       const res = await axios.put(`/api/hosted-events/${eventId}`, payload);
       return res.data;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["event", eventId], data);
+      if (isDraft) {
+        toast.success("Event saved as Draft");
+        setIsDraft?.(false);
+      router.push(`/dashboard/events/coach`);
+         return;
+      }
       toast.success("Step 3 saved");
       onNext();
     },
@@ -198,7 +213,10 @@ export default function Step3({
         : "Failed to save agenda";
       toast.error(message);
     },
-    onSettled: () => setIsLoading(false),
+   onSettled: () => {
+  setIsLoading(false);
+  setIsDraftLoading?.(false);
+},
   });
   const currentId = watch("id");
   const totalDays =
@@ -369,7 +387,7 @@ const parseTimeMinutes = (timeStr: string): number => {
     await updateStep3.mutateAsync({
       startTime: startUTC.toISOString(),
       endTime: endUTC.toISOString(),
-      timeZone: timezone,
+      timezone: timezone,
       agendaSlots: values.agendaSlots,
     });
   };

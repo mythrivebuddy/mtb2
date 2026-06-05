@@ -35,7 +35,10 @@ export default withAuth(
     }
 
     // Block non-COACH users from manage-store
-    if (path.startsWith("/dashboard/manage-store") || path.startsWith("/dashboard/manage-certificates")) {
+    if (
+      path.startsWith("/dashboard/manage-store") ||
+      path.startsWith("/dashboard/manage-certificates")
+    ) {
       if (!token || token.userType !== "COACH") {
         return NextResponse.redirect(new URL("/dashboard", req.url));
       }
@@ -99,13 +102,18 @@ export default withAuth(
         if (path === "/dashboard/store") {
           return true;
         }
-        if (path === "/dashboard/events") {
+        // Allow public access to Events discovery page and event detail page while excepting the event creation page and coach event dashboard page 
+        if (
+          path === "/dashboard/events" ||
+          (/^\/dashboard\/events\/[^/]+$/.test(path) &&
+            !path.startsWith("/dashboard/events/coach") &&
+            !path.startsWith("/dashboard/events/create"))
+        ) {
           return true;
         }
         // ✅ MFA pages publicly accessible (session hone ke baad bhi)
         if (path.startsWith("/mfa-verify")) return true;
         if (path.startsWith("/mfa-setup")) return true;
-
 
         // Require authentication for all other pages
         return !!token;
