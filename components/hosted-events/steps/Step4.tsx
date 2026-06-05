@@ -502,7 +502,7 @@ export default function Step4({
             <div className="flex flex-col gap-3">
               <button
                 className={`w-full py-4 ${theme.buttonDark} rounded-xl text-sm font-semibold shadow-md transition-opacity hover:opacity-90`}
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("/dashboard/events/coach")}
               >
                 Go to Dashboard
               </button>

@@ -34,6 +34,7 @@ interface ActiveEvent {
 interface DashboardData {
   stats: DashboardStats;
   activeEvents: ActiveEvent[];
+    pastEvents: ActiveEvent[]; 
 }
 
 export default function CoachDashboard() {
@@ -48,6 +49,10 @@ export default function CoachDashboard() {
   const router = useRouter();
   const session = useSession();
   const { text } = getGreetingData();
+  const combinedEvents = [
+  ...(data?.activeEvents || []),
+  ...(data?.pastEvents || []),
+];
   if (isLoading) {
     return <PageSkeleton type="events" />;
   }
@@ -148,7 +153,7 @@ export default function CoachDashboard() {
 
                   {!isLoading &&
                     !isError &&
-                    data?.activeEvents?.length === 0 && (
+                    combinedEvents.length === 0 && (
                       <div className="text-center p-8 bg-gray-50 rounded-2xl border border-gray-100 text-gray-500">
                         No active events scheduled.
                       </div>
@@ -156,7 +161,7 @@ export default function CoachDashboard() {
 
                   {!isLoading &&
                     !isError &&
-                    data?.activeEvents?.map((event) => (
+                    combinedEvents.map((event) => (
                       <EventCard
                         key={event.id}
                         id={event.id}

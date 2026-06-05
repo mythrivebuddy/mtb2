@@ -75,7 +75,8 @@ export async function handleHostedEventPayment(
       where: {
         couponId: order.couponId,
         userId: order.userId,
-        appliedPlan: "EVENT",
+        appliedPlan: "HOSTED_EVENT",
+        currency: order.currency,
       },
     });
 

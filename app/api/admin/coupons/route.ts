@@ -36,6 +36,12 @@ export async function GET() {
             currency: true,
           },
         },
+        applicableHostedEvents:{
+          select:{
+            id:true,
+            title:true
+          }
+        }
       },
       orderBy: { createdAt: "desc" },
     });

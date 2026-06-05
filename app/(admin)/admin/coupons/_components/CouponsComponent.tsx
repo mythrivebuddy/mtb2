@@ -104,6 +104,7 @@ export default function CouponsManagementPage() {
     applicableChallengeIds: [],
     applicableMmpProgramIds: [],
     applicableStoreProductIds: [],
+    applicableHostedEventIds:[],
     applicableCurrencies: ["INR", "USD"],
     firstCycleOnly: false,
     multiCycle: false,
@@ -410,8 +411,6 @@ export default function CouponsManagementPage() {
 
     const coupon = coupons.find((c) => c.id === editingId);
     if (!coupon) return;
-    console.log("Coupon challenge IDs:", coupon.applicableChallenges?.map(c => c.id));
-    console.log("Available challenges:", challenges.map(c => c.id));
 
     setFormData({
       couponCode: coupon.couponCode,
@@ -427,6 +426,7 @@ export default function CouponsManagementPage() {
       applicableChallengeIds: coupon.applicableChallenges?.map((c) => String(c.id)) || [],
       applicableMmpProgramIds: coupon.applicableMmpPrograms?.map((m) => m.id) || [],
       applicableStoreProductIds: coupon.applicableStoreProducts?.map((p) => p.id) || [],
+      applicableHostedEventIds:coupon.applicableHostedEvents?.map((e) => e.id) || [],
       applicableCurrencies: coupon.applicableCurrencies,
       firstCycleOnly: coupon.firstCycleOnly || false,
       multiCycle: coupon.multiCycle || false,
