@@ -11,7 +11,6 @@ import PageSkeleton from "@/components/PageSkeleton";
 import { HostedEvent } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
 // --- CATEGORY DATA ---
 const CATEGORIES = [
@@ -38,6 +37,7 @@ type HostedEventWithTickets = Omit<HostedEvent, "ticket"> & {
     id: string;
     name: string;
   };
+  isEnrolled?: boolean;
 };
 type HostedEventsListResponse = {
   events: HostedEventWithTickets[];
@@ -231,7 +231,10 @@ const FeaturedSection = ({
                   +12
                 </div> */}
               </div>
-              <Link href={`/dashboard/events/${topSideEvent.id}`} className="text-sm font-medium text-amber-900 hover:underline">
+              <Link
+                href={`/dashboard/events/${topSideEvent.id}`}
+                className="text-sm font-medium text-amber-900 hover:underline"
+              >
                 Learn More →
               </Link>
             </div>
@@ -255,11 +258,24 @@ const FeaturedSection = ({
                 {bottomSideEvent.venueName || bottomSideEvent.address}
               </p>
             </div>
-            <ComingSoonWrapper>
-            <button className="w-full bg-white text-black py-3 rounded-full text-sm font-medium mt-4 hover:bg-gray-100 transition">
-              Enroll Now - {getPrice(bottomSideEvent)}
+            <button
+              disabled={bottomSideEvent.isEnrolled}
+              onClick={() =>
+                !bottomSideEvent.isEnrolled &&
+                router.push(
+                  `/dashboard/membership/checkout?eventId=${bottomSideEvent.id}&context=HOSTED_EVENT`,
+                )
+              }
+              className={`w-full py-3 rounded-full text-sm font-medium mt-4 transition bg-white ${
+                bottomSideEvent.isEnrolled
+                  ? " text-black/60 cursor-not-allowed" // Disabled styling
+                  : " text-black hover:bg-gray-100" // Active styling
+              }`}
+            >
+              {bottomSideEvent.isEnrolled
+                ? "You are already enrolled"
+                : `Enroll Now - ${getPrice(bottomSideEvent)}`}
             </button>
-            </ComingSoonWrapper>
           </div>
         </div>
       </div>
@@ -324,7 +340,10 @@ const TrendingSection = ({
               </div>
 
               <div className="flex items-center gap-3">
-                <Link href={`/dashboard/events/${item.id}`} className={theme.highLightTextColor}>
+                <Link
+                  href={`/dashboard/events/${item.id}`}
+                  className={theme.highLightTextColor}
+                >
                   {getPrice(item)}
                 </Link>
                 <ChevronRight size={20} />

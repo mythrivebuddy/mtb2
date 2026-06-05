@@ -26,6 +26,7 @@ import {
   WindowWithRazorpay,
 } from "@/types/client/razorpay-client.types";
 import { useQuery } from "@tanstack/react-query";
+import { HostedEvent, HostedEventResponse } from "@/types/client/events";
 
 // types
 
@@ -80,7 +81,7 @@ export default function CheckoutPage() {
   const { data: session } = useSession(); // Get User Session
   const searchParams = useSearchParams();
   const planId = searchParams.get("plan");
-  const context = searchParams.get("context"); // e.g. CHALLENGE , STORE_PRODUCT, MMP_PROGRAM
+  const context = searchParams.get("context"); // e.g. CHALLENGE , STORE_PRODUCT, MMP_PROGRAM , HOSTED_EVENT
   const challengeId = searchParams.get("challengeId"); // present if context is challenge
   const mmp_programId = searchParams.get("mmp_programId");
   const action = searchParams.get("action");
@@ -126,6 +127,13 @@ export default function CheckoutPage() {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [challengeLoading, setChallengeLoading] = useState(false);
   const [mmpLoading, setMmpLoading] = useState(false);
+
+  const [hostedEvent, setHostedEvent] = useState<HostedEvent | null>(null);
+  const [hostedEventTicket, setHostedEventTicket] =
+    useState<HostedEventResponse["ticket"]>(null);
+  const [eventLoading, setEventLoading] = useState(false);
+  const eventId = searchParams.get("eventId");
+
   const { data: billingInfo } = useQuery({
     queryKey: ["billing-info"],
     queryFn: fetchBillingInfo,
@@ -182,7 +190,7 @@ export default function CheckoutPage() {
     if (context == "SUBSCRIPTION" && !plan) return;
     if (context === "CHALLENGE" && !challenge) return;
     if (context === "MMP_PROGRAM" && !mmpProgram) return;
-
+    if (context === "HOSTED_EVENT" && !hostedEvent) return;
     try {
       const isLifetime = plan?.interval === "LIFETIME";
       const isRecurring =
@@ -194,7 +202,8 @@ export default function CheckoutPage() {
       if (
         context === "CHALLENGE" ||
         context === "MMP_PROGRAM" ||
-        context === "STORE_PRODUCT"
+        context === "STORE_PRODUCT" ||
+        context === "HOSTED_EVENT"
       ) {
         endpoint = "/api/billing/razorpay/challenge/create-order";
 
@@ -225,7 +234,9 @@ export default function CheckoutPage() {
               ? challengeId
               : context === "MMP_PROGRAM"
                 ? mmp_programId
-                : undefined,
+                : context === "HOSTED_EVENT"
+                  ? eventId
+                  : undefined,
           context,
           couponCode: appliedCoupon?.code || null,
           billingDetails,
@@ -247,7 +258,9 @@ export default function CheckoutPage() {
             ? (challenge?.title ?? "")
             : context === "MMP_PROGRAM"
               ? (mmpProgram?.name ?? "")
-              : (plan?.name ?? ""),
+              : context === "HOSTED_EVENT"
+                ? (hostedEvent?.title ?? "")
+                : (plan?.name ?? ""),
         theme: { color: "#0f172a" },
 
         // Inside handleWithRazorpay -> options object
@@ -255,7 +268,8 @@ export default function CheckoutPage() {
           const callbackUrl = new URL(
             context === "CHALLENGE" ||
             context === "MMP_PROGRAM" ||
-            context === "STORE_PRODUCT"
+            context === "STORE_PRODUCT" ||
+            context === "HOSTED_EVENT"
               ? "/api/billing/razorpay/challenge/callback"
               : "/api/billing/razorpay/callback",
             window.location.origin,
@@ -263,7 +277,8 @@ export default function CheckoutPage() {
           if (
             context === "CHALLENGE" ||
             context === "STORE_PRODUCT" ||
-            context === "MMP_PROGRAM"
+            context === "MMP_PROGRAM" ||
+            context === "HOSTED_EVENT"
           ) {
             callbackUrl.searchParams.set(
               "order_id",
@@ -327,6 +342,13 @@ export default function CheckoutPage() {
                 `&reason=checkout_closed`;
               return;
             }
+            if (context === "HOSTED_EVENT") {
+              window.location.href =
+                `/dashboard/membership/failure?type=event` +
+                (eventId ? `&eventId=${eventId}` : "") +
+                `&reason=checkout_closed`;
+              return;
+            }
             const type = isLifetime ? "lifetime" : "subscription"; // ✅ clearer type
 
             window.location.href =
@@ -348,7 +370,8 @@ export default function CheckoutPage() {
       if (
         context === "CHALLENGE" ||
         context === "MMP_PROGRAM" ||
-        context === "STORE_PRODUCT"
+        context === "STORE_PRODUCT" ||
+        context === "HOSTED_EVENT"
       ) {
         options.order_id = data.orderId;
       } else if (isLifetime) {
@@ -368,7 +391,7 @@ export default function CheckoutPage() {
 
       const rzp = new RazorpayConstructor(options);
 
-      // ✅ PAYMENT FAILED EVENT (very important)
+      // ✅ PAYMENT FAILED HOSTED_EVENT (very important)
       rzp.on("payment.failed", (response: RazorpayErrorResponse) => {
         const reason =
           response?.error?.description ||
@@ -395,6 +418,14 @@ export default function CheckoutPage() {
         if (context === "STORE_PRODUCT") {
           window.location.href =
             `/dashboard/membership/failure?type=store_product` +
+            `&reason=${encodeURIComponent(reason)}`;
+          return;
+        }
+
+        if (context === "HOSTED_EVENT") {
+          window.location.href =
+            `/dashboard/membership/failure?type=hosted_event` +
+            (eventId ? `&eventId=${eventId}` : "") +
             `&reason=${encodeURIComponent(reason)}`;
           return;
         }
@@ -511,6 +542,20 @@ export default function CheckoutPage() {
 
           return;
         }
+        // ✅ EVENT CONTEXT
+        if (context === "HOSTED_EVENT" && eventId) {
+          setEventLoading(true);
+          const res = await axios.get<HostedEventResponse>(
+            `/api/hosted-events/${eventId}`,
+          );
+          setHostedEvent(res.data.event);
+          setHostedEventTicket(res.data.ticket);
+          setPlan(null);
+          setChallenge(null);
+          setmmpProgram(null);
+          setEventLoading(false);
+          return;
+        }
       } catch (error) {
         console.error("Checkout init error:", error);
       } finally {
@@ -525,6 +570,7 @@ export default function CheckoutPage() {
     async function init() {
       if (context === "SUBSCRIPTION" && !planId) return;
       if (context === "CHALLENGE" && !challengeId) return;
+      if (context === "HOSTED_EVENT" && !eventId) return;
       const isIndia = billingDetails.country === "IN";
       const currency = isIndia ? "INR" : "USD";
       setLoading(true);
@@ -551,6 +597,7 @@ export default function CheckoutPage() {
                 planId: context === "SUBSCRIPTION" ? planId : null,
                 challengeId: context === "CHALLENGE" ? challengeId : null,
                 mmp_programId: context === "MMP_PROGRAM" ? mmp_programId : null,
+                eventId: context === "HOSTED_EVENT" ? eventId : null,
                 currency: currency,
                 billingCountry: billingDetails.country, // Use detected country
                 userType: session?.user.userType,
@@ -632,7 +679,8 @@ export default function CheckoutPage() {
       !couponCode ||
       (context === "SUBSCRIPTION" && !plan) ||
       (context === "CHALLENGE" && !challenge) ||
-      (context === "MMP_PROGRAM" && !mmpProgram)
+      (context === "MMP_PROGRAM" && !mmpProgram) ||
+      (context === "HOSTED_EVENT" && !hostedEvent)
     )
       return;
 
@@ -651,6 +699,7 @@ export default function CheckoutPage() {
             planId: context === "SUBSCRIPTION" ? plan?.id : null,
             challengeId: context === "CHALLENGE" ? challenge?.id : null,
             mmp_programId: context === "MMP_PROGRAM" ? mmpProgram?.id : null,
+            eventId: context === "HOSTED_EVENT" ? hostedEvent?.id : null,
             currency: currency,
             billingCountry: billingDetails.country,
             userType: session?.user.userType,
@@ -801,6 +850,49 @@ export default function CheckoutPage() {
         currency,
       };
     }
+    if (context === "HOSTED_EVENT" && hostedEvent && hostedEventTicket) {
+      // Respect ticket's stored currency first, fallback to country detection
+      const currency: "INR" | "USD" =
+        hostedEventTicket.currency === "INR"
+          ? "INR"
+          : hostedEventTicket.currency === "USD"
+            ? "USD"
+            : isIndia
+              ? "INR"
+              : "USD";
+
+      const subtotal = hostedEventTicket.price;
+
+      let discount = 0;
+      if (appliedCoupon?.type === "PERCENTAGE") {
+        discount = (subtotal * (appliedCoupon.discountPercentage ?? 0)) / 100;
+      } else if (appliedCoupon?.type === "FIXED") {
+        discount =
+          currency === "INR"
+            ? (appliedCoupon.discountAmountINR ?? 0)
+            : (appliedCoupon.discountAmountUSD ?? 0);
+      } else if (
+        appliedCoupon?.type === "FREE_DURATION" ||
+        appliedCoupon?.type === "FULL_DISCOUNT"
+      ) {
+        discount = subtotal;
+      }
+      discount = Math.min(discount, subtotal);
+
+      const taxableAmount = subtotal - discount;
+      const taxRate = currency === "INR" ? 0.18 : 0;
+      const tax = taxableAmount * taxRate;
+      const totalRaw = taxableAmount + tax;
+      const finalTotal = totalRaw <= 0 ? 1 : totalRaw;
+      return {
+        base: subtotal,
+        discount,
+        taxableAmount,
+        tax,
+        total: Number(finalTotal.toFixed(2)), // ← bug fix: use totalRaw
+        currency,
+      };
+    }
     if (!plan)
       return {
         base: 0,
@@ -911,6 +1003,8 @@ export default function CheckoutPage() {
     appliedCoupon,
     billingDetails.country,
     mmpProgram,
+    hostedEvent,
+    hostedEventTicket,
   ]);
 
   // Handle Input Changes
@@ -932,6 +1026,7 @@ export default function CheckoutPage() {
     if (processingPayment) return;
     if (context === "SUBSCRIPTION" && !plan) return;
     if (context === "CHALLENGE" && !challenge) return;
+
     console.log(activeGateway);
 
     // Basic Validation
@@ -968,7 +1063,8 @@ export default function CheckoutPage() {
       if (
         context === "CHALLENGE" ||
         context === "MMP_PROGRAM" ||
-        context === "STORE_PRODUCT"
+        context === "STORE_PRODUCT" ||
+        context === "HOSTED_EVENT"
       ) {
         try {
           await handleWithRazorpay();
@@ -1079,7 +1175,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (loading || challengeLoading || mmpLoading)
+  if (loading || challengeLoading || mmpLoading || eventLoading)
     return (
       <div className="flex justify-center h-screen items-center">
         <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
@@ -1094,7 +1190,12 @@ export default function CheckoutPage() {
         Mini mastery program not found
       </div>
     );
-
+  if (!hostedEvent && context === "HOSTED_EVENT" && !eventLoading)
+    return (
+      <div className="text-center flex justify-center items-center h-lvh text-2xl dark:text-slate-100">
+        Event not found
+      </div>
+    );
   return (
     <div className="min-h-screen  py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto">
@@ -1104,7 +1205,9 @@ export default function CheckoutPage() {
               ? "Complete Challenge Payment"
               : context === "MMP_PROGRAM"
                 ? "Purchase Program"
-                : "Complete Your Subscription"}
+                : context === "HOSTED_EVENT"
+                  ? "Register for Event"
+                  : "Complete Your Subscription"}
           </h1>
           <p className="mt-2 text-gray-600 dark:text-slate-300">
             {context === "CHALLENGE"
@@ -1138,6 +1241,15 @@ export default function CheckoutPage() {
 
                       <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-slate-50">
                         {mmpProgram?.name}
+                      </h2>
+                    </>
+                  ) : context === "HOSTED_EVENT" ? (
+                    <>
+                      <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold uppercase tracking-wide">
+                        {hostedEvent?.type}
+                      </span>
+                      <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-slate-50">
+                        {hostedEvent?.title}
                       </h2>
                     </>
                   ) : (
@@ -1182,6 +1294,35 @@ export default function CheckoutPage() {
                       {mmpProgram?.description ||
                         "Access to exclusive mini mastery program content and resources."}
                     </div>
+                  </div>
+                ) : context === "HOSTED_EVENT" ? (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                      Event Details
+                    </h3>
+                    {hostedEvent?.description && (
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: hostedEvent?.description || "",
+                        }}
+                        className="prose prose-sm max-w-none text-gray-700 dark:prose-invert dark:text-slate-300"
+                      ></div>
+                    )}
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-300">
+                      <Check className="h-4 w-4 text-green-500" />
+                      {new Date(hostedEvent!.startTime).toLocaleString()}
+                      {hostedEvent?.endTime &&
+                        ` – ${new Date(hostedEvent.endTime).toLocaleString()}`}
+                    </div>
+                    {hostedEvent?.format && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-300">
+                        <Check className="h-4 w-4 text-green-500" />
+                        {hostedEvent.format === "ONLINE"
+                          ? "Online Event"
+                          : "In-Person Event"}
+                      </div>
+                    )}
+                
                   </div>
                 ) : (
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
