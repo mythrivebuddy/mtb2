@@ -8,13 +8,16 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 import Image from "next/image";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import AppLayout from "@/components/layout/AppLayout";
 import { useSession } from "next-auth/react";
 import PageSkeleton from "@/components/PageSkeleton";
 import Share from "@/components/common/ShareModal";
 import { AgendaSlot, HostedEvent } from "@/types/client/events";
 import { isSameDay } from "date-fns";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { toast } from "sonner";
+import { useEnrollFreeEvent } from "@/hooks/use-free-event-enroll";
 
 type EventDetailResponse = {
   event: HostedEvent & {
@@ -37,6 +40,7 @@ type EventDetailResponse = {
         profilePhoto: string | null;
       } | null;
     };
+    isEnrolled?: boolean;
   };
 };
 
@@ -73,7 +77,7 @@ const HeroSection = ({ event }: { event: EventDetail }) => {
           <Leaf className="w-4 h-4" /> {event.type.replace(/_/g, " ")}
         </div>
         <h1
-          className={`${theme.typography.h1} text-white text-4xl md:text-5xl max-w-2xl`}
+          className={`${theme.typography.h1} ${theme.bgDark} text-white px-2 py-1 rounded-lg text-4xl md:text-5xl w-fit max-w-2xl`}
         >
           {event.title}
         </h1>
@@ -209,6 +213,7 @@ const SanctuaryLocation = ({ event }: { event: EventDetail }) => (
 
 const PricingSidebar = ({ event }: { event: EventDetail }) => {
   const ticket = event.ticket;
+  const isEnrolled = event.isEnrolled;
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("en-IN", {
       day: "numeric",
@@ -218,6 +223,12 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
   const sameDay = event.endTime
     ? isSameDay(new Date(event.startTime), new Date(event.endTime))
     : true;
+  const queryKeys = useMemo(
+    () => [["all-events"], ["event-detail", event.id]],
+    [event.id],
+  );
+
+  const { freeEnroll, loadingId } = useEnrollFreeEvent(queryKeys);
   return (
     <div className="sticky top-24 space-y-6">
       <div
@@ -238,9 +249,9 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
               </span>
             </div>
           </div>
-          {ticket && ticket.spotsLeft <= 10 && (
+          {ticket && (
             <span
-              className={`${theme.highLightBgColor} text-white text-xs px-3 py-1 rounded-full`}
+              className={`${theme.highLightBgColor} whitespace-nowrap text-white text-xs px-1 sm:px-3 py-1 rounded-full`}
             >
               Only {ticket.spotsLeft} left
             </span>
@@ -258,13 +269,32 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
             </span>
           </div>
         </div>
-        <ComingSoonWrapper>
-          <button
-            className={`${theme.buttonDark} w-full py-4 rounded-xl font-medium text-lg flex items-center justify-center gap-2 transition-colors ease-linear`}
-          >
-            Enroll Now <ArrowRight className="w-5 h-5" />
-          </button>
-        </ComingSoonWrapper>
+
+        <button
+          disabled={isEnrolled || loadingId === event.id}
+          onClick={() =>
+            freeEnroll({
+              id: event.id,
+              isPaid: event.isPaid,
+              isEnrolled: event.isEnrolled,
+            })
+          }
+          className={`${theme.buttonDark} w-full py-4 rounded-xl font-medium text-lg flex items-center justify-center gap-2 transition-colors ease-linear ${
+            isEnrolled ? "opacity-75 cursor-not-allowed" : ""
+          }`}
+        >
+          {loadingId === event.id ? (
+            "Enrolling..."
+          ) : event.isEnrolled ? (
+            "You are enrolled"
+          ) : event.isPaid ? (
+            <>
+              Enroll Now <ArrowRight className="w-5 h-5" />
+            </>
+          ) : (
+            "Enroll for Free"
+          )}
+        </button>
       </div>
     </div>
   );
@@ -272,6 +302,10 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
 
 // ── main export ────────────────────────────────────────────────────────────
 export default function EventDetailsPage({ eventId }: { eventId: string }) {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+
   const { data, isLoading, isError } = useQuery<EventDetail>({
     queryKey: ["event-detail", eventId],
     queryFn: () => fetchEventDetail(eventId),
@@ -279,7 +313,17 @@ export default function EventDetailsPage({ eventId }: { eventId: string }) {
     staleTime: 1000 * 60 * 5,
   });
   const { status: authStatus } = useSession();
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    const orderId = searchParams.get("orderId");
 
+    if (payment === "success" && orderId) {
+      toast.success("Payment successful! You are now enrolled.");
+
+      // Clean up the URL so the toaster doesn't refire on refresh
+      router.replace(pathname, { scroll: false });
+    }
+  }, [searchParams, pathname, router]);
   const content = (() => {
     if (isLoading) return <PageSkeleton type="events-detail-page" />;
     if (isError || !data)
@@ -303,7 +347,7 @@ export default function EventDetailsPage({ eventId }: { eventId: string }) {
                   Nurture Your Flourishing
                 </h2>
                 <div
-                  className="space-y-4 leading-relaxed"
+                  className="prose prose-sm  max-w-none text-gray-700 dark:prose-invert dark:text-slate-300 space-y-4 leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: data.description ?? "" }}
                 />
                 <GuideCard event={data} />

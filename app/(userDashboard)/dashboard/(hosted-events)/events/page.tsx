@@ -11,7 +11,8 @@ import PageSkeleton from "@/components/PageSkeleton";
 import { HostedEvent } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
+
+import { useEnrollFreeEvent } from "@/hooks/use-free-event-enroll";
 
 // --- CATEGORY DATA ---
 const CATEGORIES = [
@@ -38,6 +39,7 @@ type HostedEventWithTickets = Omit<HostedEvent, "ticket"> & {
     id: string;
     name: string;
   };
+  isEnrolled?: boolean;
 };
 type HostedEventsListResponse = {
   events: HostedEventWithTickets[];
@@ -151,6 +153,8 @@ const FeaturedSection = ({
   events: HostedEventWithTickets[];
 }) => {
   const router = useRouter();
+
+  const { freeEnroll, loadingId } = useEnrollFreeEvent([["all-events"]]);
   if (!events || events.length === 0) return null;
 
   // For the sake of preserving the layout with limited data,
@@ -231,7 +235,10 @@ const FeaturedSection = ({
                   +12
                 </div> */}
               </div>
-              <Link href={`/dashboard/events/${topSideEvent.id}`} className="text-sm font-medium text-amber-900 hover:underline">
+              <Link
+                href={`/dashboard/events/${topSideEvent.id}`}
+                className="text-sm font-medium text-amber-900 hover:underline"
+              >
                 Learn More →
               </Link>
             </div>
@@ -252,14 +259,36 @@ const FeaturedSection = ({
               </h4>
               <p className="text-amber-100/70 text-sm mt-2 flex items-center gap-1">
                 <MapPin size={14} />{" "}
-                {bottomSideEvent.venueName || bottomSideEvent.address}
+                {bottomSideEvent.venueName ||
+                  bottomSideEvent.address ||
+                  "Online"}
               </p>
             </div>
-            <ComingSoonWrapper>
-            <button className="w-full bg-white text-black py-3 rounded-full text-sm font-medium mt-4 hover:bg-gray-100 transition">
-              Enroll Now - {getPrice(bottomSideEvent)}
+            <button
+              disabled={
+                bottomSideEvent.isEnrolled || loadingId === bottomSideEvent.id
+              }
+              onClick={() =>
+                freeEnroll({
+                  id: bottomSideEvent.id,
+                  isPaid: bottomSideEvent.isPaid,
+                  isEnrolled: bottomSideEvent.isEnrolled,
+                })
+              }
+              className={`w-full py-3 rounded-full text-sm font-medium mt-4 transition bg-white ${
+                bottomSideEvent.isEnrolled
+                  ? " text-black/60 cursor-not-allowed" // Disabled styling
+                  : " text-black hover:bg-gray-100" // Active styling
+              }`}
+            >
+              {loadingId === bottomSideEvent.id
+                ? "Enrolling..."
+                : bottomSideEvent.isEnrolled
+                  ? "You are enrolled"
+                  : bottomSideEvent.isPaid
+                    ? `Enroll Now - ${getPrice(bottomSideEvent)}`
+                    : "Enroll for Free"}
             </button>
-            </ComingSoonWrapper>
           </div>
         </div>
       </div>
@@ -277,7 +306,7 @@ const TrendingSection = ({
   const trendingEvents = events.slice(0, 3); // ✅ FIXED
 
   return (
-    <section className="rounded-t-[3rem] px-4 py-16">
+    <section className="rounded-t-[3rem]  py-16">
       <div className="max-w-7xl mx-auto flex flex-col gap-12 justify-between">
         <div className="md:w-1/3">
           <h2 className={`${theme.typography.h1} text-2xl sm:text-4xl mb-4`}>
@@ -292,7 +321,7 @@ const TrendingSection = ({
           {trendingEvents.map((item, index) => (
             <div
               key={item.id}
-              className="flex items-center gap-6 group cursor-pointer"
+              className="flex items-center gap-4 sm:gap-6 group cursor-pointer"
             >
               <span className="text-lg sm:text-3xl text-gray-500 font-light w-8">
                 {String(index + 1).padStart(2, "0")}
@@ -323,11 +352,14 @@ const TrendingSection = ({
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Link href={`/dashboard/events/${item.id}`} className={theme.highLightTextColor}>
-                  {getPrice(item)}
+              <div className="flex items-center gap-1 sm:gap-3">
+                <Link
+                  href={`/dashboard/events/${item.id}`}
+                  className={theme.highLightTextColor}
+                >
+                  {item.isPaid ? getPrice(item) : "Free"}
                 </Link>
-                <ChevronRight size={20} />
+                <ChevronRight size={20} className="shrink-0" />
               </div>
             </div>
           ))}

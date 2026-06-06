@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
 
 import CouponFormFields from "./CouponFormFields";
 import { Challenge, CouponFormPayload, MmpProgram, Plan, StoreProduct } from "@/types/client/coupons.types";
+import { HostedEventOption } from "@/types/client/events";
 
 
 
@@ -27,6 +28,7 @@ type Props = {
   challenges?: Challenge[];
   mmpPrograms?: MmpProgram[];
   storeProducts?: StoreProduct[];
+  hostedEvents?:HostedEventOption[];
   editingId?: string | null;
   onClose: () => void
   plans?: Plan[];
@@ -44,6 +46,7 @@ export default function CouponDialog({
   challenges = [],
   mmpPrograms = [],
   storeProducts = [],
+  hostedEvents = [],
   plans,
   editingId,
   isAdmin
@@ -79,6 +82,7 @@ export default function CouponDialog({
           challenges={challenges}
           mmpPrograms={mmpPrograms}
           storeProducts={storeProducts}
+          hostedEvents={hostedEvents}
           editingId={editingId}
           isAdmin={isAdmin}
           plans={plans}

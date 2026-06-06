@@ -87,6 +87,12 @@ export async function GET() {
               currency: true,
             },
           },
+          applicableHostedEvents:{
+            select:{
+              id:true,
+              title:true,
+            }
+          },
           _count: {
             select: { redemptions: true },
           },
@@ -140,6 +146,7 @@ export async function POST(req: Request) {
       applicableChallengeIds,
       applicableMmpProgramIds, // Ensure the frontend sends this exact key
       applicableStoreProductIds,
+      applicableHostedEventIds,
       applicableUserTypes,
       applicableCurrencies,
       startDate,
@@ -186,7 +193,9 @@ export async function POST(req: Request) {
       normalizedScope = "CHALLENGE";
     } else if (scope === "MMP_PROGRAM") {
       normalizedScope = "MMP_PROGRAM";
-    } else {
+    } else if (scope === "HOSTED_EVENT") {
+      normalizedScope = "HOSTED_EVENT";
+    }else {
       return NextResponse.json(
         { error: "Invalid scope provided" },
         { status: 400 },
@@ -267,7 +276,29 @@ export async function POST(req: Request) {
         );
       }
     }
+    if (normalizedScope === "HOSTED_EVENT") {
+  if (!applicableHostedEventIds?.length) {
+    return NextResponse.json(
+      { error: "At least one hosted event must be selected" },
+      { status: 400 },
+    );
+  }
 
+  const ownedEvents = await prisma.hostedEvent.findMany({
+    where: {
+      id: { in: applicableHostedEventIds },
+      creatorId: userId,
+    },
+    select: { id: true },
+  });
+
+  if (ownedEvents.length !== applicableHostedEventIds.length) {
+    return NextResponse.json(
+      { error: "Invalid hosted event selection or unauthorized" },
+      { status: 403 },
+    );
+  }
+}
     const newCoupon = await prisma.coupon.create({
       data: {
         couponCode: couponCode.trim().toUpperCase(),
@@ -319,6 +350,14 @@ export async function POST(req: Request) {
                 })),
               }
             : undefined,
+            applicableHostedEvents:
+  scope === "HOSTED_EVENT" && applicableHostedEventIds?.length > 0
+    ? {
+        connect: applicableHostedEventIds.map((id: string) => ({
+          id,
+        })),
+      }
+    : undefined,
       },
     });
 

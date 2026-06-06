@@ -9,7 +9,7 @@ import { validateCoupon } from "@/lib/payment/coupons/coupons.service";
 import { calculatePayment } from "@/lib/payment/pricingService";
 import { upsertBilling } from "@/lib/payment/billingService";
 
-type PurchaseContext = "CHALLENGE" | "MMP_PROGRAM" | "STORE_PRODUCT";
+type PurchaseContext = "CHALLENGE" | "MMP_PROGRAM" | "STORE_PRODUCT" | "HOSTED_EVENT";
 
 type Currency = "INR" | "USD";
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (!context || !entityId) {
       return NextResponse.json(
         { success: false, error: "Invalid request data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     ) {
       return NextResponse.json(
         { success: false, error: "Incomplete billing details" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -80,15 +80,13 @@ export async function POST(req: NextRequest) {
       if (!challenge) {
         return NextResponse.json(
           { success: false, error: "Challenge not found" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       amount = challenge.challengeJoiningFee ?? 0;
       currency = challenge.challengeJoiningFeeCurrency as Currency;
-    }
-
-    else if (context === "MMP_PROGRAM") {
+    } else if (context === "MMP_PROGRAM") {
       const program = await prisma.program.findUnique({
         where: { id: entityId },
       });
@@ -96,14 +94,47 @@ export async function POST(req: NextRequest) {
       if (!program) {
         return NextResponse.json(
           { success: false, error: "MMP Program not found" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       programId = program.id;
       amount = program.price ?? 0;
       currency = program.currency as Currency;
-    }
+    } else if (context === "HOSTED_EVENT") {
+      const event = await prisma.hostedEvent.findUnique({
+        where: { id: entityId },
+        include: { tickets: true },
+      });
 
+      if (!event) {
+        return NextResponse.json(
+          { success: false, error: "Event not found" },
+          { status: 400 },
+        );
+      }
+
+      if (!event.isPaid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "This event is free and requires no payment",
+          },
+          { status: 400 },
+        );
+      }
+
+      const ticket = event.tickets?.[0];
+
+      if (!ticket) {
+        return NextResponse.json(
+          { success: false, error: "No ticket found for this event" },
+          { status: 400 },
+        );
+      }
+
+      amount = ticket.price;
+      currency = (ticket.currency ?? "INR") as Currency;
+    }
     // else if (context === "STORE_PRODUCT") {
     //   const product = await prisma.storeProduct.findUnique({
     //     where: { id: entityId },
@@ -119,11 +150,10 @@ export async function POST(req: NextRequest) {
     //   amount = product.price ?? 0;
     //   currency = product.currency as Currency;
     // }
-
     else {
       return NextResponse.json(
         { success: false, error: "Invalid purchase context" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -166,19 +196,13 @@ export async function POST(req: NextRequest) {
     // 5️⃣ CREATE RAZORPAY ORDER
     // --------------------------
 
-    const { order, key } = await createRazorpayOrder(
-      totalAmount,
-      currency
-    );
+    const { order, key } = await createRazorpayOrder(totalAmount, currency);
 
     // --------------------------
     // 6️⃣ SAVE BILLING
     // --------------------------
 
-    const billing = await upsertBilling(
-      session.user.id,
-      billingDetails
-    );
+    const billing = await upsertBilling(session.user.id, billingDetails);
 
     // --------------------------
     // 7️⃣ CREATE PAYMENT ORDER
@@ -199,19 +223,17 @@ export async function POST(req: NextRequest) {
       programId,
     });
 
-
     return NextResponse.json({
       success: true,
       key,
       orderId: order.id,
     });
-
   } catch (error) {
     console.error("Payment Order Error:", error);
 
     return NextResponse.json(
       { success: false, error: "Unable to create order" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

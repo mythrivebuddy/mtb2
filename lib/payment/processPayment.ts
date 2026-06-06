@@ -2,6 +2,7 @@ import { PaymentOrder, Prisma } from "@prisma/client";
 import { handleChallengePayment } from "./handlers/challengeHandler";
 import { handleProgramPayment } from "./handlers/programHandler";
 import { handleStorePayment } from "./handlers/storeHandler";
+import { handleHostedEventPayment } from "./handlers/hostedEventHandler";
 
 type ProcessPaymentResult = {
   isAdmin?: boolean;
@@ -21,6 +22,9 @@ export async function processPayment(tx: Prisma.TransactionClient, order: Paymen
 
     if (order.contextType === "STORE_PRODUCT") {
         return handleStorePayment(tx, order);
+    }
+        if (order.contextType === "HOSTED_EVENT") {
+        return handleHostedEventPayment(tx, order);
     }
     return { isAdmin: false, allItemIds: [], adminItemIds: [] };
 }

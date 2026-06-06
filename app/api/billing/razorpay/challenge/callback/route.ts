@@ -18,10 +18,7 @@ export async function GET(req: NextRequest) {
 
     if (!paymentId || !orderId || !signature) {
       return NextResponse.redirect(
-        new URL(
-          "/dashboard/membership/failure?reason=missing_params",
-          req.url
-        )
+        new URL("/dashboard/membership/failure?reason=missing_params", req.url),
       );
     }
 
@@ -40,8 +37,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(
         new URL(
           "/dashboard/membership/failure?reason=invalid_signature",
-          req.url
-        )
+          req.url,
+        ),
       );
     }
 
@@ -59,8 +56,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(
         new URL(
           "/dashboard/membership/failure?reason=order_not_found",
-          req.url
-        )
+          req.url,
+        ),
       );
     }
 
@@ -69,7 +66,6 @@ export async function GET(req: NextRequest) {
     /* -------------------------------- */
 
     switch (order.contextType) {
-
       /* ---------- CHALLENGE ---------- */
 
       case "CHALLENGE":
@@ -77,16 +73,16 @@ export async function GET(req: NextRequest) {
           return NextResponse.redirect(
             new URL(
               `/dashboard/membership/failure?type=${order.contextType}&reason=challenge_missing`,
-              req.url
-            )
+              req.url,
+            ),
           );
         }
 
         return NextResponse.redirect(
           new URL(
             `/dashboard/challenge/upcoming-challenges/${order.challengeId}?orderId=${orderId}`,
-            req.url
-          )
+            req.url,
+          ),
         );
 
       /* ---------- MMP PROGRAM ---------- */
@@ -96,16 +92,16 @@ export async function GET(req: NextRequest) {
           return NextResponse.redirect(
             new URL(
               `/dashboard/membership/failure?type=${order.contextType}&reason=program_missing`,
-              req.url
-            )
+              req.url,
+            ),
           );
         }
 
         return NextResponse.redirect(
           new URL(
             `/dashboard/mini-mastery-programs/program/${order.programId}?payment=success&orderId=${orderId}`,
-            req.url
-          )
+            req.url,
+          ),
         );
 
       /* ---------- STORE PRODUCT ---------- */
@@ -124,18 +120,33 @@ export async function GET(req: NextRequest) {
           new URL(
             // `/dashboard/store/orders/${order.storeOrderId}?payment=success`,
             `/dashboard/store/profile?payment=success&orderId=${orderId}`,
-            req.url
-          )
+            req.url,
+          ),
         );
 
+      /* ---------- HOSTED EVENT ---------- */
+
+      case "HOSTED_EVENT":
+        if (!order.hostedEventId) {
+          return NextResponse.redirect(
+            new URL(
+              `/dashboard/membership/failure?type=${order.contextType}&reason=event_missing`,
+              req.url,
+            ),
+          );
+        }
+
+        return NextResponse.redirect(
+          new URL(
+            `/dashboard/events/${order.hostedEventId}?payment=success&orderId=${orderId}`,
+            req.url,
+          ),
+        );
       /* ---------- SUBSCRIPTION ---------- */
 
       case "SUBSCRIPTION":
         return NextResponse.redirect(
-          new URL(
-            `/dashboard/subscription/?orderId=${orderId}`,
-            req.url
-          )
+          new URL(`/dashboard/subscription/?orderId=${orderId}`, req.url),
         );
 
       /* ---------- UNKNOWN ---------- */
@@ -144,19 +155,15 @@ export async function GET(req: NextRequest) {
         return NextResponse.redirect(
           new URL(
             "/dashboard/membership/failure?reason=unknown_context",
-            req.url
-          )
+            req.url,
+          ),
         );
     }
-
   } catch (error) {
     console.error("Razorpay Callback Error:", error);
 
     return NextResponse.redirect(
-      new URL(
-        "/dashboard/membership/failure?reason=server_error",
-        req.url
-      )
+      new URL("/dashboard/membership/failure?reason=server_error", req.url),
     );
   }
 }
