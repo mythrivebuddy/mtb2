@@ -12,6 +12,7 @@ type AutoApplyRequest = {
   planId?: string;
   challengeId?: string;
   mmp_programId?: string;
+  eventId?: string;
   currency: StoreCurrency;
   billingCountry?: string;
   userType?: CouponUserType;
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
       planId,
       challengeId,
       mmp_programId,
+      eventId,
       currency,
       billingCountry,
       userType,
@@ -49,7 +51,7 @@ export async function POST(req: Request) {
       storeItemIds,
     } = (await req.json()) as AutoApplyRequest;
 
-    if (!planId && !challengeId && !mmp_programId && !storeItemIds) {
+    if (!planId && !challengeId && !mmp_programId && !storeItemIds && !eventId ) {
       return NextResponse.json(
         { coupon: null, message: "Plan, Challenge or MMP Program required" },
         { status: 400 },
@@ -74,6 +76,22 @@ export async function POST(req: Request) {
 
       creatorId = challenge?.creatorId || null;
       creatorRole = challenge?.creator?.role || null;
+    }
+    if (eventId) {
+      const event = await prisma.hostedEvent.findUnique({
+        where: { id: eventId },
+        select: {
+          creatorId: true,
+          creator: {
+            select: {
+              role: true,
+            },
+          },
+        },
+      });
+
+      creatorId = event?.creatorId || null;
+      creatorRole = event?.creator?.role || null;
     }
     // 1. Fetch auto-apply coupons
 
@@ -107,6 +125,7 @@ export async function POST(req: Request) {
         applicableChallenges: { select: { id: true } },
         applicableMmpPrograms: { select: { id: true } },
         applicableStoreProducts: { select: { id: true } },
+        applicableHostedEvents: { select: { id: true } },
         _count: { select: { redemptions: true } },
       },
     });
@@ -132,6 +151,9 @@ export async function POST(req: Request) {
         coupon.scope === "STORE_PRODUCT" &&
         (!storeItemIds || storeItemIds.length === 0)
       ) {
+        return false;
+      }
+      if (coupon.scope === "HOSTED_EVENT" && !eventId) {
         return false;
       }
       if (
@@ -170,6 +192,13 @@ export async function POST(req: Request) {
         );
 
         if (!hasApplicableItem) return false;
+      }
+      if (eventId && coupon.applicableHostedEvents?.length > 0) {
+        const isEventValid = coupon.applicableHostedEvents.some(
+          (e) => e.id === eventId,
+        );
+
+        if (!isEventValid) return false;
       }
       // C. Currency applicability
       // Skip currency validation for GP store products

@@ -25,6 +25,7 @@ export default function CouponTabs({ activeTab, setActiveTab }: Props) {
         <TabsTrigger value="CHALLENGE">Challenges</TabsTrigger>
         <TabsTrigger value="MMP_PROGRAM">MMP</TabsTrigger>
         <TabsTrigger value="STORE_PRODUCT">Store</TabsTrigger>
+         <TabsTrigger value="HOSTED_EVENT">Events</TabsTrigger>
       </TabsList>
     </Tabs>
   );

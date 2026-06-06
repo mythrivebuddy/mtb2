@@ -1473,6 +1473,7 @@ model PaymentOrder {
   challengeId   String?
   programId     String?
   storeOrderId         String?    // Todo realtion needs to define when working with the storeProductId
+  hostedEventId    String? 
   contextType   PaymentContextType?    // first optional then backfill then make required
 
 
@@ -1510,10 +1511,12 @@ model PaymentOrder {
   creatorEarnings CreatorEarningLedger[]
   invoice Invoice? @relation("PaymentOrderToInvoice")
   affiliateEarnings AffiliateEarningLedger[]
+  hostedEvent   HostedEvent?  @relation(fields: [hostedEventId], references: [id])
   @@index([planId])
   @@index([challengeId])
   @@index([storeOrderId])
   @@index([contextType])
+  @@index([hostedEventId])  
 
 }
 enum PaymentContextType {
@@ -1522,6 +1525,7 @@ enum PaymentContextType {
   STORE_ORDER
   STORE_PRODUCT
   MMP_PROGRAM
+  HOSTED_EVENT
   CMP
 }
 
@@ -1704,6 +1708,7 @@ model Coupon {
   applicableMmpPrograms Program[] @relation("ProgramCoupons")
   applicableCurrencies  SubscriptionPlanCurrency[] // INR | USD 
   applicableStoreProducts Item[] @relation("CouponStoreProducts")
+  applicableHostedEvents HostedEvent[] @relation("CouponHostedEvents")
   firstCycleOnly        Boolean @default(false)
   multiCycle            Boolean @default(false)
 
@@ -1741,6 +1746,7 @@ enum CouponScope  {
   CHALLENGE
   STORE_PRODUCT
   MMP_PROGRAM
+  HOSTED_EVENT
 }
 enum CouponType {
   PERCENTAGE
@@ -2628,7 +2634,8 @@ model HostedEvent {
   enrollments HostedEventEnrollment[]
   tickets     HostedEventTicket[]
   agendaSlots HostedEventAgendaSlot[]
-
+  paymentOrders  PaymentOrder[] 
+  coupons Coupon[] @relation("CouponHostedEvents")
   @@index([creatorId])
 }
 

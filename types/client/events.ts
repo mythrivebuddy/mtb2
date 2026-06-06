@@ -11,13 +11,15 @@ export type AgendaSlot = {
   updatedAt: string;
 };
 export type AgendaSlotPayload = Omit<AgendaSlot, "eventId" | "createdAt" | "updatedAt" | "id"> & { id?: string };
+export type HostedEventOption = Pick<HostedEvent, "id" | "title" | "currency" | "price">;
 
 export type HostedEvent = {
   id: string;
   title: string;
   description: string | null;
   type: "RETREAT" | "WEBINAR" | "WORKSHOP" | "ONE_ON_ONE" | "COURSE" | "OTHER";
-
+  currency?:string;
+  price?:string;
   coverImage: string | null;
 
   format: "IN_PERSON" | "ONLINE" | null;

@@ -79,11 +79,9 @@ export const sendInvoiceFunction = inngest.createFunction(
     }
 
     const purchaseData = await step.run("resolve-purchase", async () => {
-     
       switch (order.contextType) {
         case "CHALLENGE":
           if (!order.challengeId) return null;
-         
 
           const challenge = await prisma.challenge.findUnique({
             where: { id: order.challengeId },
@@ -105,10 +103,9 @@ export const sendInvoiceFunction = inngest.createFunction(
 
         case "MMP_PROGRAM":
           if (!order.programId) {
-            
             return null;
           }
-  
+
           const program = await prisma.program.findUnique({
             where: { id: order.programId },
             select: { name: true },
@@ -187,7 +184,6 @@ export const sendInvoiceFunction = inngest.createFunction(
             price: oi.originalPrice ?? oi.priceAtPurchase,
           }));
 
-
           return {
             type: "store",
             name: "Store Purchase",
@@ -244,7 +240,29 @@ export const sendInvoiceFunction = inngest.createFunction(
               },
             ],
           };
+        case "HOSTED_EVENT":
+          if (!order.hostedEventId) return null;
 
+          const hostedEvent = await prisma.hostedEvent.findUnique({
+            where: { id: order.hostedEventId },
+            select: {
+              title: true,
+              startTime: true,
+            },
+          });
+
+          return {
+            type: "hosted_event",
+            name: hostedEvent?.title || "Hosted Event",
+            items: [
+              {
+                name: hostedEvent?.title || "Hosted Event",
+                quantity: 1,
+                price: order.baseAmount,
+                startDate: hostedEvent?.startTime,
+              },
+            ],
+          };
         default:
           return {
             type: "unknown",
@@ -308,7 +326,6 @@ export const sendInvoiceFunction = inngest.createFunction(
     });
 
     const pdfBufferRaw = await step.run("generate-pdf", async () => {
- 
       const pdfUint8 = await generateInvoicePdf({
         order: {
           id: order.id,
@@ -350,8 +367,6 @@ export const sendInvoiceFunction = inngest.createFunction(
         ? pdfBufferRaw
         : Buffer.from(pdfBufferRaw.data);
     const pdfUrl = await step.run("upload-pdf", async () => {
-     
-
       const folder = order.contextType?.toLowerCase() || "general";
       const filePath = `invoices/${folder}/invoice-${invoiceNumber}.pdf`;
 
@@ -381,7 +396,6 @@ export const sendInvoiceFunction = inngest.createFunction(
     });
 
     await step.run("store-invoice", async () => {
-
       return prisma.invoice.upsert({
         where: {
           paymentOrderId: order.id,
@@ -397,7 +411,7 @@ export const sendInvoiceFunction = inngest.createFunction(
 
           contextType: order.contextType!,
           referenceId:
-            order.challengeId || order.programId || order.storeOrderId,
+            order.challengeId || order.programId || order.storeOrderId || order.hostedEventId,
 
           baseAmount,
           discount,

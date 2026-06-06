@@ -6,7 +6,7 @@ export async function validateCoupon({
     entityId,
 }: {
     couponCode?: string;
-    scope: "CHALLENGE" | "MMP_PROGRAM" | "STORE_PRODUCT";
+    scope: "CHALLENGE" | "MMP_PROGRAM" | "STORE_PRODUCT" | "HOSTED_EVENT";
     entityId: string;
 }) {
     if (!couponCode) return null;

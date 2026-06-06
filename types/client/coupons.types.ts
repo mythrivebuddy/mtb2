@@ -2,11 +2,14 @@
 /* SHARED TYPES - ADMIN + COACH                                       */
 /* ------------------------------------------------------------------ */
 
+import { HostedEventOption } from "./events";
+
 export type CouponScope =
   | "SUBSCRIPTION"
   | "CHALLENGE"
   | "MMP_PROGRAM"
-  | "STORE_PRODUCT";
+  | "STORE_PRODUCT"
+  | "HOSTED_EVENT";
 
 export type CouponType =
   | "PERCENTAGE"
@@ -77,7 +80,7 @@ export type Coupon = {
   applicableChallenges?: Challenge[];
   applicableMmpPrograms?: MmpProgram[];
   applicableStoreProducts?: StoreProduct[];
-
+  applicableHostedEvents?: HostedEventOption[];
   _count?: { redemptions: number };
 };
 
@@ -103,7 +106,7 @@ export type CouponFormPayload = {
   applicableChallengeIds: string[];
   applicableMmpProgramIds: string[];
   applicableStoreProductIds: string[];
-
+  applicableHostedEventIds: string[];
   applicableCurrencies: string[];
 
   firstCycleOnly: boolean;
@@ -141,7 +144,7 @@ export type UpdateCouponPayload = {
     applicableChallengeIds?: string[];
     applicableMmpProgramIds?: string[];
     applicableStoreProductIds?: string[];
-
+    applicableHostedEventIds?: string[];
     applicableUserTypes?: string[];
     applicableCurrencies?: string[];
 

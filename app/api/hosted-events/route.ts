@@ -1,4 +1,5 @@
 // /api/hosted-events/route.ts
+import { authOptions } from "@/lib/auth";
 import {
   authErrorResponse,
   errorResponse,
@@ -12,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { createHostedEventSchema } from "@/schema/hosted-event";
 import { Status } from "@prisma/client";
+import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -72,16 +74,37 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   try {
     // await checkRole(["USER", "ADMIN"]);
-
+const session = await getServerSession(authOptions); 
+    const userId = session?.user?.id;
     const events = await prisma.hostedEvent.findMany({
       where: {
         status: Status.PUBLISHED,
         // startTime: { gt: new Date() },
       },
-      include: hostedEventInclude,
+      include: {
+        ...hostedEventInclude,
+        ...(userId && {
+          enrollments: {
+            where: { userId: userId },
+            select: { id: true },
+          },
+        }),
+      },
       orderBy: { startTime: "asc" },
     });
+    const formattedEvents = events.map((event) => {
 
+    const typedEvent = event as typeof event & { enrollments?: { id: string }[] };
+      const { enrollments, ...rest } = typedEvent;
+      
+      return {
+        ...rest,
+        // If the user has an enrollment record, they are enrolled
+        isEnrolled: enrollments ? enrollments.length > 0 : false,
+      };
+    });
+
+    return NextResponse.json({ events: formattedEvents });
     return NextResponse.json({ events });
   } catch (error) {
     if (error instanceof Error && error.message.includes("authorized")) {

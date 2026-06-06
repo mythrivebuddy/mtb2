@@ -25,7 +25,7 @@ export const GET = async () => {
         },
       },
       orderBy: {
-        startTime: "asc", // Order by nearest upcoming event
+        startTime: "desc", // Order by nearest upcoming event
       },
     });
 
@@ -35,23 +35,27 @@ export const GET = async () => {
 
     // Filter for events happening in the future
     const upcomingEvents = events.filter((e) => new Date(e.startTime) >= now);
+    const pastEvents = events.filter((e) => new Date(e.startTime) < now);
     const upcomingEventsCount = upcomingEvents.length;
 
     // 4. Format the active events for the frontend UI
     const activeEventsFormatted = upcomingEvents.slice(0, 3).map((event) => {
       // Get counts and ticket info based on schema relations
       const regCount = event._count?.enrollments || 0;
-    //   activeRegistrations += regCount;
+      //   activeRegistrations += regCount;
 
       // Extract ticket configuration (unique per event based on schema)
       const ticket = event.tickets?.[0];
-    //   const price = ticket?.price || 0;
+      //   const price = ticket?.price || 0;
       const maxCapacity = ticket?.quantity || 0;
 
+      const price = ticket?.price ?? null;
+const currency = ticket?.currency ?? "INR";
+
       // Calculate Revenue
-    //   if (event.isPaid) {
-    //     totalRevenue += price * regCount;
-    //   }
+      //   if (event.isPaid) {
+      //     totalRevenue += price * regCount;
+      //   }
 
       // Calculate days until the event for the UI badge
       const timeDiff = new Date(event.startTime).getTime() - now.getTime();
@@ -79,8 +83,37 @@ export const GET = async () => {
         date: `${new Date(event.startTime).toLocaleDateString("en-US", { month: "short", day: "2-digit" })} • ${locationString}`,
         progress: regCount,
         total: maxCapacity,
+        price,
+        currency,
         badge,
         badgeLight,
+        imgSrc: event.coverImage || "/api/placeholder/400/200",
+      };
+    });
+    const pastEventsFormatted = pastEvents.map((event) => {
+      const regCount = event._count?.enrollments || 0;
+      const ticket = event.tickets?.[0];
+      const maxCapacity = ticket?.quantity || 0;
+      const price = ticket?.price ?? null;
+const currency = ticket?.currency ?? "INR";
+      const locationString =
+        event.format === "IN_PERSON"
+          ? event.venueName || event.address || "In Person"
+          : "Online";
+
+      return {
+        id: event.id,
+        title: event.title,
+        date: `${new Date(event.startTime).toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+        })} • ${locationString}`,
+        progress: regCount,
+        total: maxCapacity,
+          price,
+  currency,
+        badge: "COMPLETED",
+        badgeLight: true,
         imgSrc: event.coverImage || "/api/placeholder/400/200",
       };
     });
@@ -97,6 +130,7 @@ export const GET = async () => {
           averageRating: "N/A", // Mocked rating (requires a Review schema implementation)
         },
         activeEvents: activeEventsFormatted,
+        pastEvents: pastEventsFormatted,
       },
       { status: 200 },
     );
