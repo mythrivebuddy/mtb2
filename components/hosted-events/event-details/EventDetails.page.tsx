@@ -227,7 +227,7 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
     () => [["all-events"], ["event-detail", event.id]],
     [event.id],
   );
-
+  const session = useSession();
   const { freeEnroll, loadingId } = useEnrollFreeEvent(queryKeys);
   return (
     <div className="sticky top-24 space-y-6">
@@ -272,13 +272,17 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
 
         <button
           disabled={isEnrolled || loadingId === event.id}
-          onClick={() =>
+          onClick={() => {
+            if (session.data?.user.role === "ADMIN") {
+              toast.error("Admins cannot enroll for events");
+              return;
+            }
             freeEnroll({
               id: event.id,
               isPaid: event.isPaid,
               isEnrolled: event.isEnrolled,
-            })
-          }
+            });
+          }}
           className={`${theme.buttonDark} w-full py-4 rounded-xl font-medium text-lg flex items-center justify-center gap-2 transition-colors ease-linear ${
             isEnrolled ? "opacity-75 cursor-not-allowed" : ""
           }`}
