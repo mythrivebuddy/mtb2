@@ -7,7 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
@@ -39,7 +38,6 @@ export async function GET(req: NextRequest) {
             OR: [
               { title: { contains: search, mode: "insensitive" } },
               { description: { contains: search, mode: "insensitive" } },
-              { customCategory: { contains: search, mode: "insensitive" } },
             ],
           }
         : {}),
@@ -56,6 +54,7 @@ export async function GET(req: NextRequest) {
       prisma.hostedEvent.count({ where }),
     ]);
 
+    
     return NextResponse.json({
       events,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },

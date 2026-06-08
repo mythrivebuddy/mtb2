@@ -14,7 +14,7 @@ export async function generateMetadata({
   const { slug: challengeId } = await params;
   const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
 
-  const logoUrl = `${baseUrl}/logo.png`;
+  const logoUrl = `${baseUrl}/new-home-assets/new-logo.png`;
   const challenge = await prisma.challenge.findUnique({
     where: { id: challengeId },
     select: {
@@ -32,11 +32,11 @@ export async function generateMetadata({
   return {
     metadataBase: new URL(baseUrl),
     title: `${challenge.title} | MythriveBuddy`,
-    description: challenge.description ?? undefined,
+    description: challenge?.description?.replace(/<[^>]*>/g, "").slice(0, 160)?? undefined,
 
     openGraph: {
       title: `${challenge.title} | MythriveBuddy`,
-      description: challenge.description ?? undefined,
+      description: challenge?.description?.replace(/<[^>]*>/g, "").slice(0, 160) ?? undefined,
       url: `${baseUrl}/dashboard/challenge/my-challenges/${challengeId}`,
       siteName: "MyThriveBuddy",
       images: [
@@ -53,7 +53,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: `${challenge.title} | MythriveBuddy`,
-      description: challenge.description ?? undefined,
+      description: challenge?.description?.replace(/<[^>]*>/g, "").slice(0, 160) ?? undefined,
       images: [logoUrl],
     },
   };
