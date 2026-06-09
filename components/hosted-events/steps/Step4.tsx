@@ -27,22 +27,28 @@ import { useRouter } from "next/navigation";
 
 const step4Schema = z.object({
   resourcesVisibility: z.enum(["PUBLIC", "PRIVATE", "DRAFT"]),
-  // status: z.enum(["DRAFT", "PUBLISHED"]),
   resource: z
     .instanceof(File)
     .refine((f) => f.size <= 25 * 1024 * 1024, "File must be 25MB or smaller")
     .refine(
-      (f) =>
-        [
+      (f) => {
+        const allowedTypes = [
           "application/pdf",
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           "application/msword",
-        ].includes(f.type) || f.name.endsWith(".key"),
+        ];
+        const allowedExtensions = [".pdf", ".doc", ".docx", ".key"];
+        
+        //  check MIME type OR file extension as fallback
+        return (
+          allowedTypes.includes(f.type) ||
+          allowedExtensions.some((ext) => f.name.toLowerCase().endsWith(ext))
+        );
+      },
       "Only PDF, DOCX, or Keynote files are allowed",
     )
     .optional(),
 });
-
 type Step4FormData = z.infer<typeof step4Schema>;
 
 export default function Step4({
