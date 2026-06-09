@@ -2629,7 +2629,7 @@ model HostedEvent {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
+  lastSubmittedAt DateTime?  // for notify the admin for edit and create
   // Relations
   enrollments HostedEventEnrollment[]
   tickets     HostedEventTicket[]
@@ -2924,6 +2924,7 @@ enum NotificationType {
  SPOTLIGHT_ACTIVE_ADMIN
  MMP_PROGRAM_UPDATED_ADMIN
  STORE_ITEM_UPDATED_ADMIN
+ HOSTED_EVENT_CREATED_ADMIN
 }
 
 enum BreathWorkType {

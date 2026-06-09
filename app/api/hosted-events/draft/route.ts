@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
           description,
           type,
           isPaid,
+          status: Status.DRAFT,
         },
       });
     } else {
@@ -66,9 +67,9 @@ export async function POST(req: NextRequest) {
         event.id,
         {
           fileName: "coverImage",
-            width: 400,
-  height: 300,
-  quality: 70,
+          width: 400,
+          height: 300,
+          quality: 70,
         },
       );
       event = await prisma.hostedEvent.update({

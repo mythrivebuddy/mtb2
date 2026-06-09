@@ -522,7 +522,8 @@ const NOTIFICATION_SEEDS: {
     type: NotificationType.SUBSCRIPTION_PURCHASED_ADMIN,
     name: "New Subscription/CMP Purchase",
     title: "💰 New {{planName}} Purchase",
-    message: "{{userName}} purchased {{planName}} {{amountSection}} {{currency}}.",
+    message:
+      "{{userName}} purchased {{planName}} {{amountSection}} {{currency}}.",
     isDynamic: true,
     url: "/admin/dashboard",
     audiences: ["ADMIN"],
@@ -544,6 +545,17 @@ const NOTIFICATION_SEEDS: {
       "{{userName}} updated a {{itemType}} item: {{itemName}} {{amount}}.",
     isDynamic: true,
     url: "/admin/manage-store-product?search={{itemName}}",
+    audiences: ["ADMIN"],
+  },
+  // Hosted Event
+  {
+    type: NotificationType.HOSTED_EVENT_CREATED_ADMIN,
+    name: "New Event Created or updated (Admin)",
+    title: "🎪 Event Submitted for Review",
+    message:
+      "{{userName}} created a new {{hostedEventType}} event: {{hostedEventTitle}}{{amountSection}}.",
+    isDynamic: true,
+    url: "/admin/manage-events?search={{hostedEventTitle}}",
     audiences: ["ADMIN"],
   },
 ];
