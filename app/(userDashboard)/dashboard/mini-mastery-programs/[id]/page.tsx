@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import axios from "axios";
 import ProgramDetailViewClient from "@/components/mini-mastery-program/ProgramDetailViewClient";
+import assets from "@/lib/constants/assets";
 
 type Props = {
   params: { id: string };
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const program = await getProgram(paramsContext.id);
   const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
 
-  const logoUrl = `${baseUrl}/logo.png`;
+   const logoUrl = `${baseUrl}${assets.logo.current}`;
   if (!program) {
     return {
       title: "Program Not Found",
@@ -31,18 +32,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
   const description =
-    program.description?.trim() || "Explore this program on MyThriveBuddy";
+    program.description?.replace(/<[^>]*>/g, "").slice(0, 160) || "Explore this program on MyThriveBuddy";
   return {
     metadataBase: new URL(baseUrl),
     title: program.name
-      ? `${program.name} | MythriveBuddy`
-      : "Mini Mastery Program | MythriveBuddy",
+      ? `${program.name} | MyThriveBuddy`
+      : "Mini Mastery Program | MyThriveBuddy",
     description,
 
     openGraph: {
       title: program.name
-        ? `${program.name} | MythriveBuddy`
-        : "Mini Mastery Program | MythriveBuddy",
+        ? `${program.name} | MyThriveBuddy`
+        : "Mini Mastery Program | MyThriveBuddy",
       description,
       url: `${baseUrl}/dashboard/mini-mastery-programs/${program.id}`,
       siteName: "MyThriveBuddy",
@@ -51,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: program.thumbnailUrl || logoUrl,
           width: 1200,
           height: 630,
-          alt: program.name || "Mini Mastery Program | MythriveBuddy",
+          alt: program.name || "Mini Mastery Program | MyThriveBuddy",
         },
       ],
       type: "website",
@@ -59,10 +60,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     twitter: {
       card: "summary_large_image",
       title: program.name
-        ? `${program.name} | MythriveBuddy`
-        : "Mini Mastery Program | MythriveBuddy",
+        ? `${program.name} | MyThriveBuddy`
+        : "Mini Mastery Program | MyThriveBuddy",
       description,
       images: [program.thumbnailUrl || logoUrl],
+    },
+      alternates: {
+      canonical: `${baseUrl}/dashboard/mini-mastery-programs/${program.id}`,
     },
   };
 }
