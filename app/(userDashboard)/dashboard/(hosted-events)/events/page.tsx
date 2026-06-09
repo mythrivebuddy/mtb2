@@ -157,11 +157,89 @@ const FeaturedSection = ({
   const { freeEnroll, loadingId } = useEnrollFreeEvent([["all-events"]]);
   if (!events || events.length === 0) return null;
 
+  const getActiveMainEvent = (events: HostedEventWithTickets[]) => {
+    const sorted = [...events].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    const now = new Date();
+    return sorted.find((e) => new Date(e.startTime) > now) ?? null; // ✅ null if all passed
+  };
   // For the sake of preserving the layout with limited data,
   // we fallback to the first event if there are fewer than 3 events.
-  const mainEvent = events[0];
-  const topSideEvent = events.length > 1 ? events[1] : events[0];
-  const bottomSideEvent = events.length > 2 ? events[2] : events[0];
+  const mainEvent = getActiveMainEvent(events);
+
+  if (!mainEvent)
+    return (
+      <section className="mb-8">
+        <h2 className={`${theme.typography.h1} text-3xl mb-8`}>
+          Featured Events
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[400px]">
+          {/* Main Card — matches existing main card style */}
+          <div className="md:col-span-2 relative rounded-2xl overflow-hidden h-[400px] md:h-full bg-gray-100">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-8">
+              <h3 className={`${theme.typography.h1} text-3xl text-white mb-3`}>
+                No Featured Events
+              </h3>
+              <p className="text-gray-200 text-sm max-w-md">
+                New experiences are being curated. Check back soon!
+              </p>
+            </div>
+          </div>
+
+          {/* Side Cards */}
+          <div className="flex flex-col gap-6 h-full">
+            {/* Top — matches existing white card style */}
+            <div className="flex-1 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between">
+              <div>
+                <span className="text-amber-700 text-xs tracking-wider uppercase mb-2 block">
+                  Coming Soon
+                </span>
+                <h4
+                  className={`${theme.typography.h1} text-xl mb-2 leading-tight`}
+                >
+                  New Events on the Way
+                </h4>
+                <p className="text-gray-500 text-sm">
+                  Stay tuned for upcoming experiences.
+                </p>
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-xs text-gray-400">Check back soon</span>
+              </div>
+            </div>
+
+            {/* Bottom — matches existing dark card style */}
+            <div
+              className={`flex-1 rounded-2xl p-6 flex flex-col justify-between text-white ${theme.bgSecondary} bg-amber-950`}
+            >
+              <div>
+                <span className="text-amber-200 text-xs font-semibold tracking-wider uppercase mb-2 block">
+                  Stay Tuned
+                </span>
+                <h4
+                  className={`${theme.typography.h1} text-xl mb-2 leading-tight`}
+                >
+                  More Experiences Coming
+                </h4>
+                <p className="text-amber-100/70 text-sm mt-2 flex items-center gap-1">
+                  <MapPin size={14} /> Locations TBA
+                </p>
+              </div>
+              <button
+                disabled
+                className="w-full py-3 rounded-full text-sm font-medium mt-4 bg-white text-black/40 cursor-not-allowed"
+              >
+                No Events Yet
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  const topSideEvent = mainEvent;
+  const bottomSideEvent = mainEvent;
 
   return (
     <section className="mb-8">
@@ -303,8 +381,27 @@ const TrendingSection = ({
 }) => {
   if (!events || events.length === 0) return null;
 
-  const trendingEvents = events.slice(0, 3); // ✅ FIXED
-
+  const now = new Date();
+  const trendingEvents = [...events]
+    .filter((e) => new Date(e.startTime) > now) // ✅ exclude past events
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    ) // sort by createdAt
+    .slice(0, 3);
+  if (trendingEvents.length === 0)
+    return (
+      <section className="rounded-t-[3rem] py-16">
+        <div className="max-w-7xl mx-auto">
+          <h2 className={`${theme.typography.h1} text-2xl sm:text-4xl mb-4`}>
+            Trending This Week
+          </h2>
+          <p className="text-sm opacity-60">
+            No upcoming events at the moment. Check back soon!
+          </p>
+        </div>
+      </section>
+    );
   return (
     <section className="rounded-t-[3rem]  py-16">
       <div className="max-w-7xl mx-auto flex flex-col gap-12 justify-between">
@@ -319,11 +416,12 @@ const TrendingSection = ({
 
         <div className="flex flex-col gap-8">
           {trendingEvents.map((item, index) => (
-            <div
+            <Link
               key={item.id}
+              href={`/dashboard/events/${item.id}`}
               className="flex items-center gap-4 sm:gap-6 group cursor-pointer"
             >
-              <span className="text-lg sm:text-3xl text-gray-500 font-light w-8">
+              <span className="text-lg sm:text-3xl whitespace-nowrap text-gray-500 font-light w-8">
                 {String(index + 1).padStart(2, "0")}
               </span>
 
@@ -353,15 +451,12 @@ const TrendingSection = ({
               </div>
 
               <div className="flex items-center gap-1 sm:gap-3">
-                <Link
-                  href={`/dashboard/events/${item.id}`}
-                  className={theme.highLightTextColor}
-                >
+                <p className={theme.highLightTextColor}>
                   {item.isPaid ? getPrice(item) : "Free"}
-                </Link>
+                </p>
                 <ChevronRight size={20} className="shrink-0" />
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
