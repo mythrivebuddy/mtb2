@@ -28,7 +28,13 @@ type NotificationContext = {
   // Spotlight
   spotlightTitle?: string;
   spotlightId?: string;
-   currency?: string;
+  currency?: string;
+
+  //  Hosted Events
+  hostedEventTitle?: string;
+  hostedEventId?: string;
+  hostedEventType?: string;
+
   // Common
   amountSection?: string;
   actionType?: "created" | "updated" | "applied";
@@ -44,13 +50,18 @@ type NotificationEvent = {
   sendToAdmin?: boolean;
   sendToCoach?: boolean;
   sendEmailAdmin?: boolean;
-  adminEntityType?: "CHALLENGE" | "SPOTLIGHT" | "MMP" | "STORE";
+  adminEntityType?:
+    | "CHALLENGE"
+    | "SPOTLIGHT"
+    | "MMP"
+    | "STORE"
+    | "HOSTED_EVENT";
   billingType?: "Subscription" | "CMP";
 };
 function getActionMeta(actionType: string, entityType: string) {
   if (actionType === "updated") {
     return {
-      actionLabel: `${entityType} Updated`,
+      actionLabel: `${entityType} Updated and Submitted for Review 📝`,
       actionSentence: "has updated the",
     };
   }
@@ -179,6 +190,28 @@ function buildAdminEmailContext(
         ctaUrl: `${process.env.NEXT_URL}/admin/spotlight`,
       };
     }
+    case "HOSTED_EVENT": {
+      const entityLabel = "Event";
+      const { actionLabel, actionSentence } = getActionMeta(
+        actionType,
+        entityLabel,
+      );
+
+      return {
+        username: context.userName,
+        userProfileUrl: `${process.env.NEXT_URL}/profile/${context.userId}`,
+        entityType: entityLabel,
+        entityTitle: context.hostedEventTitle,
+        actionLabel,
+        actionSentence,
+        challengeType: context.hostedEventType || "Event",
+        amount: context.amountSection
+          ? context.amountSection.replace(/^\s*for\s*/i, "")
+          : undefined, // ✅ was "Free" — undefined hides the row in the template
+          currency: context.currency,   
+        ctaUrl: `${process.env.NEXT_URL}/admin/manage-events?search=${encodeURIComponent(context.hostedEventTitle ?? "")}`,
+      };
+    }
     default:
       return context;
   }
@@ -281,14 +314,14 @@ export const sendNotifications = inngest.createFunction(
       // ✅ SUBSCRIPTION FLOW (separate)
       const { billingType } = event.data as NotificationEvent;
       if (billingType) {
-          const ctx = context as NotificationContext;
+        const ctx = context as NotificationContext;
         await sendEmailUsingTemplateWithConditionals({
           toEmail: admin.email,
           toName: admin.name || "Admin",
           templateId: "admin-subscription-cmp", // 👈 create this
           templateData: {
             username: ctx.userName,
-          planName: ctx.planName?.replace(/plan/gi, "").trim(),
+            planName: ctx.planName?.replace(/plan/gi, "").trim(),
             billingType,
             amount: ctx?.amountSection?.replace(/^\s*for\s*/i, ""),
             actionLabel: `New ${billingType} Purchased `,
