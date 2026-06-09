@@ -167,15 +167,15 @@ export default function CreateEventClient() {
       </div>
 
       {/* 🔥 FOOTER */}
-      <footer className={`${theme.footer} mx-6 py-4 z-40`}>
-        <div className="mx-auto px-6 flex items-center justify-between">
+      <footer className={`${theme.footer} mx-4 py-4 z-40`}>
+        <div className="mx-auto px-1 sm:px-6 flex items-center justify-between">
           {/* Left */}
           <button
             type="button"
               disabled={isDraftLoading || isLoading}
             onClick={() => {
               setIsDraft(true);
-              console.log("from the button call the value of isDraft : ",isDraft)
+              
               // Trigger the current step's form submission
               document
                 .getElementById(`step${step}-form`)

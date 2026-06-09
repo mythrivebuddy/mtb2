@@ -18,6 +18,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { useEnrollFreeEvent } from "@/hooks/use-free-event-enroll";
+import assets from "@/lib/constants/assets";
 
 type EventDetailResponse = {
   event: HostedEvent & {
@@ -62,9 +63,18 @@ const HeroSection = ({ event }: { event: EventDetail }) => {
       : `/dashboard/events/${event.id}`;
   return (
     <section
-      className="relative h-[60vh] min-h-[500px] w-full bg-cover bg-center flex items-end pb-16"
-      style={{ backgroundImage: `url('${event.coverImage ?? ""}')` }}
+      className="relative h-[60vh] min-h-[500px] w-full flex items-end pb-16"
+      // style={{ backgroundImage: `url('${event.coverImage ?? ""}')` }}
     >
+    <Image
+    src={event?.coverImage ?? assets.logo.current}
+    alt={event.title}
+    fill
+    className="object-cover object-center  " // object-top shows the top of image (faces/subjects)
+    priority
+    quality={100}
+    unoptimized
+  />
       {/* <div className="absolute inset-0 bg-black/40" /> */}
       {/* Share button top-right */}
       <div className="absolute top-4 right-4 z-20">
