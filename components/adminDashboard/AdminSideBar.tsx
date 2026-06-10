@@ -114,6 +114,10 @@ const Sidebar = () => {
                 href="/admin/cron-schedules"
                 label="Cron schedules"
               />
+                <NavItem
+                href="/admin/manage-events"
+                label="Events Management"
+              />
               <NavItem href="/admin/feature-controls" label="Feature Controls" />
                <NavItem
                 href="/admin/invoices"

@@ -90,7 +90,7 @@ const session = await getServerSession(authOptions);
           },
         }),
       },
-      orderBy: { startTime: "asc" },
+      orderBy: { createdAt: "asc" },
     });
     const formattedEvents = events.map((event) => {
 
@@ -105,7 +105,7 @@ const session = await getServerSession(authOptions);
     });
 
     return NextResponse.json({ events: formattedEvents });
-    return NextResponse.json({ events });
+
   } catch (error) {
     if (error instanceof Error && error.message.includes("authorized")) {
       return authErrorResponse(error);

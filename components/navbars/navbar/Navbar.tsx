@@ -19,6 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { theme } from "@/lib/new-home/theme/theme";
+import assets from "@/lib/constants/assets";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -33,7 +34,7 @@ export default function Navbar() {
           className="flex items-center space-x-2 relative"
         >
           <Image
-            src="/new-home-assets/new-logo.png"
+            src={assets.logo.current}
             alt="MyThriveBuddy"
             width={68}
             height={68}

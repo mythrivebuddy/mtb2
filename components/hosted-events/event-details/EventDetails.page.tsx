@@ -18,6 +18,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { useEnrollFreeEvent } from "@/hooks/use-free-event-enroll";
+import assets from "@/lib/constants/assets";
 
 type EventDetailResponse = {
   event: HostedEvent & {
@@ -62,9 +63,18 @@ const HeroSection = ({ event }: { event: EventDetail }) => {
       : `/dashboard/events/${event.id}`;
   return (
     <section
-      className="relative h-[60vh] min-h-[500px] w-full bg-cover bg-center flex items-end pb-16"
-      style={{ backgroundImage: `url('${event.coverImage ?? ""}')` }}
+      className="relative h-[60vh] min-h-[500px] w-full flex items-end pb-16"
+      // style={{ backgroundImage: `url('${event.coverImage ?? ""}')` }}
     >
+    <Image
+    src={event?.coverImage ?? assets.logo.current}
+    alt={event.title}
+    fill
+    className="object-cover object-center  " // object-top shows the top of image (faces/subjects)
+    priority
+    quality={100}
+    unoptimized
+  />
       {/* <div className="absolute inset-0 bg-black/40" /> */}
       {/* Share button top-right */}
       <div className="absolute top-4 right-4 z-20">
@@ -227,7 +237,7 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
     () => [["all-events"], ["event-detail", event.id]],
     [event.id],
   );
-
+  const session = useSession();
   const { freeEnroll, loadingId } = useEnrollFreeEvent(queryKeys);
   return (
     <div className="sticky top-24 space-y-6">
@@ -272,13 +282,17 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
 
         <button
           disabled={isEnrolled || loadingId === event.id}
-          onClick={() =>
+          onClick={() => {
+            if (session.data?.user.role === "ADMIN") {
+              toast.error("Admins cannot enroll for events");
+              return;
+            }
             freeEnroll({
               id: event.id,
               isPaid: event.isPaid,
               isEnrolled: event.isEnrolled,
-            })
-          }
+            });
+          }}
           className={`${theme.buttonDark} w-full py-4 rounded-xl font-medium text-lg flex items-center justify-center gap-2 transition-colors ease-linear ${
             isEnrolled ? "opacity-75 cursor-not-allowed" : ""
           }`}

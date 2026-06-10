@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import ChallengeDetailView from "../ChallengeDetailView";
 import type { ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
 import { Metadata } from "next";
+import assets from "@/lib/constants/assets";
 
 export async function generateMetadata({
   params,
@@ -17,7 +18,7 @@ export async function generateMetadata({
   const { id: challengeId } = await params;
   const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
 
-  const logoUrl = `${baseUrl}/logo.png`;
+  const logoUrl = `${baseUrl}${assets.logo.current}`;
   let challenge = null;
 
   try {
@@ -34,17 +35,17 @@ export async function generateMetadata({
 
   if (!challenge) {
     return {
-      title: "Challenge | MythriveBuddy",
+      title: "Challenge | MyThriveBuddy",
     };
   }
 
   return {
     metadataBase: new URL(baseUrl),
-    title: challenge.title ? `${challenge.title} | MythriveBuddy` : "Challenge | MythriveBuddy",
+    title: challenge.title ? `${challenge.title} | MyThriveBuddy` : "Challenge | MyThriveBuddy",
     description: challenge.description ?? undefined,
 
     openGraph: {
-      title: challenge.title ? `${challenge.title} | MythriveBuddy` : "Challenge | MythriveBuddy",
+      title: challenge.title ? `${challenge.title} | MyThriveBuddy` : "Challenge | MyThriveBuddy",
       description: challenge.description ?? undefined,
       url: `${baseUrl}/dashboard/challenge/upcoming-challenges/${challengeId}`,
       siteName: "MyThriveBuddy",
@@ -61,7 +62,7 @@ export async function generateMetadata({
 
     twitter: {
       card: "summary_large_image",
-      title: `${challenge.title} | MythriveBuddy`,
+      title: `${challenge.title} | MyThriveBuddy`,
       description: challenge.description ?? undefined,
       images: [logoUrl],
     },

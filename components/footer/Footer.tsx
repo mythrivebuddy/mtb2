@@ -1,4 +1,5 @@
 "use client";
+import assets from "@/lib/constants/assets";
 import { theme } from "@/lib/new-home/theme/theme";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -22,7 +23,7 @@ const isDashboard = pathname.includes("dashboard");
               className="flex items-center gap-3"
             >
               <Image
-                src="/new-home-assets/new-logo.png"
+                src={assets.logo.current}
                 height={68}
                 width={68}
                 alt="Logo"

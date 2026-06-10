@@ -8,17 +8,18 @@ import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 import PWAInstallButton from "@/components/PWAInstallButton"; // <-- NEW Import
 import { SupabaseClientProvider } from "@/components/providers/SupabaseClientProvider"; // Adjust path if needed
 import AnalyticsWrapper from "@/components/wrappers/AnalyticsWrapper";
+import assets from "@/lib/constants/assets";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "My Thrive Buddy",
-  description: "MTB with PWA",
+  title: "MyThriveBuddy",
+  description: "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
   themeColor: "#F1F9FF",
     icons:{
-      icon: "/new-home-assets/favicon.svg",
-      shortcut: "/new-home-assets/favicon.svg",
-      apple: "/new-home-assets/favicon.svg",
+      icon: assets.favicon.svg.current,
+      shortcut:  assets.favicon.svg.current,
+      apple:  assets.favicon.svg.current,
     },
   
 };

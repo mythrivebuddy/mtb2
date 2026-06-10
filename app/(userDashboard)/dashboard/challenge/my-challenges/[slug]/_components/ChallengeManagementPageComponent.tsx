@@ -549,6 +549,7 @@ export default function ChallengeManagementPage({
   const socialLinks = socialLinksData.map((social) => ({
     name: social.name,
     icon: social.icon,
+
     onClick: () =>
       window.open(
         social.template.replace("{url}", shareUrl).replace("{text}", shareText),

@@ -473,7 +473,7 @@ const parseTimeMinutes = (timeStr: string): number => {
           {/* LEFT COLUMN: Dates & Timezone */}
           <div ref={dateRef} className="lg:col-span-4 flex flex-col gap-8 ">
             <section
-              className={`bg-white p-8 rounded-xl shadow-sm border ${theme.borderLight}`}
+              className={`bg-white p-8 rounded-xl shadow-sm border ${theme.borderLight} overflow-hidden`}
             >
               <h3 className="text-sm font-semibold uppercase tracking-widest mb-6 opacity-80">
                 Event Duration
@@ -521,13 +521,14 @@ const parseTimeMinutes = (timeStr: string): number => {
               </div>
 
               {/* Calendar Widget */}
-              <div className={`mt-6 pt-8 border-t ${theme.borderLight}`}>
+              <div className={`mt-6 pt-8 border-t ${theme.borderLight} overflow-x-auto`}>
                 <DayPicker
                   mode="range"
                   selected={range}
                   onSelect={setRange}
                   defaultMonth={new Date()}
                   disabled={{ before: new Date() }}
+                  
                 />
                 {!range && (
                   <p className="text-red-500 text-xs mt-2">

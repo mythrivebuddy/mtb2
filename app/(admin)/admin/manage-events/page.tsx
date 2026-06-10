@@ -10,14 +10,12 @@ import {
   Eye,
   FileText,
   Loader2,
-  Plus,
   RefreshCw,
   Search,
   Trash2,
   X,
-  XCircle,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
@@ -62,6 +60,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import Link from "next/link";
+import { Pagination } from "@/components/ui/pagination";
 
 const LIMIT = 10;
 const MAX_RESOURCE_SIZE = 25 * 1024 * 1024;
@@ -351,7 +351,12 @@ export default function ManageEventsPage() {
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<HostedEvent | null>(null);
-
+  const [confirmAction, setConfirmAction] = useState<{
+    id: string;
+    type: "approve" | "delete";
+  } | null>(null);
+  const confirmActionRef = useRef(confirmAction);
+  if (confirmAction) confirmActionRef.current = confirmAction;
   const eventsQuery = useQuery({
     queryKey: ["admin-hosted-events", page, status, search],
     queryFn: () => fetchEvents(page, status, search),
@@ -400,8 +405,8 @@ export default function ManageEventsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div className="min-h-screen px-1 sm:px-6 py-6">
+      <div className="mx-auto space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-950">
@@ -411,64 +416,78 @@ export default function ManageEventsPage() {
               Review, publish, create, and remove hosted events.
             </p>
           </div>
-          <Button onClick={() => setCreateOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" /> Create Event
-          </Button>
         </div>
 
         <Card>
-          <CardHeader className="gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <CardTitle className="text-lg">Hosted Events</CardTitle>
-              <CardDescription>
-                {pagination?.total ?? 0} total events
-              </CardDescription>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <div className="relative sm:w-72">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  value={searchInput}
-                  onChange={(event) => setSearchInput(event.target.value)}
-                  onKeyDown={(event) => event.key === "Enter" && runSearch()}
-                  placeholder="Search events"
-                  className="pl-9"
-                />
+          <CardHeader className="gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-lg">Events</CardTitle>
+                <CardDescription>
+                  {pagination?.total ?? 0} total events
+                </CardDescription>
               </div>
-              <Select
-                value={status || "ALL"}
-                onValueChange={(value) => {
-                  setStatus(value === "ALL" ? "" : (value as EventStatus));
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="sm:w-44">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All status</SelectItem>
-                  <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
-                  <SelectItem value="PUBLISHED">Published</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" onClick={runSearch}>
-                Search
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => void eventsQuery.refetch()}
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${eventsQuery.isFetching ? "animate-spin" : ""}`}
-                />
-              </Button>
-              {search || status ? (
-                <Button variant="ghost" size="icon" onClick={clearFilters}>
-                  <X className="h-4 w-4" />
-                </Button>
-              ) : null}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="flex gap-2">
+                  <div className="relative flex-1 sm:w-72 sm:flex-none">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      value={searchInput}
+                      onChange={(event) => setSearchInput(event.target.value)}
+                      onKeyDown={(event) =>
+                        event.key === "Enter" && runSearch()
+                      }
+                      placeholder="Search events"
+                      className="pl-9"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={runSearch}
+                    className="shrink-0"
+                  >
+                    <Search className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Search</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => void eventsQuery.refetch()}
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 ${eventsQuery.isFetching ? "animate-spin" : ""}`}
+                    />
+                  </Button>
+                  {search || status ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={clearFilters}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                </div>
+                <Select
+                  value={status || "ALL"}
+                  onValueChange={(value) => {
+                    setStatus(value === "ALL" ? "" : (value as EventStatus));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-44">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All status</SelectItem>
+                    <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
+                    <SelectItem value="PUBLISHED">Published</SelectItem>
+                    <SelectItem value="DRAFT">Draft</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -482,38 +501,22 @@ export default function ManageEventsPage() {
                 isLoading={eventsQuery.isLoading}
                 statusPendingId={statusMutation.variables?.id}
                 deletePendingId={deleteMutation.variables}
-                onView={setSelectedEvent}
-                onApprove={(id) =>
-                  statusMutation.mutate({ id, action: "approve" })
-                }
-                onDisapprove={(id) =>
-                  statusMutation.mutate({ id, action: "disapprove" })
-                }
-                onDelete={(id) => deleteMutation.mutate(id)}
+                onApprove={(id) => setConfirmAction({ id, type: "approve" })}
+                onDelete={(id) => setConfirmAction({ id, type: "delete" })}
               />
             )}
-            <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
-              <span>
+            <div className="mt-4 space-y-2">
+              <div className="text-sm text-slate-500 text-center">
                 Page {pagination?.page ?? page} of {pagination?.totalPages ?? 1}
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((value) => Math.max(1, value - 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!pagination || page >= pagination.totalPages}
-                  onClick={() => setPage((value) => value + 1)}
-                >
-                  Next
-                </Button>
               </div>
+
+              <Pagination
+                currentPage={pagination?.page ?? page}
+                totalPages={pagination?.totalPages ?? 1}
+                onPageChange={(newPage) => {
+                  setPage(newPage);
+                }}
+              />
             </div>
           </CardContent>
         </Card>
@@ -530,6 +533,71 @@ export default function ManageEventsPage() {
         event={selectedEvent}
         onOpenChange={(open) => !open && setSelectedEvent(null)}
       />
+      <Dialog
+        open={!!confirmAction}
+        onOpenChange={(open) => !open && setConfirmAction(null)}
+      >
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-xl mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {confirmActionRef.current?.type === "approve"
+                ? "Approve Event?"
+                : "Delete Event?"}
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              {confirmActionRef.current?.type === "approve"
+                ? "This will publish the event and make it visible to users."
+                : "This action cannot be undone. The event will be permanently deleted."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => setConfirmAction(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={
+                confirmActionRef.current?.type === "delete"
+                  ? "destructive"
+                  : "default"
+              }
+              className="w-full sm:w-auto"
+              disabled={
+                confirmActionRef.current?.type === "approve"
+                  ? statusMutation.isPending
+                  : deleteMutation.isPending
+              }
+              onClick={() => {
+                if (!confirmAction) return;
+                if (confirmAction.type === "approve") {
+                  statusMutation.mutate(
+                    { id: confirmAction.id, action: "approve" },
+                    { onSuccess: () => setConfirmAction(null) },
+                  );
+                } else {
+                  deleteMutation.mutate(confirmAction.id, {
+                    onSuccess: () => setConfirmAction(null),
+                  });
+                }
+              }}
+            >
+              {(
+                confirmActionRef.current?.type === "approve"
+                  ? statusMutation.isPending
+                  : deleteMutation.isPending
+              ) ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {confirmActionRef.current?.type === "approve"
+                ? "Approve"
+                : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -539,26 +607,22 @@ function EventsTable({
   isLoading,
   statusPendingId,
   deletePendingId,
-  onView,
   onApprove,
-  onDisapprove,
   onDelete,
 }: {
   events: HostedEvent[];
   isLoading: boolean;
   statusPendingId?: string;
   deletePendingId?: string;
-  onView: (event: HostedEvent) => void;
   onApprove: (id: string) => void;
-  onDisapprove: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-md border">
+    <div className="overflow-x-auto rounded-md border">
       <Table>
         <TableHeader>
           <TableRow className="bg-slate-50">
-            <TableHead>Event</TableHead>
+            <TableHead className="min-w-[160px]">Event</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Schedule</TableHead>
             <TableHead>Creator</TableHead>
@@ -598,10 +662,10 @@ function EventsTable({
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-slate-950">
+                        <p className="truncate font-medium text-slate-950 max-w-[120px] sm:max-w-[200px]">
                           {event.title}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-500 whitespace-nowrap">
                           {event.type.replaceAll("_", " ")} -{" "}
                           {event.format === "ONLINE" ? "Online" : "Offline"}
                         </p>
@@ -620,9 +684,13 @@ function EventsTable({
                     {formatDate(event.startTime)}
                   </TableCell>
                   <TableCell>
-                    <p className="text-sm font-medium text-slate-800">
+                    <Link
+                      href={`/profile/${event.creator.id}`}
+                      target="_blank"
+                      className="text-sm font-medium text-slate-800"
+                    >
                       {event.creator?.name ?? "Unknown"}
-                    </p>
+                    </Link>
                     <p className="text-xs text-slate-500">
                       {event.creator?.email}
                     </p>
@@ -635,29 +703,37 @@ function EventsTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => onView(event)}
+                      <Link
+                        href={`/admin/manage-events/${event.id}`}
+                        target="_blank"
                       >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={statusPendingId === event.id}
-                        onClick={() => onApprove(event.id)}
-                      >
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      </Button>
-                      <Button
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          // onClick={() => router.push(`/admin/manage-events/${event.id}`)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      {event.status !== "PUBLISHED" && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          disabled={statusPendingId === event.id}
+                          onClick={() => onApprove(event.id)}
+                        >
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        </Button>
+                      )}
+
+                      {/* <Button
                         variant="outline"
                         size="icon"
                         disabled={statusPendingId === event.id}
                         onClick={() => onDisapprove(event.id)}
                       >
                         <XCircle className="h-4 w-4 text-blue-600" />
-                      </Button>
+                      </Button> */}
                       <Button
                         variant="outline"
                         size="icon"
