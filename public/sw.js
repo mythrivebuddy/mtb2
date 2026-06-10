@@ -20,8 +20,8 @@ self.addEventListener("push", function (event) {
         // Set up notification options
         options = {
           body: body, // This is the clean message text
-          icon: data.notification.icon || "/logo.png",
-          badge: "/logo.png",
+          icon: data.notification.icon || "/favicon.png",
+          badge: "/favicon.png",
           requireInteraction: true,
           silent: false,
           vibrate: [200, 100, 200],
@@ -38,7 +38,7 @@ self.addEventListener("push", function (event) {
     // Use fallback values
     options = {
       body: body,
-      icon: "/logo.png",
+      icon: "/favicon.png",
       data: { url: "/dashboard/notifications" }
     };
   }

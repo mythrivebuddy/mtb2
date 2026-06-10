@@ -11,8 +11,11 @@ const favicon = {
     v1: '/favicon.ico', //this is old favicon lives in /app/favicon.ico, served at root 
   },
   svg: {
-    v1: '/favicon2.svg', //  new favicon lives in /public/favicon2.svg
+    v1: '/favicon.svg', //  new favicon lives in /public/favicon2.svg
   },
+  png:{
+    v1:'/favicon.png',    // for push messaging we are using favicon.png everywhere but in service worker we hardcoded this 
+  }
 } as const;
 
 const assets = {
@@ -29,6 +32,10 @@ const assets = {
       ...favicon.svg,
       current: favicon.svg.v1, // always points to the latest
     },
+    png:{
+      ...favicon.png,
+      current:favicon.svg.v1 // for push messaging we are using favicon.png everywhere but in service worker we hardcoded this 
+    }
   },
 } as const;
 

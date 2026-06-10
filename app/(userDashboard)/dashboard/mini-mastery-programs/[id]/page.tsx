@@ -24,15 +24,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const program = await getProgram(paramsContext.id);
   const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
 
-   const logoUrl = `${baseUrl}${assets.logo.current}`;
+   const logoUrl = `${baseUrl}${assets.logo.current}?v=2`;
   if (!program) {
     return {
       title: "Program Not Found",
       description: "This program does not exist",
     };
   }
-  const description =
-    program.description?.replace(/<[^>]*>/g, "").slice(0, 160) || "Explore this program on MyThriveBuddy";
+
+   const description = program.description
+  ?.replace(/<[^>]*>/g, "")
+  .replace(/&ndash;/g, "–")
+  .replace(/&amp;/g, "&")
+  .replace(/&bull;/g, "•")
+  .replace(/&nbsp;/g, " ")
+  .trim()
+  .slice(0, 160) ?? "Explore this program on MyThriveBuddy";
   return {
     metadataBase: new URL(baseUrl),
     title: program.name
