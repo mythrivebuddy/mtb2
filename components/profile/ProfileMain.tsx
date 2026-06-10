@@ -232,7 +232,7 @@ function ProfileMain({
                     Tailored {service.toLowerCase()} experience.
                   </p>
                   <p className="text-sm font-semibold mt-4 text-blue-700">
-                    ${profile.priceMin ?? 0} – ${profile.priceMax ?? 0}
+                   {profile.preferredCurrency === "INR" ? "₹" : "$"}{profile.priceMin ?? 0} –  {profile.preferredCurrency === "INR" ? "₹" : "$"}{profile.priceMax ?? 0}
                   </p>
                 </div>
               ))}

@@ -18,7 +18,7 @@ export async function generateMetadata({
   const { slug: challengeId } = await params;
   const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
 
-  const logoUrl = `${baseUrl}${assets.logo.current}`;
+  const logoUrl = `${baseUrl}${assets.logo.current}?v=2`;
 
   
   const challenge = await prisma.challenge.findUnique({
@@ -36,8 +36,14 @@ export async function generateMetadata({
       title: "Challenges | MyThriveBuddy",
     };
   }
-  const description =
-    challenge.description?.replace(/<[^>]*>/g, "").slice(0, 160) ?? "";
+const description = challenge.description
+  ?.replace(/<[^>]*>/g, "")
+  .replace(/&ndash;/g, "–")
+  .replace(/&amp;/g, "&")
+  .replace(/&bull;/g, "•")
+  .replace(/&nbsp;/g, " ")
+  .trim()
+  .slice(0, 160) ?? "";
   // for sharing we need this url upcoming-challenges/{challengeId}
   return {
     metadataBase: new URL(baseUrl),
