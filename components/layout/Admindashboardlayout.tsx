@@ -2,7 +2,6 @@
 
 import { useSession } from "next-auth/react";
 import AdminSideBar from "@/components/adminDashboard/AdminSideBar";
-import { Toaster } from "sonner";
 
 import AdminDashboardHeader from "../adminDashboard/AdminDashboardHeader";
 
@@ -25,7 +24,6 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {/* Page Content */}
         <main className="flex-1 overflow-auto   bg-transparent pt-4">
           {children}
-          <Toaster richColors position="top-right" />
         </main>
       </div>
     </div>

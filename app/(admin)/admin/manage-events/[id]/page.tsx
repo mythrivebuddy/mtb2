@@ -1,7 +1,6 @@
-import type { Metadata } from "next";
 import EventDetailsPage from "@/components/hosted-events/event-details/EventDetails.page";
-import { prisma } from "@/lib/prisma";
-import assets from "@/lib/constants/assets";
+import {prisma} from "@/lib/prisma"
+import { Metadata } from "next";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -42,11 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? event.description.replace(/<[^>]*>/g, "").slice(0, 160) // strip HTML tags
     : ``;
   const image =
-    event.coverImage ?? `${process.env.NEXT_URL}${assets.logo.current}`;
-  const url = `${process.env.NEXT_URL}/dashboard/events/${id}`;
+    event.coverImage ?? `${process.env.NEXT_PU_URL}/new-home-assets/new-logo.png`;
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/events/${id}`;
 
   return {
-     metadataBase: new URL(process.env.NEXT_URL || 'https://www.mythrivebuddy.com'),
     title,
     description,
     openGraph: {
@@ -75,8 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
   };
 }
-
-export default async function EventPage({ params }: Props) {
+export default async function AdminEventDetailPage({ params }: Props) {
   const { id } = await params;
-  return <EventDetailsPage eventId={id} />;
+    return <EventDetailsPage eventId={id} />;
 }

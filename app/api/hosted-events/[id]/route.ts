@@ -8,6 +8,7 @@ import {
   toHostedEventUpdateData,
   validationError,
 } from "@/lib/hosted-event";
+import { inngest } from "@/lib/inngest";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { updateHostedEventSchema } from "@/schema/hosted-event";
@@ -34,7 +35,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       );
     }
     const ticket = event.tickets?.[0] ?? null;
-    return NextResponse.json({ event,ticket });
+    return NextResponse.json({ event, ticket });
   } catch (error) {
     if (error instanceof Error && error.message.includes("authorized")) {
       return authErrorResponse(error);
@@ -61,10 +62,14 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const parsed = updateHostedEventSchema.safeParse(body);
     if (!parsed.success) return validationError(parsed.error);
 
+    const now = new Date();
+    let shouldNotify = false;
+    let actionType: "created" | "updated" = "created";
+
     const event = await prisma.$transaction(async (tx) => {
       const existing = await tx.hostedEvent.findUnique({
         where: { id },
-        select: { id: true, creatorId: true },
+        select: { id: true, creatorId: true, lastSubmittedAt: true },
       });
 
       if (!existing) return null;
@@ -78,9 +83,25 @@ export async function PUT(req: NextRequest, context: RouteContext) {
         if (enrollmentCount > 0) return "HAS_ENROLLMENTS" as const;
       }
 
+      if (parsed.data.status === "UNDER_REVIEW") {
+        if (!existing?.lastSubmittedAt) {
+          shouldNotify = true;
+        } else if (
+          now.getTime() - existing.lastSubmittedAt.getTime() >
+          2 * 60 * 1000
+        ) {
+          shouldNotify = true;
+          actionType = "updated";
+        }
+      }
+
       await tx.hostedEvent.update({
         where: { id },
-        data: toHostedEventUpdateData(parsed.data),
+        data: {
+          ...toHostedEventUpdateData(parsed.data),
+          // 🟢 2. ADD THIS SINGLE LINE
+          ...(shouldNotify ? { lastSubmittedAt: now } : {}),
+        },
       });
 
       if (parsed.data.ticket !== undefined) {
@@ -141,7 +162,37 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       );
     }
     const ticket = event.tickets?.[0] ?? null;
-    return NextResponse.json({ event:{ ...event, tickets: undefined },ticket });
+    if (event.status === "UNDER_REVIEW") {
+      await inngest.send({
+        name: "notification/send",
+        data: {
+          types: ["HOSTED_EVENT_CREATED_ADMIN"],
+          actorId: session.user.id,
+          sendToUser: false,
+          sendToAdmin: true,
+          sendToCoach: false,
+          sendEmailAdmin: true,
+          adminEntityType: "HOSTED_EVENT",
+          context: {
+            userName: session.user.name,
+            userId: session.user.id,
+            hostedEventTitle: event.title,
+            hostedEventId: event.id,
+            hostedEventType: event.type, // e.g. "Online", "In-Person"
+            amountSection: ticket?.price
+              ? ` for ${ticket.currency ?? "₹"} ${ticket.price}`
+              : undefined,
+            currency: ticket?.currency ?? undefined,
+            actionType,
+          },
+        },
+      });
+    }
+
+    return NextResponse.json({
+      event: { ...event, tickets: undefined },
+      ticket,
+    });
   } catch (error) {
     console.log(error);
     if (error instanceof Error && error.message.includes("authorized")) {

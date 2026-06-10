@@ -11,6 +11,7 @@ import Philosophy from "@/components/home/Philosophy";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import assets from "@/lib/constants/assets";
 
 export const metadata: Metadata = {
   title:
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
     siteName: "MyThriveBuddy",
     images: [
       {
-        url: "/logo.png",
+        url:  assets.logo.current,
         width: 1200,
         height: 630,
         alt: "MyThriveBuddy - Your Personal & Professional Growth Environment For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
       "MyThriveBuddy - Your Personal & Professional Growth Environment For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
     description:
       "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
-    images: ["/logo.png"],
+    images: [assets.logo.current],
   },
 };
 type HomeProps = {

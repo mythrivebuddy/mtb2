@@ -253,12 +253,12 @@ export async function POST(request: Request) {
         sendToUser: false,
         sendToAdmin: true,
         sendToCoach: false,
-         sendEmailAdmin: true,
+        sendEmailAdmin: true,
 
-    adminEntityType: "CHALLENGE",
+        adminEntityType: "CHALLENGE",
         context: {
           userName: user.name,
-           userId: user.id,
+          userId: user.id,
           challengeTitle: newChallenge.title,
           challengeId: newChallenge.id,
           challengeType, // FREE / PAID
