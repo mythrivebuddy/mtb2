@@ -12,8 +12,8 @@ self.addEventListener("push", (event) => {
   const title = data.title || "New Notification";
   const options = {
     body: data.body || "You have a new update from MyThriveBuddy.",
-    icon: data.icon || "/icons/icon-192x192.png",
-    badge: "/icons/icon-192x192.png",
+    icon: data.icon || '/favicon.png',
+    badge: "/favicon.png",
     vibrate: [200, 100, 200],
     data: { url: (data.data && data.data.url) || data.url || "/dashboard/notifications" }
   };
@@ -71,7 +71,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll([
       OFFLINE_URL,
-      "/icons/icon-192x192.png",
+      "/favicon.png",
       "/icons/icon-512x512.png"
     ]))
   );

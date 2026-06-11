@@ -2,6 +2,7 @@ import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 import { NotificationType } from "@prisma/client";
 import { createBulkNotifications, createNotification } from "./notifications";
+import assets from "../constants/assets";
 
 webpush.setVapidDetails(
   `mailto:${process.env.ADMIN_EMAIL || "developer.deepak25@gmail.com"}`,
@@ -30,7 +31,7 @@ export async function sendPushNotification(
   subscription: PushSubscription,
   title: string,
   body: string,
-  icon = "/logo.png",
+  icon = assets.favicon.png.current,
   data: Record<string, unknown> = {},
 ) {
   try {
@@ -166,7 +167,7 @@ export async function sendPushNotificationMultipleUsers(
   const payload = JSON.stringify({
     title,
     body,
-    icon: "/logo.png",
+    icon: assets.favicon.png.current,
     url: data.url || "/dashboard",
     data,
   });
