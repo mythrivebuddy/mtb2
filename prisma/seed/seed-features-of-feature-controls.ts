@@ -274,8 +274,10 @@ const featureConfig = {
       free: {
         COACH: {
           createLimit: 3,
-          canCreatePaidEvents: false,
-          commissionPercent: null, // not applicable — no paid events on free
+          canCreatePaidEvents: true,
+          commissionPercent: 25, 
+          limitType: "MONTHLY" as LimitType, // 👈 add this
+          isUpgradeFlagShow: true,
         },
       },
       paid: {
@@ -283,6 +285,7 @@ const featureConfig = {
           createLimit: UNLIMITED,
           canCreatePaidEvents: true,
           commissionPercent: 10,
+          limitType: "MONTHLY" as LimitType,
         },
       },
     },
@@ -591,6 +594,19 @@ const FEATURE_SCHEMAS: Record<string, Record<string, SchemaField>> = {
       type: "number",
       label: "Commission % (only if paid events enabled)",
       default: null,
+      nullable: true,
+    },
+    limitType: {
+      type: "select",
+      label: "Limit Type",
+      options: ["MONTHLY", "YEARLY", "LIFETIME"],
+      default: "LIFETIME",
+      nullable: true,
+    },
+    isUpgradeFlagShow: {
+      type: "boolean",
+      label: "Upgrade Flag",
+      default: false,
       nullable: true,
     },
   },
