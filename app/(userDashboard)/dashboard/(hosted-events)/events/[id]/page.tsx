@@ -38,15 +38,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const title = `${event.title} | MyThriveBuddy`;
-  const description = event.description
-    ? event.description.replace(/<[^>]*>/g, "").slice(0, 160) // strip HTML tags
-    : ``;
+
+  const description =
+    event.description
+      ?.replace(/<[^>]*>/g, "")
+      .replace(/&ndash;/g, "–")
+      .replace(/&amp;/g, "&")
+      .replace(/&bull;/g, "•")
+      .replace(/&nbsp;/g, " ")
+      .trim()
+      .slice(0, 160) ?? "Explore this event on MyThriveBuddy";
   const image =
-    event.coverImage ?? `${process.env.NEXT_URL}${assets.logo.current}`;
+    event.coverImage ?? `${process.env.NEXT_URL}${assets.logo.current}?v=2`;
   const url = `${process.env.NEXT_URL}/dashboard/events/${id}`;
 
   return {
-     metadataBase: new URL(process.env.NEXT_URL || 'https://www.mythrivebuddy.com'),
+    metadataBase: new URL(
+      process.env.NEXT_URL || "https://www.mythrivebuddy.com",
+    ),
     title,
     description,
     openGraph: {

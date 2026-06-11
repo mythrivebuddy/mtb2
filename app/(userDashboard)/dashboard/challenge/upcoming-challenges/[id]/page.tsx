@@ -18,7 +18,7 @@ export async function generateMetadata({
   const { id: challengeId } = await params;
   const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
 
-  const logoUrl = `${baseUrl}${assets.logo.current}`;
+  const logoUrl = `${baseUrl}${assets.logo.current}?v=2`;
   let challenge = null;
 
   try {
@@ -38,15 +38,22 @@ export async function generateMetadata({
       title: "Challenge | MyThriveBuddy",
     };
   }
-
+  const description = challenge.description
+  ?.replace(/<[^>]*>/g, "")
+  .replace(/&ndash;/g, "–")
+  .replace(/&amp;/g, "&")
+  .replace(/&bull;/g, "•")
+  .replace(/&nbsp;/g, " ")
+  .trim()
+  .slice(0, 160) ?? "";
   return {
     metadataBase: new URL(baseUrl),
     title: challenge.title ? `${challenge.title} | MyThriveBuddy` : "Challenge | MyThriveBuddy",
-    description: challenge.description ?? undefined,
+    description,
 
     openGraph: {
       title: challenge.title ? `${challenge.title} | MyThriveBuddy` : "Challenge | MyThriveBuddy",
-      description: challenge.description ?? undefined,
+      description,
       url: `${baseUrl}/dashboard/challenge/upcoming-challenges/${challengeId}`,
       siteName: "MyThriveBuddy",
       images: [
