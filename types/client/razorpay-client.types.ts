@@ -1,6 +1,7 @@
   export type RazorpayCheckoutOptions = {
     key: string;
     name: string;
+    image?:string;
     description: string;
     theme: {
       color: string;
