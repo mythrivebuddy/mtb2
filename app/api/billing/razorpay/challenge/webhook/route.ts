@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
           });
 
           // notify-creator-admin
-          if (existingOrder.contextType !== "HOSTED_EVENT") {
+        
           await inngest.send({
             name: "mmp-challenge-store.notify",
             id: `notify-${existingOrder.id}`,
@@ -147,9 +147,10 @@ export async function POST(req: NextRequest) {
               orderId: existingOrder.id,
               seId: existingOrder.userId,
               isFree: false, // paid flow
+              entityType: existingOrder.contextType,
             },
           });
-        }
+        
           // ✅ PROGRAM REMINDER TRIGGER
           try {
             if (existingOrder.programId) {

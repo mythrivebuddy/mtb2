@@ -27,6 +27,7 @@ import {
 } from "@/types/client/razorpay-client.types";
 import { useQuery } from "@tanstack/react-query";
 import { HostedEvent, HostedEventResponse } from "@/types/client/events";
+import assets from "@/lib/constants/assets";
 
 // types
 
@@ -253,6 +254,7 @@ export default function CheckoutPage() {
       const options: RazorpayCheckoutOptions = {
         key: data.key,
         name: "mythrivebuddy.com",
+        image:`https://www.mythrivebuddy.com/${assets.logo.current}`,
         description:
           context === "CHALLENGE"
             ? (challenge?.title ?? "")

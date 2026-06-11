@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { HostedEventResponse } from "@/types/client/events";
 import Image from "next/image";
+import UpgradeMessageModal from "@/components/common/UpgradeMessageModal";
 
 const step1Schema = z
   .object({
@@ -115,6 +116,11 @@ export default function Step1({
   ];
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const [modalContent, setModalContent] = useState<{
+  title: string;
+  message: string;
+} | null>(null);
 
   const fieldRefs: Record<
     keyof Step1Form,
@@ -253,9 +259,16 @@ export default function Step1({
       router.replace(`?eventId=${res.event.id}`, { scroll: false });
       onNext();
     } catch (err) {
-      console.error("❌ Error in onSubmit:", err);
-      toast.error(getAxiosErrorMessage(err));
-    }
+  console.error("❌ Error in onSubmit:", err);
+  if (axios.isAxiosError(err) && err.response?.status === 403) {
+    setModalContent({
+      title: "Upgrade Required",
+      message: err.response.data?.message || "You've reached your plan limit.",
+    });
+  } else {
+    toast.error(getAxiosErrorMessage(err));
+  }
+}
   };
   const mapToEnum = (type: string) => {
     return type.toUpperCase().replace(/-/g, "_");
@@ -579,6 +592,13 @@ export default function Step1({
           </section>
         </form>
       </main>
+      <UpgradeMessageModal
+  isOpen={!!modalContent}
+  onClose={() => setModalContent(null)}
+  title={modalContent?.title ?? ""}
+  message={modalContent?.message ?? ""}
+  redirectToPricingUrl="/pricing?ref=create-event"
+/>
     </div>
   );
 }
