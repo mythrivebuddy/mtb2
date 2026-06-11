@@ -1,10 +1,5 @@
-import {
-  Prisma,
-  PlanUserType,
-  FeatureUserType,
-} from "@prisma/client";
+import { Prisma, PlanUserType, FeatureUserType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-
 
 export type PlanAccess = "FREE" | "PAID";
 export type LimitType = "MONTHLY" | "YEARLY" | "LIFETIME";
@@ -266,6 +261,29 @@ const featureConfig = {
       },
       paid: {
         COACH: { createLimit: UNLIMITED, commissionPercent: 10 },
+      },
+    },
+  },
+  hostedEvents: {
+    access: [PlanUserType.COACH],
+    actions: {
+      create: [PlanUserType.COACH],
+      publishPaidEvent: [PlanUserType.COACH],
+    },
+    plans: {
+      free: {
+        COACH: {
+          createLimit: 3,
+          canCreatePaidEvents: false,
+          commissionPercent: null, // not applicable — no paid events on free
+        },
+      },
+      paid: {
+        COACH: {
+          createLimit: UNLIMITED,
+          canCreatePaidEvents: true,
+          commissionPercent: 10,
+        },
       },
     },
   },
@@ -556,6 +574,26 @@ const FEATURE_SCHEMAS: Record<string, Record<string, SchemaField>> = {
       nullable: true,
     },
   },
+  hostedEvents: {
+    createLimit: {
+      type: "number",
+      label: "Create Limit (-1 unlimited)",
+      default: 3,
+      nullable: true,
+    },
+    canCreatePaidEvents: {
+      type: "boolean",
+      label: "Can Create Paid Events",
+      default: false,
+      nullable: true,
+    },
+    commissionPercent: {
+      type: "number",
+      label: "Commission % (only if paid events enabled)",
+      default: null,
+      nullable: true,
+    },
+  },
   prosperityDrops: {
     eligible: {
       type: "boolean",
@@ -596,6 +634,7 @@ const FEATURE_NAMES: Record<string, string> = {
   liveWebinars: "Live Webinars",
   miniMasteryPrograms: "Mini Mastery Programs",
   prosperityDrops: "Prosperity Drops",
+  hostedEvents: "Hosted Events",
 };
 
 // ==========================================
@@ -635,7 +674,7 @@ function normalizeConfig(
 // ==========================================
 
 async function seedFeatures() {
-  console.log("🌱 Seeding FULL feature config ...");
+  console.log("🌱 Seeding full feature config ...");
 
   for (const [key, rawValue] of Object.entries(featureConfig)) {
     const value = rawValue as FeatureConfigEntry;
@@ -647,27 +686,34 @@ async function seedFeatures() {
     const configSchema = FEATURE_SCHEMAS[key] ?? null;
     const allKeys = configSchema ? Object.keys(configSchema) : [];
 
-    // FEATURE UPSERT
-    const feature = await prisma.feature.upsert({
+    // Check if feature already exists
+    const existingFeature = await prisma.feature.findUnique({
       where: { key },
-      update: {
-        allowedUserTypes,
-        ...(actions !== undefined && { actions }),
-        configSchema: configSchema as Prisma.InputJsonValue,
-        name: FEATURE_NAMES[key] ?? key,
-      },
-      create: {
-        key,
-        name: FEATURE_NAMES[key] ?? key,
-        description: null,
-        allowedUserTypes,
-        actions: actions ?? Prisma.JsonNull,
-        configSchema: configSchema as Prisma.InputJsonValue,
-        isActive: true,
-      },
     });
 
-    // PLAN CONFIGS
+    let feature;
+
+    if (existingFeature) {
+      // ✅ Feature exists — skip update to preserve any admin edits
+      console.log(`⏭️  Skipping existing feature: ${key}`);
+      feature = existingFeature;
+    } else {
+      // 🆕 New feature — create it fresh
+      console.log(`🆕 Creating new feature: ${key}`);
+      feature = await prisma.feature.create({
+        data: {
+          key,
+          name: FEATURE_NAMES[key] ?? key,
+          description: null,
+          allowedUserTypes,
+          actions: actions ?? Prisma.JsonNull,
+          configSchema: configSchema as Prisma.InputJsonValue,
+          isActive: true,
+        },
+      });
+    }
+
+    // PLAN CONFIGS — already skip-if-exists, no change needed
     for (const [planKey, planValue] of Object.entries(value.plans)) {
       const membership = MEMBERSHIP_MAP[planKey];
 
@@ -689,6 +735,9 @@ async function seedFeatures() {
         });
 
         if (!existing) {
+          console.log(
+            `➕ Creating plan config: ${key} / ${membership} / ${userType}`,
+          );
           await prisma.featurePlanConfig.create({
             data: {
               featureId: feature.id,
@@ -698,12 +747,16 @@ async function seedFeatures() {
               config: config as Prisma.InputJsonValue,
             },
           });
+        } else {
+          console.log(
+            `⏭️  Skipping existing plan config: ${key} / ${membership} / ${userType}`,
+          );
         }
       }
     }
   }
 
-  console.log("✅ FULL feature seeding completed");
+  console.log("✅ Full feature config seeding completed");
 }
 
 async function main() {
