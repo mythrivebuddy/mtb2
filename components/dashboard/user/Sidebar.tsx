@@ -227,82 +227,6 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                   onLinkClick={toggleSidebar}
                 /> */}
               </NavSection>
-              <NavSection title="Features">
-                <NavItem
-                  href={`/dashboard/complete-makeover-program/onboarding?planId=${cmpPlan?.id}`}
-                  icon={<Compass size={20} />}
-                  label="Life Blueprint"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/aligned-actions"
-                  icon={<TrendingUp size={20} />}
-                  label="Set Today's Focus"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/daily-bloom"
-                  icon={<Flower size={20} />}
-                  label="Plan The Day"
-                  onLinkClick={toggleSidebar}
-                />
-                <NavItem
-                  href="/dashboard/reminders"
-                  icon={<BellRing />}
-                  label="Set Reminders"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/progress-vault"
-                  icon={<LucideSignalHigh size={20} />}
-                  label="Log 1% Progress"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/miracle-log"
-                  icon={<WandSparklesIcon size={20} />}
-                  label="Log Miracles"
-                  onLinkClick={toggleSidebar}
-                />
-                <NavItem
-                  href="/dashboard/challenge?tab=join"
-                  icon={<Swords size={20} />}
-                  label="Join Challenges"
-                  onLinkClick={toggleSidebar}
-                />
-                <NavItem
-                  href="/dashboard/mini-mastery-programs"
-                  icon={<GraduationCap size={20} />}
-                  label="Join Mini Mastery Programs"
-                  onLinkClick={toggleSidebar}
-                />
-                <NavItem
-                  href="/dashboard/events"
-                  icon={<Calendar size={20} />}
-                  label="Join Events"
-                  onLinkClick={toggleSidebar}
-                />
-                <div className="flex items-center ">
-                  <Link href="/MTB-2026-the-complete-makeover-program">
-                    <span className="flex items-center gap-3 py-2 cursor-pointer text-[#6C7894] dark:text-slate-300 ">
-                      <Crown size={20} className="w-7" />
-                      2026 Complete Makeover Program
-                    </span>
-                  </Link>
-                </div>
-                <NavItem
-                  href="/dashboard/store"
-                  icon={<ShoppingCartIcon size={20} />}
-                  label="Growth Store"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/accountability/home?view=true"
-                  icon={<LayoutDashboard size={20} />}
-                  label="View Groups"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-              </NavSection>
               {/* Settings Section */}
               {(session.data?.user.userType == "COACH" ||
                 session.data?.user.userType == "SOLOPRENEUR") && (
@@ -408,6 +332,82 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                   </ComingSoonWrapper> */}
                 </NavSection>
               )}
+              <NavSection title="Features">
+                <NavItem
+                  href={`/dashboard/complete-makeover-program/onboarding?planId=${cmpPlan?.id}`}
+                  icon={<Compass size={20} />}
+                  label="Life Blueprint"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
+                <NavItem
+                  href="/dashboard/aligned-actions"
+                  icon={<TrendingUp size={20} />}
+                  label="Set Today's Focus"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
+                <NavItem
+                  href="/dashboard/daily-bloom"
+                  icon={<Flower size={20} />}
+                  label="Plan The Day"
+                  onLinkClick={toggleSidebar}
+                />
+                <NavItem
+                  href="/dashboard/reminders"
+                  icon={<BellRing />}
+                  label="Set Reminders"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
+                <NavItem
+                  href="/dashboard/progress-vault"
+                  icon={<LucideSignalHigh size={20} />}
+                  label="Log 1% Progress"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
+                <NavItem
+                  href="/dashboard/miracle-log"
+                  icon={<WandSparklesIcon size={20} />}
+                  label="Log Miracles"
+                  onLinkClick={toggleSidebar}
+                />
+                <NavItem
+                  href="/dashboard/challenge?tab=join"
+                  icon={<Swords size={20} />}
+                  label="Join Challenges"
+                  onLinkClick={toggleSidebar}
+                />
+                <NavItem
+                  href="/dashboard/mini-mastery-programs"
+                  icon={<GraduationCap size={20} />}
+                  label="Join Mini Mastery Programs"
+                  onLinkClick={toggleSidebar}
+                />
+                <NavItem
+                  href="/dashboard/events"
+                  icon={<Calendar size={20} />}
+                  label="Join Events"
+                  onLinkClick={toggleSidebar}
+                />
+                <div className="flex items-center ">
+                  <Link href="/MTB-2026-the-complete-makeover-program">
+                    <span className="flex items-center gap-3 py-2 cursor-pointer text-[#6C7894] dark:text-slate-300 ">
+                      <Crown size={20} className="w-7" />
+                      2026 Complete Makeover Program
+                    </span>
+                  </Link>
+                </div>
+                <NavItem
+                  href="/dashboard/store"
+                  icon={<ShoppingCartIcon size={20} />}
+                  label="Growth Store"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
+                <NavItem
+                  href="/dashboard/accountability/home?view=true"
+                  icon={<LayoutDashboard size={20} />}
+                  label="View Groups"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
+              </NavSection>
             </div>
           </div>
         </aside>
