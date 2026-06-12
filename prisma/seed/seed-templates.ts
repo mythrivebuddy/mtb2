@@ -2023,7 +2023,7 @@ async function main() {
     <p style="margin:6px 0 0;color:#4b5563;">Someone signed up for your event</p>
   </div>
   <div style="padding:28px;">
-    <p style="font-size:15px;color:#374151;">Hi <strong>{{username}}</strong>,</p>
+    <p style="font-size:15px;color:#374151;">Hi <strong>{{creatorName}}</strong>,</p>
     <p style="color:#4b5563;"><strong>{{username}}</strong> registered for:</p>
     <h2 style="margin:8px 0 20px;color:#111827;">{{programName}}</h2>
 

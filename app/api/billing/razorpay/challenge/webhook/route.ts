@@ -148,6 +148,7 @@ export async function POST(req: NextRequest) {
               seId: existingOrder.userId,
               isFree: false, // paid flow
               entityType: existingOrder.contextType,
+              entityId:existingOrder.contextType === "CHALLENGE" ? existingOrder.challengeId : existingOrder.contextType === "HOSTED_EVENT"? existingOrder.hostedEventId : existingOrder.contextType === "MMP_PROGRAM"? existingOrder.programId : ""
             },
           });
         

@@ -14,7 +14,7 @@
     "migrate": "npx prisma migrate deploy",
     "seed": "tsx prisma/seed/seed-activity.ts && tsx prisma/seed/seed-magic-box-settings.ts && tsx prisma/seed/seed-templates.ts && tsx prisma/seed/seed-new-subscription-plans.ts && tsx prisma/seed/seed-programs.ts && tsx prisma/seed/makover-program/index.ts && tsx prisma/seed/seed-notification.ts && tsx prisma/seed/seed-features-of-feature-controls.ts",
     "postbuild": "npm run migrate && npm run seed",
-    "pnseed":"tsx prisma/seed/seed-features-of-feature-controls.ts"
+    "pnseed": "tsx prisma/seed/seed-features-of-feature-controls.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
@@ -215,6 +215,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
     "i": "^0.3.7",
+    "inngest-cli": "^1.27.0",
     "jest": "^30.1.3",
     "jest-environment-jsdom": "^30.1.2",
     "minimatch": "^10.0.3",
