@@ -1198,6 +1198,7 @@ export const notifyStakeholders = inngest.createFunction(
             templateId: templates.creator,
             templateData: {
               username: user.name,
+              creatorName:creator.name,
               [nameKey]: entityName,
               [urlKey]: redirectUrl,
               showEarnings: creator.id !== admin?.id,

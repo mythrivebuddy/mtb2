@@ -56,7 +56,7 @@ type RouteContext = { params: Promise<{ id: string }> };
   address: string | null;
   travelInstructions: string | null;
   meetingLink: string | null;
-  startTime: string;
+  startTime: string | null;
   endTime: string | null;
   timeZone: string | null;
   isPaid: boolean;
@@ -167,7 +167,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     const response: GetEventDetailResponse = {
       event: {
         ...event,
-        startTime: event.startTime.toISOString(),
+        startTime: event?.startTime?.toISOString() ?? null,
         endTime: event.endTime?.toISOString() ?? null,
         ticket,
         agendaSlots: event.agendaSlots,

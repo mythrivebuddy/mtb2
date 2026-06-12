@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { theme } from "@/lib/new-home/theme/theme"; // Adjust path as needed
+import { theme } from "@/lib/new-home/theme/theme";
 import { Plus, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -11,35 +11,12 @@ import PageSkeleton from "@/components/PageSkeleton";
 import { getGreetingData } from "@/lib/utils/utils";
 import Link from "next/link";
 import Share from "@/components/common/ShareModal";
+import { HostedEventDashboardData } from "@/types/client/events";
 
-// 1. DEFINE TYPES MATCED TO THE API PAYLOAD
-interface DashboardStats {
-  totalRevenue: string;
-  activeRegistrations: number;
-  upcomingEventsCount: number;
-  averageRating: string;
-}
-
-interface ActiveEvent {
-  id: string;
-  title: string;
-  date: string;
-  progress: number;
-  total: number;
-  badge: string;
-  badgeLight: boolean;
-  imgSrc: string;
-}
-
-interface DashboardData {
-  stats: DashboardStats;
-  activeEvents: ActiveEvent[];
-    pastEvents: ActiveEvent[]; 
-}
 
 export default function CoachDashboard() {
 
-  const { data, isLoading, isError } = useQuery<DashboardData>({
+  const { data, isLoading, isError } = useQuery<HostedEventDashboardData>({
     queryKey: ["events"],
     queryFn: async () => {
       const res = await axios.get("/api/hosted-events/me");
