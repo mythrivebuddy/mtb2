@@ -12,7 +12,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import { HostedEventResponse } from "@/types/client/events";
+import {
+  HostedActiveEvent,
+  HostedEventDashboardData,
+  HostedEventResponse,
+} from "@/types/client/events";
 import Image from "next/image";
 import UpgradeMessageModal from "@/components/common/UpgradeMessageModal";
 
@@ -84,22 +88,18 @@ const step1Schema = z
   });
 
 type Step1Form = z.infer<typeof step1Schema>;
+const DRAFT_STORAGE_KEY = "create-event-step1-draft";
 
 export default function Step1({
   onNext,
   setIsLoading,
   eventData,
   eventId,
-  isDraft,
-  setIsDraft,
-  setIsDraftLoading,
 }: {
   onNext: () => void;
   setIsLoading: (loading: boolean) => void;
   eventData?: HostedEventResponse;
   eventId?: string | undefined | null;
-  isDraft?: boolean;
-  setIsDraft?: (v: boolean) => void;
   setIsDraftLoading?: (v: boolean) => void;
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -118,9 +118,9 @@ export default function Step1({
   const queryClient = useQueryClient();
 
   const [modalContent, setModalContent] = useState<{
-  title: string;
-  message: string;
-} | null>(null);
+    title: string;
+    message: string;
+  } | null>(null);
 
   const fieldRefs: Record<
     keyof Step1Form,
@@ -141,6 +141,7 @@ export default function Step1({
     trigger,
     reset,
     watch,
+    getValues,
     formState: { errors },
   } = useForm<Step1Form>({
     resolver: zodResolver(step1Schema),
@@ -155,6 +156,31 @@ export default function Step1({
   const descriptionValue = watch("description");
   const ticketValue = watch("ticket");
   const data = eventData;
+
+  useEffect(() => {
+    if (eventData?.event) return; // DB data takes priority
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      reset({
+        title: saved.title ?? "",
+        description: saved.description ?? "",
+        type: saved.type ?? "",
+        isPaid: saved.isPaid ?? true,
+        ticket: saved.ticket ?? { price: 0, quantity: 0, currency: "INR" },
+        coverImage: undefined,
+      });
+      if (saved.type) {
+        const formatted =
+          saved.type.charAt(0) + saved.type.slice(1).toLowerCase();
+        setActiveCategory(formatted);
+      }
+      if (saved.isPaid === false) setEventType("FREE");
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (data?.event) {
       reset({
@@ -189,13 +215,9 @@ export default function Step1({
     register("ticket");
     register("coverImage");
   }, [register]);
-
-  /* ---------------- MUTATION ---------------- */
-
   const createDraft = useMutation({
     mutationFn: async (data: FormData) => {
-      if (isDraft) setIsDraftLoading?.(true);
-      else setIsLoading(true);
+      setIsLoading(true);
       const res = await axios.post("/api/hosted-events/draft", data);
       return res.data;
     },
@@ -204,9 +226,164 @@ export default function Step1({
     },
     onSettled: () => {
       setIsLoading(false);
-      setIsDraftLoading?.(false);
     },
   });
+  const buildFormData = (data: Step1Form): FormData => {
+    const formData = new FormData();
+    const activeEventId =
+      eventId || localStorage.getItem("create-event-draft-id") || "";
+    formData.append("eventId", activeEventId || "");
+    formData.append("title", data.title);
+    if (data.description) formData.append("description", data.description);
+    formData.append("type", data.type);
+    formData.append("isPaid", String(data.isPaid));
+    if (data.ticket) {
+      formData.append(
+        "ticket",
+        JSON.stringify({
+          ...data.ticket,
+          currency: data.isPaid ? data.ticket.currency : null,
+          price: data.isPaid ? data.ticket.price : 0,
+        }),
+      );
+    }
+    if (data.coverImage instanceof File) {
+      formData.append("coverImage", data.coverImage);
+    }
+    return formData;
+  };
+  const handleBackRequest = async () => {
+    const values = getValues();
+    const anyContent = !!(
+      values.title?.trim() ||
+      values.description?.trim() ||
+      values.type ||
+      values.ticket?.price ||
+      values.ticket?.quantity
+    );
+
+    if (!anyContent) {
+      router.back();
+      return;
+    }
+
+    const isFullyFilled = !!(
+      values.title?.trim() &&
+      values.description?.trim() &&
+      values.type &&
+      values.coverImage &&
+      values.ticket?.quantity &&
+      (values.isPaid ? values.ticket?.price : true)
+    );
+
+    if (isFullyFilled) {
+      // fire-and-forget — don't await, don't setIsLoading
+      buildFormData(values);
+      axios
+        .post("/api/hosted-events/draft", buildFormData(values))
+        .then((res) => {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+          localStorage.setItem("create-event-draft-id", res.data.event.id);
+
+          const newEvent = res.data.event;
+          const newTicket = res.data.ticket;
+
+          const formattedDate = newEvent.startTime
+            ? new Date(newEvent.startTime).toLocaleDateString("en-US", {
+                month: "short",
+                day: "2-digit",
+              })
+            : null;
+
+          // 2. Format the Location (handles in-person vs online)
+          let locationString = null;
+          if (newEvent.format === "IN_PERSON") {
+            locationString = newEvent.address || newEvent.venueName;
+          } else if (newEvent.format === "ONLINE") {
+            locationString = "Online";
+          }
+
+          // 3. Combine them safely without dangling bullets
+          const dateLocationString = [formattedDate, locationString]
+            .filter(Boolean)
+            .join(" • ");
+
+          queryClient.setQueryData(
+            ["events"],
+            (old: HostedEventDashboardData | undefined) => {
+              if (!old) return old;
+
+              const mapped: HostedActiveEvent = {
+                id: newEvent.id,
+                title: newEvent.title,
+                date: dateLocationString,
+                progress: 0,
+                total: newTicket?.quantity ?? 0,
+                badge: newEvent.status,
+                badgeLight: newEvent.status === "DRAFT",
+                imgSrc: newEvent.coverImage ?? "",
+              };
+
+              const existsInActive = old.activeEvents?.some(
+                (e) => e.id === newEvent.id,
+              );
+              const existsInPast = old.pastEvents?.some(
+                (e) => e.id === newEvent.id,
+              );
+
+              return {
+                ...old,
+                activeEvents: existsInActive
+                  ? old.activeEvents.map((e) =>
+                      e.id === newEvent.id ? mapped : e,
+                    )
+                  : [mapped, ...(old.activeEvents ?? [])],
+                // Remove from pastEvents if it was there (e.g. re-editing a past draft)
+                pastEvents: existsInPast
+                  ? old.pastEvents.filter((e) => e.id !== newEvent.id)
+                  : (old.pastEvents ?? []),
+              };
+            },
+          );
+        })
+        .catch(console.error);
+      router.back(); // navigate immediately
+      return;
+    } else {
+      try {
+        localStorage.setItem(
+          DRAFT_STORAGE_KEY,
+          JSON.stringify({
+            title: values.title,
+            description: values.description,
+            type: values.type,
+            isPaid: values.isPaid,
+            ticket: values.ticket,
+          }),
+        );
+      } catch {}
+      router.back();
+    }
+  };
+  const handleBackRequestRef = useRef(handleBackRequest);
+  useEffect(() => {
+    handleBackRequestRef.current = handleBackRequest;
+  }, []);
+  useEffect(() => {
+    if (eventId) {
+      localStorage.setItem("create-event-draft-id", eventId);
+    }
+  }, [eventId]);
+  useEffect(() => {
+    const form = document.getElementById("step1-form");
+    if (!form) return;
+    const listener = (e: Event) => {
+      e.stopPropagation();
+      handleBackRequestRef.current(); // ← always latest
+    };
+    form.addEventListener("back-request", listener);
+    return () => form.removeEventListener("back-request", listener);
+  }, []);
 
   /* ---------------- SUBMIT ---------------- */
 
@@ -214,7 +391,9 @@ export default function Step1({
   const onSubmit = async (data: Step1Form) => {
     try {
       const formData = new FormData();
-      formData.append("eventId", eventId || "");
+      const activeEventId =
+        eventId || localStorage.getItem("create-event-draft-id") || "";
+      formData.append("eventId", activeEventId);
       formData.append("title", data.title);
       if (data.description) formData.append("description", data.description);
       formData.append("type", data.type);
@@ -249,26 +428,22 @@ export default function Step1({
         coverImage: res.event.coverImage,
       });
 
-      if (isDraft) {
-        toast.success("Event saved as Draft");
-        setIsDraft?.(false);
-        router.push(`/dashboard/events/coach`);
-        return;
-      }
       toast.success("Step 1 saved");
+      localStorage.setItem("create-event-draft-id", res.event.id);
       router.replace(`?eventId=${res.event.id}`, { scroll: false });
       onNext();
     } catch (err) {
-  console.error("❌ Error in onSubmit:", err);
-  if (axios.isAxiosError(err) && err.response?.status === 403) {
-    setModalContent({
-      title: "Upgrade Required",
-      message: err.response.data?.message || "You've reached your plan limit.",
-    });
-  } else {
-    toast.error(getAxiosErrorMessage(err));
-  }
-}
+      console.error("❌ Error in onSubmit:", err);
+      if (axios.isAxiosError(err) && err.response?.status === 403) {
+        setModalContent({
+          title: "Upgrade Required",
+          message:
+            err.response.data?.message || "You've reached your plan limit.",
+        });
+      } else {
+        toast.error(getAxiosErrorMessage(err));
+      }
+    }
   };
   const mapToEnum = (type: string) => {
     return type.toUpperCase().replace(/-/g, "_");
@@ -593,12 +768,12 @@ export default function Step1({
         </form>
       </main>
       <UpgradeMessageModal
-  isOpen={!!modalContent}
-  onClose={() => setModalContent(null)}
-  title={modalContent?.title ?? ""}
-  message={modalContent?.message ?? ""}
-  redirectToPricingUrl="/pricing?ref=create-event"
-/>
+        isOpen={!!modalContent}
+        onClose={() => setModalContent(null)}
+        title={modalContent?.title ?? ""}
+        message={modalContent?.message ?? ""}
+        redirectToPricingUrl="/pricing?ref=create-event"
+      />
     </div>
   );
 }

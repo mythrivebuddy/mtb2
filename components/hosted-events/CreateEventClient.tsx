@@ -39,6 +39,13 @@ export default function CreateEventClient() {
   };
 
   const topRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (eventId) return; // already has an id in URL, do nothing
+    const savedId = localStorage.getItem("create-event-draft-id");
+    if (savedId) {
+      router.replace(`?eventId=${savedId}`, { scroll: false });
+    }
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -50,6 +57,7 @@ export default function CreateEventClient() {
 
     return () => clearTimeout(timeout);
   }, [step]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <div ref={topRef} />
@@ -126,9 +134,6 @@ export default function CreateEventClient() {
             setIsLoading={setIsLoading}
             eventData={data}
             eventId={eventId}
-            isDraft={isDraft}
-            setIsDraft={setIsDraft}
-            setIsDraftLoading={setIsDraftLoading}
           />
         )}
         {step === 2 && (
@@ -139,7 +144,7 @@ export default function CreateEventClient() {
             eventId={eventId}
             isDraft={isDraft}
             setIsDraft={setIsDraft}
-                    setIsDraftLoading={setIsDraftLoading}
+            setIsDraftLoading={setIsDraftLoading}
           />
         )}
         {step === 3 && (
@@ -150,7 +155,7 @@ export default function CreateEventClient() {
             eventId={eventId}
             isDraft={isDraft}
             setIsDraft={setIsDraft}
-                    setIsDraftLoading={setIsDraftLoading}
+            setIsDraftLoading={setIsDraftLoading}
           />
         )}
         {step === 4 && (
@@ -161,7 +166,7 @@ export default function CreateEventClient() {
             eventId={eventId}
             isDraft={isDraft}
             setIsDraft={setIsDraft}
-                    setIsDraftLoading={setIsDraftLoading}
+            setIsDraftLoading={setIsDraftLoading}
           />
         )}
       </div>
@@ -172,20 +177,22 @@ export default function CreateEventClient() {
           {/* Left */}
           <button
             type="button"
-              disabled={isDraftLoading || isLoading}
+            disabled={isLoading}
             onClick={() => {
-              setIsDraft(true);
-              
-              // Trigger the current step's form submission
-              document
-                .getElementById(`step${step}-form`)
-                ?.dispatchEvent(
-                  new Event("submit", { cancelable: true, bubbles: true }),
-                );
+              if (step === 1) {
+                document
+                  .getElementById("step1-form")
+                  ?.dispatchEvent(
+                    new CustomEvent("back-request", { bubbles: true }),
+                  );
+              } else {
+                prevStep();
+              }
             }}
-            className={`px-4 sm:px-8 py-3 rounded-full border ${theme.borderAccent} ${theme.textAccent} text-sm font-medium hover:opacity-80 transition-all`}
+            className={`px-4 sm:px-6 flex items-center gap-2 py-3 rounded-full border ${theme.borderAccent} ${theme.textAccent} text-sm font-medium hover:opacity-80 transition-all`}
           >
-           {isDraftLoading ? "Saving..." : "Save as Draft"}
+            <ArrowLeft className="w-4 h-4" />
+            Back
           </button>
 
           {/* Right */}
@@ -198,7 +205,7 @@ export default function CreateEventClient() {
               // onClick={nextStep}
               form={`step${step}-form`}
               disabled={isLoading || isDraftLoading}
-              className={`px-8 py-3 rounded-full ${theme.buttonDark} text-sm font-medium shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center gap-2`}
+              className={`px-6 py-3 rounded-full ${theme.buttonDark} text-sm font-medium shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center gap-2`}
             >
               {isLoading ? "Saving..." : "Continue"}
               <ArrowRight className="w-4 h-4" />

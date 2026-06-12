@@ -127,7 +127,6 @@ export async function POST(req: NextRequest) {
           description: description || null,
           type: type || HostedEventType.WORKSHOP,
           isPaid: isPaid ?? false,
-          startTime: new Date(),
           status: Status.DRAFT,
         },
       });
