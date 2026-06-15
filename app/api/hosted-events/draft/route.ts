@@ -12,6 +12,8 @@ import {
 import { LimitType } from "@/lib/access-control/featureConfig";
 import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { handleSupabaseFileReplace } from "@/lib/utils/supabase-image-upload";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 interface ParsedTicket {
   price: number;
@@ -65,6 +67,21 @@ export async function POST(req: NextRequest) {
     const isPaid = formData.get("isPaid") === "true";
 
     const coverImageFile = formData.get("coverImage") as File | null;
+
+    const resourceFile =
+      (formData.get("resources") as File) || (formData.get("resource") as File);
+
+    if (resourceFile && resourceFile.size > 0) {
+      const ext = resourceFile.name.split(".").pop()?.toLowerCase();
+
+      if (resourceFile.size > 25 * 1024 * 1024) {
+        throw new Error("File must be under 25MB");
+      }
+
+      if (!["pdf", "docx", "key"].includes(ext || "")) {
+        throw new Error("Invalid file type");
+      }
+    }
 
     let event;
 
@@ -153,6 +170,42 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // =========================================================
+    // 🔥 RESOURCE UPLOAD
+    // =========================================================
+    let resourceUrl: string | null = null;
+
+    if (resourceFile && resourceFile.size > 0) {
+      resourceUrl = await handleSupabaseFileReplace({
+        file: resourceFile,
+        bucket: "events",
+        folder: event.id,
+        fileName: "resource.pdf",
+        upsert: true,
+      });
+
+      event = await prisma.hostedEvent.update({
+        where: { id: event.id },
+        data: {
+          resources: resourceUrl,
+        },
+      });
+    }
+    const clearResources = formData.get("clearResources");
+
+    if (clearResources === "true") {
+      // 🔥 direct path (no parsing needed)
+      const filePath = `${event.id}/resource.pdf`;
+
+      await supabaseAdmin.storage.from("events").remove([filePath]);
+
+      event = await prisma.hostedEvent.update({
+        where: { id: event.id },
+        data: {
+          resources: null,
+        },
+      });
+    }
     // =========================================================
     // 🔥 SINGLE TICKET UPSERT
     // =========================================================

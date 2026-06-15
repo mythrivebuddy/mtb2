@@ -5,7 +5,6 @@ import {
   MapPin,
   Video,
   Compass,
-  Map,
   Monitor,
   CheckCircle2,
   Circle,
@@ -163,9 +162,9 @@ export default function Step2({
       toast.error(getAxiosErrorMessage(err));
     },
     onSettled: () => {
-  setIsLoading(false);
-  setIsDraftLoading?.(false);
-},
+      setIsLoading(false);
+      setIsDraftLoading?.(false);
+    },
   });
   const onSubmit = async (data: Step2Form) => {
     await updateStep2.mutateAsync(data);
@@ -207,7 +206,7 @@ export default function Step2({
           <section
             className={` bg-white p-8 rounded-xl shadow-sm border ${theme.borderLight}`}
           >
-            <h3 className={`${theme.typography.h1} text-2xl mb-6`}>
+            <h3 className={`${theme.typography.h1} text-2xl  lg:text-3xl mb-6`}>
               Choose your format
             </h3>
             <p className="text-base opacity-70 mb-8 max-w-2xl">
@@ -215,34 +214,37 @@ export default function Step2({
               of both? This helps us provide the right tools for your attendees.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {/* In-Person Card */}
               <button
                 type="button"
                 onClick={async () => {
                   setValue("format", "IN_PERSON", { shouldValidate: true });
-
                   await trigger();
                 }}
-                className={`flex flex-col items-center text-center p-6 border-2 rounded-xl transition-all group ${
+                className={`${theme.borderAccent} flex flex-row sm:flex-col items-center text-left sm:text-center p-5 sm:p-6 border-2 rounded-xl transition-all group gap-4 sm:gap-0 ${
                   format === "IN_PERSON"
-                    ? `${theme.borderAccent} bg-white shadow-md`
-                    : `${theme.borderLight} hover:border-gray-400`
+                    ? `bg-[var(--brand-deep)] text-[var(--ink-inverse)] border-transparent shadow-md`
+                    : ` hover:border-gray-400`
                 }`}
               >
                 <div
-                  className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${theme.bgSecondary}`}
+                  className={`w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full flex items-center justify-center sm:mb-4 transition-transform group-hover:scale-110 bg-[var(--surface-calm)]`}
                 >
                   <MapPin
-                    className={`w-8 h-8 ${format === "IN_PERSON" ? theme.textAccent : theme.textDark}`}
+                    className={`w-6 h-6 sm:w-8 sm:h-8 ${theme.textAccent}`}
                   />
                 </div>
-                <span className="text-xl font-medium mb-2 block">
-                  In-Person
-                </span>
-                <p className="text-xs opacity-70">
-                  Gather physically at a specific venue or outdoors.
-                </p>
+                <div className="flex flex-col">
+                  <span
+                    className={`${theme.typography.h1} text-lg md:text-xl lg:text-3xl font-medium mb-1 sm:mb-2 block`}
+                  >
+                    In-Person
+                  </span>
+                  <p className="text-sm sm:text-base opacity-70 leading-snug sm:leading-normal">
+                    Gather physically at a specific venue or outdoors.
+                  </p>
+                </div>
               </button>
 
               {/* Online Card */}
@@ -250,26 +252,31 @@ export default function Step2({
                 type="button"
                 onClick={async () => {
                   setValue("format", "ONLINE", { shouldValidate: true });
-
-                  await trigger(); //  forces validation refresh
+                  await trigger(); // forces validation refresh
                 }}
-                className={`flex flex-col items-center text-center p-6 border-2 rounded-xl transition-all group ${
+                className={`${theme.borderAccent} flex flex-row sm:flex-col items-center text-left sm:text-center p-5 sm:p-6 border-2 rounded-xl transition-all group gap-4 sm:gap-0 ${
                   format === "ONLINE"
-                    ? `${theme.borderAccent} bg-white shadow-md`
-                    : `${theme.borderLight} hover:border-gray-400`
+                    ? `bg-[var(--brand-deep)] text-[var(--ink-inverse)] border-transparent shadow-md`
+                    : ` hover:border-gray-400`
                 }`}
               >
                 <div
-                  className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${theme.bgSecondary}`}
+                  className={`w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full flex items-center justify-center sm:mb-4 transition-transform group-hover:scale-110 bg-[var(--surface-calm)]`}
                 >
                   <Video
-                    className={`w-8 h-8 ${format === "ONLINE" ? theme.textAccent : theme.textDark}`}
+                    className={`w-6 h-6 sm:w-8 sm:h-8 ${theme.textAccent}`}
                   />
                 </div>
-                <span className="text-xl font-medium mb-2 block">Online</span>
-                <p className="text-xs opacity-70">
-                  A digital experience via Zoom, Meet, or similar.
-                </p>
+                <div className="flex flex-col">
+                  <span
+                    className={`${theme.typography.h1} text-lg md:text-xl lg:text-3xl font-medium mb-1 sm:mb-2 block`}
+                  >
+                    Online
+                  </span>
+                  <p className="text-sm sm:text-base opacity-70 leading-snug sm:leading-normal">
+                    A digital experience via Zoom, Meet, or similar.
+                  </p>
+                </div>
               </button>
             </div>
           </section>
@@ -282,22 +289,27 @@ export default function Step2({
                 className={`flex-1 bg-white p-8 rounded-xl shadow-sm border-l-4 border-l-[var(--colors-primary)] border-y border-r ${theme.borderLight}`}
               >
                 <div className="flex items-center gap-3 mb-8">
-                  <Compass className={theme.textAccent} />
-                  <h3 className={`${theme.typography.h1} text-2xl`}>
+                  <Compass />
+                  <h3
+                    className={`${theme.typography.h1} text-2xl  lg:text-3xl`}
+                  >
                     In-Person Logistics
                   </h3>
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                   {/* Venue name */}
                   <div ref={fieldRefs.venueName} className="col-span-2">
-                    <label className="text-sm font-semibold mb-2 block">
-                      Venue Name
-                    </label>
-                    <input
-                      {...register("venueName")}
-                      placeholder="e.g. The Sanctuary at High Peaks"
-                      className={`w-full bg-transparent border-0 border-b ${theme.borderLight} focus:${theme.borderAccent} focus:ring-0 outline-none py-2 transition-all`}
-                    />
+                    <label className="text-base mb-2 block">Venue Name</label>
+                    <div
+                      className="flex items-center w-full bg-[transparent] border rounded-xl px-4 py-2
+                   border-[var(--brand-momentum)] transition-all"
+                    >
+                      <input
+                        {...register("venueName")}
+                        placeholder="e.g. The Sanctuary at High Peaks"
+                        className={`w-full bg-transparent appearance-none ${theme.borderLight} focus:${theme.borderAccent} focus:ring-0 outline-none  transition-all`}
+                      />
+                    </div>
                     {errors.venueName && (
                       <p className="text-red-500 text-xs mt-1">
                         {errors.venueName.message}
@@ -306,33 +318,34 @@ export default function Step2({
                   </div>
 
                   <div ref={fieldRefs.address} className="col-span-2">
-                    <label className="text-sm font-semibold mb-2 block">
-                      Full Address
-                    </label>
-                    <div className="relative">
-                      <Map className="absolute left-0 top-3 w-5 h-5 opacity-50" />
+                    <label className="text-base mb-2 block">Full Address</label>
+
+                    <div
+                      className="flex items-center w-full bg-[transparent] border rounded-xl px-4 py-2
+                   border-[var(--brand-momentum)] transition-all"
+                    >
                       <input
                         {...register("address")}
                         placeholder="Street, City, State, Zip"
-                        className={`w-full bg-transparent border-0 border-b ${theme.borderLight} focus:${theme.borderAccent} focus:ring-0 outline-none py-2 pl-8 transition-all`}
+                        className={`w-full bg-transparent appearance-none ${theme.borderLight} focus:${theme.borderAccent} focus:ring-0 outline-none  transition-all`}
                       />
-                      {errors.address && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errors.address.message}
-                        </p>
-                      )}
                     </div>
+                    {errors.address && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.address.message}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="col-span-2 mt-4">
-                    <label className="text-sm font-semibold mb-2 block">
+                  <div className="col-span-2">
+                    <label className="text-base mb-2 block">
                       Travel Instructions (Optional)
                     </label>
                     <textarea
                       {...register("travelInstructions")}
                       rows={3}
                       placeholder="Where to park, hidden entrances, or local transit tips..."
-                      className={`w-full border ${theme.borderLight} rounded-lg p-4 focus:ring-0 focus:${theme.borderAccent} } outline-none transition-all resize-none`}
+                      className={`w-full border border-[var(--brand-momentum)] appearance-none rounded-xl p-4 focus:ring-0 focus:${theme.borderAccent} outline-none transition-all resize-none`}
                     ></textarea>
                   </div>
                 </div>
@@ -345,8 +358,10 @@ export default function Step2({
                 className={`flex-1 bg-white p-8 rounded-xl shadow-sm border-l-4 border-l-gray-700 border-y border-r ${theme.borderLight}`}
               >
                 <div className="flex items-center gap-3 mb-8">
-                  <Monitor className="text-gray-700" />
-                  <h3 className={`${theme.typography.h1} text-2xl`}>
+                  <Monitor />
+                  <h3
+                    className={`${theme.typography.h1} text-2xl  lg:text-3xl`}
+                  >
                     Online Settings
                   </h3>
                 </div>
@@ -364,15 +379,21 @@ export default function Step2({
                   </div> */}
 
                   <div ref={fieldRefs.meetingLink} className="col-span-2">
-                    <label className="text-sm font-semibold mb-2 block">
+                    <label className="text-base mb-2 block">
                       Meeting Link / Invite URL
                     </label>
+                     <div
+                      className="flex items-center w-full bg-[transparent] border rounded-xl px-4 py-2
+                   border-[var(--brand-momentum)] transition-all"
+                    >
+
                     <input
                       type="url"
                       {...register("meetingLink")}
                       placeholder="https://zoom.us/j/..."
-                      className={`w-full bg-transparent border-0 border-b ${theme.borderLight} focus:${theme.borderAccent} focus:ring-0 outline-none py-3 transition-all`}
-                    />
+                      className={`w-full bg-transparent appearance-none ${theme.borderLight} focus:${theme.borderAccent} focus:ring-0 outline-none transition-all`}
+                      />
+                      </div>
                     {errors.meetingLink && (
                       <p className="text-red-500 text-xs mt-1">
                         {errors.meetingLink.message}
