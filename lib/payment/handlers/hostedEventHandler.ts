@@ -1,3 +1,4 @@
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 import { PaymentOrder, Prisma, Role } from "@prisma/client";
 
 type ProcessPaymentResult = {
@@ -120,66 +121,72 @@ export async function handleHostedEventPayment(
   // ---------------------------
   // 5. COMMISSION CONFIG
   // ---------------------------
-//   const feature = await tx.feature.findFirst({
-//     where: { key: "hostedEvents" }, // adjust key to match your Feature table
-//   });
 
-//   const creatorUserType = normalizeUserType(event.creator.userType);
-//   if (!creatorUserType) {
-//     return { isAdmin: false, allItemIds: [], adminItemIds: [] };
-//   }
+  const feature = await tx.feature.findFirst({
+    where: { key: "hostedEvents" },
+  });
 
-//   const featureConfig = await tx.featurePlanConfig.findFirst({
-//     where: {
-//       featureId: feature?.id,
-//       membership: event.creator.membership,
-//       userType: creatorUserType,
-//       isActive: true,
-//     },
-//   });
+  const creatorUserType = normalizeUserType(event.creator.userType);
+  if (!creatorUserType) {
+    return { isAdmin: false, allItemIds: [], adminItemIds: [] };
+  }
 
-//   const config = featureConfig?.config as {
-//     commissionPercent?: number;
-//   } | null;
+  const featureConfig = await tx.featurePlanConfig.findFirst({
+    where: {
+      featureId: feature?.id,
+      membership: event.creator.membership,
+      userType: creatorUserType,
+      isActive: true,
+    },
+  });
 
-//   const commissionPercent = Number(config?.commissionPercent ?? 0);
+  const config = featureConfig?.config as {
+    commissionPercent?: number | null;
+    canCreatePaidEvents?: boolean;
+  } | null;
 
-//   // ---------------------------
-//   // 6. FINANCIAL CALCULATION
-//   // ---------------------------
-//   const baseAmount = order.baseAmount ?? order.totalAmount;
-//   const discountAmount = order.discountApplied ?? 0;
-//   const netAmount = Math.max(0, baseAmount - discountAmount);
-//   const platformFee = (netAmount * commissionPercent) / 100;
-//   const earnedAmount = netAmount - platformFee;
+  // If paid events aren't enabled for this plan, no commission applies
+  const commissionPercent = config?.canCreatePaidEvents
+    ? Number(config?.commissionPercent ?? 0)
+    : 0;
 
-//   // ---------------------------
-//   // 7. LEDGER ENTRY (idempotent)
-//   // ---------------------------
-//   await tx.creatorEarningLedger.upsert({
-//     where: {
-//       paymentOrderId_contextId_contextType_currency: {
-//         paymentOrderId: order.id,
-//         contextId: eventId,
-//         contextType: "HOSTED_EVENT",
-//         currency: order.currency,
-//       },
-//     },
-//     update: {},
-//     create: {
-//       creatorId: event.creatorId,
-//       paymentOrderId: order.id,
-//       contextId: eventId,
-//       contextType: "HOSTED_EVENT",
-//       baseAmount,
-//       discountAmount,
-//       commissionRate: commissionPercent,
-//       platformFee,
-//       earnedAmount,
-//       currency: order.currency,
-//       status: "PENDING",
-//     },
-//   });
+  // ---------------------------
+  // 6. FINANCIAL CALCULATION
+  // ---------------------------
+  const baseAmount = order.baseAmount ?? order.totalAmount;
+  const discountAmount = order.discountApplied ?? 0;
+  const netAmount = Math.max(0, baseAmount - discountAmount);
+  const platformFee = (netAmount * commissionPercent) / 100;
+  const earnedAmount = netAmount - platformFee;
+
+  // ---------------------------
+  // 7. LEDGER ENTRY (idempotent)
+  // ---------------------------
+  await tx.creatorEarningLedger.upsert({
+    where: {
+      paymentOrderId_contextId_contextType_currency: {
+        paymentOrderId: order.id,
+        contextId: eventId,
+        contextType: "HOSTED_EVENT",
+        currency: order.currency,
+      },
+    },
+    update: {},
+    create: {
+      creatorId: event.creatorId!,
+      paymentOrderId: order.id,
+      contextId: eventId,
+      contextType: "HOSTED_EVENT",
+      baseAmount,
+      discountAmount,
+      commissionRate: commissionPercent,
+      platformFee,
+      earnedAmount,
+      currency: order.currency,
+      status: "PENDING",
+    },
+  });
+
 
   return {
     isAdmin: false,

@@ -2611,7 +2611,7 @@ model HostedEvent {
   meetingPlatform String?
 
   // Schedule
-  startTime   DateTime
+  startTime   DateTime?
   endTime     DateTime?
   timeZone   String?
 
@@ -2925,6 +2925,9 @@ enum NotificationType {
  MMP_PROGRAM_UPDATED_ADMIN
  STORE_ITEM_UPDATED_ADMIN
  HOSTED_EVENT_CREATED_ADMIN
+ HOSTED_EVENT_JOINED
+ HOSTED_EVENT_ENROLLMENT_CREATOR
+ HOSTED_EVENT_ENROLLMENT_ADMIN
 }
 
 enum BreathWorkType {

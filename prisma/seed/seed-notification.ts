@@ -558,6 +558,38 @@ const NOTIFICATION_SEEDS: {
     url: "/admin/manage-events?search={{hostedEventTitle}}",
     audiences: ["ADMIN"],
   },
+  // one notififcatoin for both paid and free events
+  {
+    type: NotificationType.HOSTED_EVENT_JOINED,
+    name: "Hosted Event Joined",
+    title: "You're in: {{entityName}} 🎉",
+    message:
+      "You’ve successfully joined {{entityName}}. You can now access all details. Tap to view.",
+    url: "/dashboard/events/{{entityId}}",
+    isDynamic: true,
+    audiences: ["USER"],
+  },
+
+  {
+    type: NotificationType.HOSTED_EVENT_ENROLLMENT_CREATOR,
+    name: "Hosted Event New Attendee",
+    title: "🎪 New Registration",
+    message:
+      "{{userName}} joined {{entityName}}",
+    url: "/dashboard/events/{{entityId}}",
+    isDynamic: true,
+    audiences: ["COACH"],
+  },
+  {
+    type: NotificationType.HOSTED_EVENT_ENROLLMENT_ADMIN,
+    name: "Admin: Hosted Event New Attendee",
+    title: "New Registration",
+    message:
+      "{{userName}} joined {{entityName}} of {{creatorName}}",
+    url: "/admin/manage-events?eventId={{entityId}}",
+    isDynamic: true,
+    audiences: ["ADMIN"],
+  },
 ];
 
 async function main() {

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { deductJp, assignJp } from "@/lib/utils/jp";
-import { ActivityType, ChallengeJoiningType } from "@prisma/client";
+import { ActivityType, ChallengeJoiningType, PaymentContextType } from "@prisma/client";
 import { sendMessageForJoining } from "@/lib/utils/system-message-for-joining";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
 import { checkFeature } from "@/lib/access-control/checkFeature";
@@ -252,7 +252,7 @@ export async function POST(request: Request) {
         data: {
           userId: joinerId,
           isFree: true,
-          entityType: "CHALLENGE",
+          entityType: PaymentContextType.CHALLENGE,
           entityId: challengeToJoin.id,
         },
       });

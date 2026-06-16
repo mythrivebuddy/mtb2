@@ -53,7 +53,7 @@ type NotifyEvent = {
   orderId?: string;
 
   // 🟢 Free
-  entityType?: "MMP" | "CHALLENGE" | "STORE";
+  entityType?: "MMP_PROGRAM" | "CHALLENGE" | "STORE_PRODUCT" | "HOSTED_EVENT";
   entityId?: string;
 
   isFree: boolean;
@@ -74,7 +74,7 @@ type PaidTemplateGroup = {
 };
 
 type TemplateMap = {
-  MMP: {
+  MMP_PROGRAM: {
     free: FreeTemplateGroup;
     paid: PaidTemplateGroup;
   };
@@ -82,7 +82,11 @@ type TemplateMap = {
     free: FreeTemplateGroup;
     paid: PaidTemplateGroup;
   };
-  STORE: {
+  STORE_PRODUCT: {
+    paid: PaidTemplateGroup;
+  };
+  HOSTED_EVENT: {
+    free: FreeTemplateGroup;
     paid: PaidTemplateGroup;
   };
 };
@@ -115,7 +119,7 @@ export const notifyStakeholders = inngest.createFunction(
        🔹 Resolve Entity
     ============================= */
 
-    let finalEntityType: "MMP" | "CHALLENGE" | "STORE";
+    let finalEntityType: "MMP_PROGRAM" | "CHALLENGE" | "STORE_PRODUCT" | "HOSTED_EVENT";
     let finalEntityId: string;
     let entityName: string;
     let creatorId: string | null = null;
@@ -142,7 +146,7 @@ export const notifyStakeholders = inngest.createFunction(
     if (!isFree) {
       // ✅ WALLET FLOW (NO paymentOrder)
       if (event.data.isWallet) {
-        finalEntityType = "STORE";
+        finalEntityType = "STORE_PRODUCT";
         finalEntityId = orderId!;
 
         const order = await prisma.order.findUnique({
@@ -220,6 +224,7 @@ export const notifyStakeholders = inngest.createFunction(
           select: {
             programId: true,
             challengeId: true,
+            hostedEventId: true,
             contextType: true,
           },
         });
@@ -238,7 +243,7 @@ export const notifyStakeholders = inngest.createFunction(
 
           if (!program) return;
 
-          finalEntityType = "MMP";
+          finalEntityType = "MMP_PROGRAM";
           finalEntityId = program.id;
           entityName = program.name;
           creatorId = program.creator?.id ?? null;
@@ -261,8 +266,26 @@ export const notifyStakeholders = inngest.createFunction(
           entityName = challenge.title;
           creatorId = challenge.creator?.id ?? null;
           redirectUrl = `${process.env.NEXT_URL}/dashboard/challenge/my-challenges/${challenge.id}`;
+          // After the challengeId block, before the else (store) block:
+        } else if (order.hostedEventId) {
+          const hostedEvent = await prisma.hostedEvent.findUnique({
+            where: { id: order.hostedEventId },
+            select: {
+              id: true,
+              title: true,
+              creator: { select: { id: true } },
+            },
+          });
+
+          if (!hostedEvent) return;
+
+          finalEntityType = "HOSTED_EVENT";
+          finalEntityId = hostedEvent.id;
+          entityName = hostedEvent.title;
+          creatorId = hostedEvent.creator?.id ?? null;
+          redirectUrl = `${process.env.NEXT_URL}/dashboard/events/${hostedEvent.id}`;
         } else {
-          finalEntityType = "STORE";
+          finalEntityType = "STORE_PRODUCT";
           finalEntityId = orderId!;
 
           const storeOrder = await prisma.paymentOrder.findUnique({
@@ -374,7 +397,7 @@ export const notifyStakeholders = inngest.createFunction(
       finalEntityType = entityType!;
       finalEntityId = entityId!;
 
-      if (entityType === "MMP") {
+      if (entityType === "MMP_PROGRAM") {
         const program = await prisma.program.findUnique({
           where: { id: entityId },
           select: {
@@ -388,6 +411,20 @@ export const notifyStakeholders = inngest.createFunction(
         entityName = program.name;
         creatorId = program.creator?.id ?? null;
         redirectUrl = `${process.env.NEXT_URL}/dashboard/mini-mastery-programs/program/${entityId}`;
+      } else if (entityType === "HOSTED_EVENT") {
+        const hostedEvent = await prisma.hostedEvent.findUnique({
+          where: { id: entityId },
+          select: {
+            title: true,
+            creator: { select: { id: true } },
+          },
+        });
+
+        if (!hostedEvent) return;
+
+        entityName = hostedEvent.title;
+        creatorId = hostedEvent.creator?.id ?? null;
+        redirectUrl = `${process.env.NEXT_URL}/dashboard/events/${entityId}`;
       } else {
         const challenge = await prisma.challenge.findUnique({
           where: { id: entityId },
@@ -444,7 +481,7 @@ export const notifyStakeholders = inngest.createFunction(
     let orderWithItems: OrderWithItems | null = null;
     let derivedDiscount = 0;
 
-    if (!isFree && orderId && finalEntityType === "STORE") {
+    if (!isFree && orderId && finalEntityType === "STORE_PRODUCT") {
       orderWithItems = await prisma.order.findUnique({
         where: { id: orderId },
         include: {
@@ -523,7 +560,7 @@ export const notifyStakeholders = inngest.createFunction(
         where: {
           id: {
             in:
-              finalEntityType === "STORE"
+              finalEntityType === "STORE_PRODUCT"
                 ? Array.from(creatorMap.keys())
                 : creatorId
                   ? [creatorId]
@@ -541,7 +578,7 @@ export const notifyStakeholders = inngest.createFunction(
     ]);
 
     const creator =
-      finalEntityType === "STORE"
+      finalEntityType === "STORE_PRODUCT"
         ? creators.length === 1
           ? creators[0]
           : null
@@ -603,7 +640,7 @@ export const notifyStakeholders = inngest.createFunction(
       });
     }
     let financials = null;
-    if (event.data.isWallet && finalEntityType === "STORE") {
+    if (event.data.isWallet && finalEntityType === "STORE_PRODUCT") {
       const totalPaid = event.data.walletAmount || 0;
       const discount = derivedDiscount;
       const baseAmount = totalPaid + discount;
@@ -621,7 +658,12 @@ export const notifyStakeholders = inngest.createFunction(
         platformEarning: "0.00",
       };
     }
-    if (!isFree && paymentData && finalEntityType !== "STORE") {
+    if (
+      !isFree &&
+      paymentData &&
+      finalEntityType !== "STORE_PRODUCT" &&
+      finalEntityType !== "HOSTED_EVENT"
+    ) {
       const baseAmount = paymentData.baseAmount ?? 0;
       const discount = paymentData.discountApplied ?? 0;
       const gst = paymentData.gstAmount ?? 0;
@@ -641,7 +683,7 @@ export const notifyStakeholders = inngest.createFunction(
           userType: creator.userType,
           membership: creator.membership,
         });
-      } else if (finalEntityType === "MMP") {
+      } else if (finalEntityType === "MMP_PROGRAM") {
         commissionPercent = await getCommissionPercent({
           feature: "miniMasteryPrograms",
           userType: creator.userType,
@@ -665,10 +707,42 @@ export const notifyStakeholders = inngest.createFunction(
         platformEarning: platformEarning.toFixed(2),
       };
     }
+    if (!isFree && finalEntityType === "HOSTED_EVENT" && orderId) {
+      const ledger = await prisma.creatorEarningLedger.findFirst({
+        where: {
+          paymentOrderId: orderId,
+          contextType: "HOSTED_EVENT",
+        },
+        select: {
+          baseAmount: true,
+          discountAmount: true,
+          commissionRate: true,
+          platformFee: true,
+          earnedAmount: true,
+        },
+      });
+
+      if (ledger) {
+        const netBase = Math.max(ledger.baseAmount - ledger.discountAmount, 0);
+        const gst = paymentData?.gstAmount ?? 0;
+        const discount = paymentData?.discountApplied ?? 0;
+        financials = {
+          baseAmount: ledger.baseAmount.toFixed(2),
+          discount: discount.toFixed(2),
+          netBase: netBase.toFixed(2),
+          gst: gst.toFixed(2), // ← real GST
+          totalPaid: (netBase + gst).toFixed(2), // ← netBase + GST = what user actually paid
+          commissionPercent: ledger.commissionRate,
+          platformFee: ledger.platformFee.toFixed(2),
+          creatorEarning: ledger.earnedAmount.toFixed(2),
+          platformEarning: ledger.platformFee.toFixed(2),
+        };
+      }
+    }
     if (
       !isFree &&
       paymentData &&
-      finalEntityType === "STORE" &&
+      finalEntityType === "STORE_PRODUCT" &&
       !event.data.isWallet &&
       creators.length === 1
     ) {
@@ -726,7 +800,7 @@ export const notifyStakeholders = inngest.createFunction(
     ============================= */
 
     const templateMap: TemplateMap = {
-      MMP: {
+      MMP_PROGRAM: {
         free: {
           user: "mmp-free-enrolled-user",
           creator: "mmp-free-enrolled-creator",
@@ -751,10 +825,22 @@ export const notifyStakeholders = inngest.createFunction(
         },
       },
 
-      STORE: {
+      STORE_PRODUCT: {
         paid: {
           creator: "store-order-seller",
           admin: "store-order-admin",
+        },
+      },
+      // ADD inside templateMap, after STORE:
+      HOSTED_EVENT: {
+        free: {
+          user: "hosted-event-enrolled-user",
+          creator: "hosted-event-enrolled-creator",
+          admin: "hosted-event-enrolled-admin",
+        },
+        paid: {
+          creator: "hosted-event-enrolled-creator",
+          admin: "hosted-event-enrolled-admin",
         },
       },
     };
@@ -765,8 +851,8 @@ export const notifyStakeholders = inngest.createFunction(
 
     let templates: FreeTemplateGroup | PaidTemplateGroup | undefined;
 
-    if (finalEntityType === "STORE") {
-      templates = templateMap.STORE.paid;
+    if (finalEntityType === "STORE_PRODUCT") {
+      templates = templateMap.STORE_PRODUCT.paid;
     } else {
       templates = isFree
         ? templateMap[finalEntityType].free
@@ -780,9 +866,10 @@ export const notifyStakeholders = inngest.createFunction(
     ============================= */
 
     const adminUrlMap = {
-      MMP: `/admin/manage-mini-mastery-program/students?programId=${finalEntityId}`,
+      MMP_PROGRAM: `/admin/manage-mini-mastery-program/students?programId=${finalEntityId}`,
       CHALLENGE: `/admin/manage-challenges/users?challengeId=${finalEntityId}`,
-      STORE: `/admin/store/orders`,
+      STORE_PRODUCT: `/admin/store/orders`,
+      HOSTED_EVENT: `/admin/manage-events?eventId=${finalEntityId}`,
     };
 
     const adminUrl = `${process.env.NEXT_URL}${adminUrlMap[finalEntityType]}`;
@@ -794,11 +881,13 @@ export const notifyStakeholders = inngest.createFunction(
     await step.run("push-joiner", async () => {
       try {
         const type =
-          finalEntityType === "STORE"
+          finalEntityType === "STORE_PRODUCT"
             ? "STORE_PURCHASE"
             : finalEntityType === "CHALLENGE"
               ? "CHALLENGE_JOINED"
-              : "MMP_JOINED";
+              : finalEntityType === "HOSTED_EVENT"
+                ? "HOSTED_EVENT_JOINED"
+                : "MMP_JOINED";
         await sendPushNotificationFromDBToUser({
           type,
           userId: user.id,
@@ -846,7 +935,7 @@ export const notifyStakeholders = inngest.createFunction(
         creatorEarning: number;
       }
     >();
-    if (finalEntityType === "STORE") {
+    if (finalEntityType === "STORE_PRODUCT") {
       for (const creator of creators) {
         if (creator.id === user.id) continue;
         const creatorItems = creatorMap.get(creator.id)?.items || [];
@@ -872,13 +961,19 @@ export const notifyStakeholders = inngest.createFunction(
           const type =
             finalEntityType === "CHALLENGE"
               ? "CHALLENGE_ENROLLMENT_CREATOR"
-              : "MMP_ENROLLMENT_CREATOR";
+              : finalEntityType === "HOSTED_EVENT"
+                ? "HOSTED_EVENT_ENROLLMENT_CREATOR"
+                : "MMP_ENROLLMENT_CREATOR";
+          const entityNameWithAmount =
+            !isFree && financials?.netBase
+              ? `${entityName} for ${currencySymbol}${financials.netBase}`
+              : entityName;
           await sendPushNotificationFromDBToUser({
             type,
             userId: creator.id,
             context: {
               userName: user?.name || "Someone",
-              entityName,
+              entityName: entityNameWithAmount,
               entityId: finalEntityId,
             },
           });
@@ -889,18 +984,25 @@ export const notifyStakeholders = inngest.createFunction(
     if (admin?.id && admin.id !== creator?.id && admin.id !== user.id) {
       await step.run("push-admin", async () => {
         const type =
-          finalEntityType === "STORE"
+          finalEntityType === "STORE_PRODUCT"
             ? "STORE_ORDER_ADMIN"
             : finalEntityType === "CHALLENGE"
               ? "CHALLENGE_ENROLLMENT_ADMIN"
-              : "MMP_ENROLLMENT_ADMIN";
+              : finalEntityType === "HOSTED_EVENT"
+                ? "HOSTED_EVENT_ENROLLMENT_ADMIN"
+                : "MMP_ENROLLMENT_ADMIN";
+        const entityNameWithAmount =
+          !isFree && financials?.netBase
+            ? `${entityName} for ${currencySymbol}${financials.netBase}`
+            : entityName;
         await sendPushNotificationFromDBToUser({
           type,
           userId: admin.id,
           context: {
             userName: user?.name || "Someone",
-            entityName,
+            entityName: entityNameWithAmount,
             entityId: finalEntityId,
+            creatorName: creator?.name || "Unknown",
           },
         });
       });
@@ -1002,7 +1104,7 @@ export const notifyStakeholders = inngest.createFunction(
     }
 
     // CREATOR
-    if (finalEntityType === "STORE") {
+    if (finalEntityType === "STORE_PRODUCT") {
       for (const creator of creators) {
         if (creator.id === user.id || !creator.email) continue;
         const creatorItems = creatorMap.get(creator.id)?.items || [];
@@ -1096,6 +1198,7 @@ export const notifyStakeholders = inngest.createFunction(
             templateId: templates.creator,
             templateData: {
               username: user.name,
+              creatorName:creator.name,
               [nameKey]: entityName,
               [urlKey]: redirectUrl,
               showEarnings: creator.id !== admin?.id,
@@ -1127,7 +1230,7 @@ export const notifyStakeholders = inngest.createFunction(
       creatorEarning: string;
     }> = [];
 
-    if (finalEntityType === "STORE" && creatorFinancialsMap.size > 0) {
+    if (finalEntityType === "STORE_PRODUCT" && creatorFinancialsMap.size > 0) {
       let totalOriginal = 0;
       let totalDiscount = 0;
       let totalNetBase = 0;
@@ -1214,7 +1317,7 @@ export const notifyStakeholders = inngest.createFunction(
             userEmail: maskEmail(user.email ?? ""),
             [nameKey]: entityName,
             creatorName:
-              finalEntityType === "STORE"
+              finalEntityType === "STORE_PRODUCT"
                 ? creators
                     .filter((c) => c.id !== admin?.id)
                     .map((c) => c.name)
@@ -1227,14 +1330,14 @@ export const notifyStakeholders = inngest.createFunction(
             showRevenueSplit: true,
 
             perProductBreakdown:
-              finalEntityType === "STORE" ? perProductBreakdown : [],
+              finalEntityType === "STORE_PRODUCT" ? perProductBreakdown : [],
             isMultiCreator:
-              finalEntityType === "STORE" && perProductBreakdown.length > 1,
+              finalEntityType === "STORE_PRODUCT" && perProductBreakdown.length > 1,
 
             ...commonChallengeData,
-            isStore: finalEntityType === "STORE",
+            isStore: finalEntityType === "STORE_PRODUCT",
             productName:
-              finalEntityType === "STORE"
+              finalEntityType === "STORE_PRODUCT"
                 ? entityFullNames || entityName
                 : null,
 

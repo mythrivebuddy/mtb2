@@ -6,6 +6,7 @@ import { convertCurrency } from "@/lib/payment/payment.utils";
 import { createRazorpayOrder } from "@/lib/payment/createRazorpayOrder";
 import { assignJp, deductJp } from "@/lib/utils/jp";
 import { inngest } from "@/lib/inngest";
+import { PaymentContextType } from "@prisma/client";
 
 type Currency = "INR" | "USD";
 
@@ -610,7 +611,7 @@ if (isInngestEnabled) {
       data: {
         userId: user.id,
         orderId: order.id,
-        entityType: "STORE",
+        entityType: PaymentContextType.STORE_PRODUCT,
         entityId: order.id,
         isFree: false,
         isWallet: true,
