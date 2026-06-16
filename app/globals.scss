@@ -49,23 +49,62 @@
     --chart-5: 27 87% 67%;
 
 /* New */
-  --bg-primary: #FFF7DD;
-  --bg-secondary: #FFFFFF;
-  --bg-tertiary:#FCFAF4;
-  --colors-primary: #432F1D;
-  --colors-secondary:#B1673D;
-  --highlight-bg: #B87042;
-  --highlight-text: #B87042;
-  --highlight-border: #B87042;
+    /* ===== SURFACES ===== */
+    --surface-warm: #FFF7DD;
+    --surface-base: #FFFFFF;
+    --surface-calm: #FCFAF4;
+    --surface-card: #FCF9F3;
+    --surface-cta: linear-gradient(to bottom right, #433428, #5A4535);
 
-  --text-dark: #2C251F;
-  --text-accent: #B87042;
-  
-  --border-light: #E6D9CA;
-  --border-accent: #B87042;
+    /* ===== TEXT ===== */
+    --ink-primary: #2C251F;
+    --ink-secondary: #5A5048;
+    --ink-accent: #B1673D;
 
-  --button-dark: #432E1D;
-  --button-dark-hover: #8B6240;
+    /* ===== BRAND ===== */
+    --brand-deep: #432E1D;
+    --brand-deep-hover: #8B6240;
+    --brand-warm: #FFA97A;
+    --brand-streak: #E77C53;
+    --brand-momentum: #B1673D;
+
+    /* ===== BORDER ===== */
+    --border-light: #E6D9CA;
+    --border-accent: #B1673D;
+    --border-stepper: #D2C4BB;
+
+    /* ===== EXTRA ===== */
+    --selection-bg: #B1673D;
+
+    --ink-black: #000000;
+    --ink-inverse: #FFFFFF;
+    --brand-cta-ink: #433428;
+    --border-muted: #D6C5B3;
+    --border-soft: #F5F5F4;
+    --surface-soft: #F5F5F4;
+    --surface-soft-hover: #FAFAF9;
+    --ink-muted: #78716C;
+    --ink-soft: #A8A29E;
+    --ink-label: #57534E;
+    --success-bg: #F0FDF4;
+    --success-ink: #15803D;
+    --avatar-blue: #BFDBFE;
+    --avatar-indigo: #C7D2FE;
+    --avatar-stone: #D6D3D1;
+    --avatar-rose: #FECDD3;
+
+    // --bg-primary: #FFF7DD;
+    // --bg-secondary: #FFFFFF;
+    // --bg-tertiary: #FCFAF4;
+    --highlight-bg: var(--ink-accent);
+    --highlight-text: var(--ink-accent);
+    --highlight-border: var(--border-accent);
+
+    --text-dark: var(--ink-primary);
+    --text-accent: var(--ink-accent);
+    
+    --button-dark: var(--brand-deep);
+    --button-dark-hover: var(--brand-deep-hover);
   }
 
   .dark {
@@ -361,4 +400,16 @@
   background-image: linear-gradient(135deg, rgba(0,0,0,0.2) 25%, transparent 25%, transparent 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2) 75%, transparent 75%, transparent);
   background-size: 4px 4px;
   opacity: 0.7;
+}
+
+
+/* Remove browser autofill blue/yellow background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+  box-shadow: 0 0 0px 1000px transparent inset !important;
+  -webkit-text-fill-color: inherit !important;
+  transition: background-color 5000s ease-in-out 0s;
 }

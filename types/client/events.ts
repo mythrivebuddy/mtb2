@@ -78,3 +78,26 @@ export type HostedEventResponse = {
   } | null;
 };
 
+export interface HostedActiveEvent {
+  id: string;
+  title: string;
+  date: string;
+  progress: number;
+  total: number;
+  badge: string;
+  badgeLight: boolean;
+  imgSrc: string;
+}
+
+export interface HostedEventDashboardStats {
+  totalRevenue: string;
+  activeRegistrations: number;
+  upcomingEventsCount: number;
+  averageRating: string;
+}
+
+export interface HostedEventDashboardData {
+  stats: HostedEventDashboardStats;
+  activeEvents: HostedActiveEvent[];
+  pastEvents: HostedActiveEvent[];
+}

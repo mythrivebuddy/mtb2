@@ -40,13 +40,15 @@ import { SuccessStoriesSection } from "@/components/home/sge-A/SuccessStoriesSec
 
 const Hero = () => (
   <section
-    className={`max-w-[1440px]  mx-auto px-4 sm:px-6 md:px-12 pt-12 pb-12 sm:pb-24 overflow-hidden`}
+    className={`${theme.layout.container} pt-12 pb-12 sm:pb-24 overflow-hidden`}
   >
     {/* from here  */}
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
       {/* Left Content */}
       <div className="space-y-4 sm:space-y-8 ">
-        <div className="inline-flex items-center gap-2 px-2 py-2.5 rounded-full border border-[#B87042] text-black text-xs  sm:tracking-widest uppercase shadow-[0px_0px_4px_rgba(255,255,255,1)]">
+        <div
+          className={`inline-flex items-center gap-2 px-2 py-2.5 rounded-full border ${theme.border.accent} ${theme.text.primary} text-xs sm:tracking-widest uppercase shadow-[0px_0px_4px_rgba(255,255,255,1)]`}
+        >
           {/* Sparkels icon */}
           <MtbSparklesIcon className="w-3 h-3 sm:w-4 sm:h-4" />
           <span
@@ -64,15 +66,17 @@ const Hero = () => (
           <span>Growth is easier when your</span>
           <br className="hidden sm:block" />
           {"  "}
-          <span className={`${cormorant.className} italic text-[#B87042] `}>
+          <span className={`${cormorant.className} italic ${theme.text.accent} `}>
             environment
           </span>{" "}
           supports it.
         </h1>
 
-        <p className="pt-1 sm:pt-0 text-[16px] sm:text-[24px] text-[#2C251F] leading-[1.4] ">
+        <p
+          className={`pt-1 sm:pt-0 text-[16px] sm:text-[24px] ${theme.text.primary} leading-[1.4] `}
+        >
           MTB is a growth environment that helps people struggling with{" "}
-          <span className="text-[#B87042]">
+          <span className={theme.text.accent}>
             focus, routines, burnout, and inconsistency
           </span>{" "}
           grow through guided structure, programs, daily actions,
@@ -82,14 +86,16 @@ const Hero = () => (
         <div className="flex flex-col sm:flex-row w-full text-[16px] items-center sm:items-stretch gap-4 pt-2">
           <button
             className={
-              theme.buttonDark +
+              theme.button.primary +
               ` flex items-center justify-center gap-2 w-full sm:w-auto lg:w-full px-6 lg:px-8 py-4 rounded-full font-medium transition-colors whitespace-nowrap`
             }
           >
             Start Your Journey <ArrowRight className="w-5 h-5" />
           </button>
 
-          <button className="flex items-center justify-center gap-2 w-full sm:w-auto lg:w-full px-6 lg:px-8 py-4 rounded-full font-medium bg-white text-[#2C251F] hover:bg-stone-50 transition-colors shadow-sm hover:shadow-lg whitespace-nowrap">
+          <button
+            className={`flex items-center justify-center gap-2 w-full sm:w-auto lg:w-full px-6 lg:px-8 py-4 rounded-full font-medium ${theme.bg.base} ${theme.text.primary} hover:bg-[var(--surface-soft-hover)] transition-colors shadow-sm hover:shadow-lg whitespace-nowrap`}
+          >
             <PlayCircle className="w-5 h-5" /> Explore Inside MTB
           </button>
         </div>
@@ -97,14 +103,14 @@ const Hero = () => (
         <div className="flex items-center gap-4 pt-2 sm:pt-6">
           <div className="flex -space-x-3">
             {[
-              "bg-blue-200",
-              "bg-indigo-200",
-              "bg-stone-300",
-              "bg-rose-200",
+              "bg-[var(--avatar-blue)]",
+              "bg-[var(--avatar-indigo)]",
+              "bg-[var(--avatar-stone)]",
+              "bg-[var(--avatar-rose)]",
             ].map((bg, i) => (
               <div
                 key={i}
-                className={`w-10 h-10 rounded-full border-2 border-[#FCF9F3] ${bg} overflow-hidden`}
+                className={`w-10 h-10 rounded-full border-2 border-[var(--surface-card)] ${bg} overflow-hidden`}
               >
                 <img
                   src={`https://i.pravatar.cc/100?img=${i + 10}`}
@@ -115,10 +121,10 @@ const Hero = () => (
             ))}
           </div>
           <div className="text-sm">
-            <div className="font-semibold text-[#2C251F]">
+            <div className={`font-semibold ${theme.text.primary}`}>
               Trusted by 500+ members
             </div>
-            <div className="text-[#5A5048]">
+            <div className={theme.text.secondary}>
               building healthier routines everyday
             </div>
           </div>
@@ -135,33 +141,35 @@ const Hero = () => (
         />
 
         {/* Floating Weekly Momentum Card */}
-        <div className="absolute -top-8 right-0 sm:-top-4 sm:-right-4 lg:-top-8 lg:-right-8 bg-white p-3 rounded-2xl shadow-xl border border-stone-100 w-[220px] sm:w-[250px] h-[141px] flex flex-col justify-between z-10">
+        <div
+          className={`absolute -top-8 right-0 sm:-top-4 sm:-right-4 lg:-top-8 lg:-right-8 ${theme.bg.base} p-3 rounded-2xl shadow-xl border ${theme.border.soft} w-[220px] sm:w-[250px] h-[141px] flex flex-col justify-between z-10`}
+        >
           {/* Top */}
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-[10px] text-[#2C251F]">
+            <span className={`font-semibold text-[10px] ${theme.text.primary}`}>
               Weekly momentum
             </span>
-            <span className="text-[9px] bg-stone-100 px-1.5 py-0.5 rounded text-stone-600">
+            <span className={`text-[9px] ${theme.bg.soft} px-1.5 py-0.5 rounded text-[var(--ink-label)]`}>
               This week v
             </span>
           </div>
 
           {/* Date */}
-          <div className="text-[9px] text-stone-500">Feb 12 - Feb 19</div>
+          <div className={`text-[9px] ${theme.text.secondary}`}>Feb 12 - Feb 19</div>
 
           {/* Chart */}
           <div className="flex items-end justify-between flex-1 px-1">
             {[40, 50, 55, 65, 70, 85, 95].map((h, i) => (
               <div
                 key={i}
-                className="w-2 bg-[#FFA97A] rounded-t-sm"
+                className={`w-2 ${theme.bg.warmAccent} rounded-t-sm`}
                 style={{ height: `${h}%` }}
               />
             ))}
           </div>
 
           {/* Days */}
-          <div className="flex justify-between text-[9px] text-stone-400 px-1">
+          <div className={`flex justify-between text-[9px] ${theme.text.soft} px-1`}>
             <span>M</span>
             <span>T</span>
             <span>W</span>
@@ -174,24 +182,26 @@ const Hero = () => (
           {/* Bottom */}
           <div className="flex justify-between items-end">
             <div>
-              <div className="text-sm font-semibold text-[#2C251F] leading-none">
+              <div className={`text-sm font-semibold ${theme.text.primary} leading-none`}>
                 83%
               </div>
-              <div className="text-[9px] text-stone-500 leading-none">
+              <div className={`text-[9px] ${theme.text.secondary} leading-none`}>
                 Consistency
               </div>
             </div>
 
-            <div className="text-[9px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-medium">
+            <div className="text-[9px] bg-[var(--success-bg)] text-[var(--success-ink)] px-1.5 py-0.5 rounded font-medium">
               +19%
             </div>
           </div>
         </div>
 
         {/* Floating Streak Card */}
-        <div className="absolute bottom-0 left-0 sm:bottom-6 sm:left-4 lg:left-8 bg-white p-4 rounded-2xl shadow-xl border border-stone-100 w-[220px] sm:w-[242px] h-[156px] flex flex-col justify-between select-none z-10">
+        <div
+          className={`absolute bottom-0 left-0 sm:bottom-6 sm:left-4 lg:left-8 ${theme.bg.base} p-4 rounded-2xl shadow-xl border ${theme.border.soft} w-[220px] sm:w-[242px] h-[156px] flex flex-col justify-between select-none z-10`}
+        >
           {/* Header */}
-          <div className="text-[13px] font-semibold text-[#2C251F] tracking-wide">
+          <div className={`text-[13px] font-semibold ${theme.text.primary} tracking-wide`}>
             Current streak
           </div>
 
@@ -199,15 +209,15 @@ const Hero = () => (
           <div className="flex items-center gap-4 pl-3">
             {/* Flame Icon */}
             <div className="flex items-center justify-center">
-              <Flame className="w-10 h-10 text-[#E77C53]" fill="#E77C53" />
+              <Flame className={`w-10 h-10 ${theme.icon.streak}`} fill="var(--brand-streak)" />
             </div>
 
             {/* Counter Numbers */}
             <div className="flex flex-col justify-center leading-none">
-              <div className="text-[38px] font-medium text-[#2C251F] tracking-tight h-[36px] flex items-center">
+              <div className={`text-[38px] font-medium ${theme.text.primary} tracking-tight h-[36px] flex items-center`}>
                 28
               </div>
-              <div className="text-[11px] text-[#2C251F] font-medium mt-1">
+              <div className={`text-[11px] ${theme.text.primary} font-medium mt-1`}>
                 days going
               </div>
             </div>
@@ -217,17 +227,17 @@ const Hero = () => (
           <div className="flex justify-between items-center px-0.5">
             {["M", "T", "W", "T", "F", "F", "S", "S"].map((day, i) => (
               <div key={i} className="flex flex-col items-center gap-1.5">
-                <span className="text-[10px] font-medium text-stone-500">
+                <span className={`text-[10px] font-medium ${theme.text.secondary}`}>
                   {day}
                 </span>
                 {i < 7 ? (
                   // Active Completed Days
-                  <div className="w-[15px] h-[15px] rounded-full bg-[#E77C53] flex items-center justify-center">
-                    <Check className="w-2.5 h-2.5 text-white stroke-[4]" />
+                  <div className="w-[15px] h-[15px] rounded-full bg-[var(--brand-streak)] flex items-center justify-center">
+                    <Check className="w-2.5 h-2.5 text-[var(--ink-inverse)] stroke-[4]" />
                   </div>
                 ) : (
                   // Incomplete Day (Last Circle)
-                  <div className="w-[15px] h-[15px] rounded-full border border-stone-400 bg-white"></div>
+                  <div className={`w-[15px] h-[15px] rounded-full border ${theme.border.soft} ${theme.bg.base}`}></div>
                 )}
               </div>
             ))}
@@ -237,7 +247,7 @@ const Hero = () => (
     </div>
 
     {/* Bottom Feature Bar */}
-    <div className="mt-[42px] bg-white border-2 border-[#B87042] rounded-2xl p-3 sm:p-6 md:p-8 flex justify-between gap-2 sm:gap-4 lg:gap-8">
+    <div className={`mt-[42px] ${theme.bg.base} border-2 ${theme.border.accent} rounded-2xl p-3 sm:p-6 md:p-8 flex justify-between gap-2 sm:gap-4 lg:gap-8`}>
       {[
         {
           title: "Structure routines",
@@ -265,17 +275,17 @@ const Hero = () => (
           className="flex flex-1 flex-col lg:flex-row items-center lg:items-start gap-1.5 sm:gap-3 lg:gap-4 text-center lg:text-left"
         >
           <div
-            className={`p-2 sm:p-3 bg-[#FCF9F3] rounded-full shrink-0 ${theme.highLightTextColor}`}
+            className={`p-2 sm:p-3 ${theme.bg.card} rounded-full shrink-0 ${theme.text.accent}`}
           >
             {React.cloneElement(feature.icon, {
               className: "w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7",
             })}
           </div>
           <div className="w-full flex flex-col items-center justify-center lg:block mt-1 sm:mt-2 lg:mt-0">
-            <h4 className="font-semibold text-[#2C251F] text-[9px] min-[375px]:text-[10px] sm:text-[12px] lg:text-sm leading-tight mb-1">
+            <h4 className={`font-semibold ${theme.text.primary} text-[9px] min-[375px]:text-[10px] sm:text-[12px] lg:text-sm leading-tight mb-1`}>
               {feature.title}
             </h4>
-            <p className="text-[11px] lg:text-xs hidden sm:block text-[#5A5048] leading-relaxed">
+            <p className={`text-[11px] lg:text-xs hidden sm:block ${theme.text.secondary} leading-relaxed`}>
               {feature.desc}
             </p>
           </div>
@@ -287,7 +297,7 @@ const Hero = () => (
 
 const ProblemSection = () => (
   <section
-    className={`py-24 px-4 sm:px-6 md:px-12 max-w-[1440px] mx-auto ${theme.bgSecondary}`}
+    className={`py-24 ${theme.layout.container} ${theme.bg.base}`}
   >
     <SectionHeading
       eyebrow="The Real Problem"
@@ -321,22 +331,22 @@ const ProblemSection = () => (
       ].map((card, i) => (
         <div
           key={i}
-          className={`bg-white border ${theme.hightLightBorderColor} rounded-2xl sm:rounded-[2rem] py-5 sm:py-8 px-3 sm:px-6 xl:px-12 text-center flex flex-col items-center`}
+          className={`${theme.card.problem} sm:rounded-[2rem] py-5 sm:py-8 px-3 sm:px-6 xl:px-12`}
         >
           <div
-            className={`w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-full bg-[#FCFAF4] border-2 border-[#E6D9CA] flex items-center justify-center ${theme.highLightTextColor} mb-3 sm:mb-6`}
+            className={`w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-full ${theme.bg.calm} border-2 ${theme.border.light} flex items-center justify-center ${theme.text.accent} mb-3 sm:mb-6`}
           >
             {React.cloneElement(card.icon, {
               className: "w-5 h-5 sm:w-8 sm:h-8 stroke-2",
             })}
           </div>
           <h3
-            className={`${cormorant.className} font-bold text-[14px] min-[375px]:text-[16px] sm:text-[22px] md:text-2xl text-black mb-2 sm:mb-3 min-h-[2.5rem] sm:min-h-[3.5rem] md:min-h-[4rem] flex items-center justify-center leading-tight`}
+            className={`${cormorant.className} font-bold text-[14px] min-[375px]:text-[16px] sm:text-[22px] md:text-2xl ${theme.text.primary} mb-2 sm:mb-3 min-h-[2.5rem] sm:min-h-[3.5rem] md:min-h-[4rem] flex items-center justify-center leading-tight`}
           >
             {card.title}
           </h3>
-          <div className="w-6 sm:w-8 h-px shrink-0 bg-[#2C251F] mb-3 sm:mb-5"></div>
-          <p className="text-[11px] sm:text-sm text-black leading-relaxed">
+          <div className="w-6 sm:w-8 h-px shrink-0 bg-[var(--border-light)] mb-3 sm:mb-5"></div>
+          <p className={`text-[11px] sm:text-sm ${theme.text.primary} leading-relaxed`}>
             {card.desc}
           </p>
         </div>
@@ -344,27 +354,25 @@ const ProblemSection = () => (
     </div>
 
     <div
-      className={`bg-white text-[16px] border ${theme.hightLightBorderColor} rounded-2xl px-5 sm:px-8 lg:px-12 xl:px-24 py-5 md:py-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8`}
+      className={`${theme.bg.base} text-[16px] border ${theme.border.accent} rounded-2xl px-5 sm:px-8 lg:px-12 xl:px-24 py-5 md:py-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8`}
     >
       <div className="flex items-center gap-7 sm:pl-4">
-        <div className="w-12 h-12 bg-[#FCF9F3] rounded-full flex items-center justify-center text-[#B87042]">
+        <div className={`w-12 h-12 ${theme.bg.card} rounded-full flex items-center justify-center ${theme.text.accent}`}>
           <img src="/new-home-assets/Leaf.svg" width={72} height={72} />
         </div>
         <div className="flex flex-col justify-center gap-2 leading-none">
-          <p className="font-medium text-[10px] sm:text-sm md:text-base  text-black">
+          <p className={`font-medium text-[10px] sm:text-sm md:text-base ${theme.text.primary}`}>
             You're not lazy. You're not bad with goals.
           </p>
           <p
-            className={`${cormorant.className} text-sm sm:text-base md:text-[24px] font-semibold ${theme.highLightTextColor}`}
+            className={`${cormorant.className} text-sm sm:text-base md:text-[24px] font-semibold ${theme.text.accent}`}
           >
             You just need the right environment.
           </p>
         </div>
       </div>
-      <div
-        className={`${theme.highLightBgColor} hidden md:block w-px md:h-16 shrink-0`}
-      ></div>
-      <p className="text-base hidden md:block text-[#5A5048] pr-4 max-w-sm leading-relaxed">
+      <div className={`${theme.bg.accent} hidden md:block w-px md:h-16 shrink-0`}></div>
+      <p className={`text-base hidden md:block ${theme.text.secondary} pr-4 max-w-sm leading-relaxed`}>
         MTB gives you the structure, accountability, and support to help you
         stay consistent and keep growing forward.
       </p>
@@ -374,7 +382,7 @@ const ProblemSection = () => (
 
 const FeatureSection = () => (
   <section
-    className={" py-14 sm:py-24 px-4 sm:px-6  md:px-12 max-w-[1440px] mx-auto"}
+    className={`${theme.layout.sectionY} ${theme.layout.container}`}
   >
     <SectionHeading
       eyebrow="What MTB Actually Does"
@@ -386,17 +394,12 @@ const FeatureSection = () => (
 
     <div className="grid md:grid-cols-6 gap-6 mt-2 mb-6 sm:mb-[72px]">
       {/* Row 1 */}
-      <div className="md:col-span-3 bg-white border border-[#B87042] rounded-[2rem] p-8 flex items-start gap-6">
-        <div
-          className={
-            theme.bgTertiary +
-            " w-14 h-14 shrink-0 rounded-full border border-[#E6D9CA] flex items-center justify-center text-[#B87042]"
-          }
-        >
+      <div className={`md:col-span-3 ${theme.card.feature}`}>
+        <div className={`${theme.icon.wrapper} shrink-0`}>
           <MtbCheckIcon className="w-8 h-8 stroke-1" />
         </div>
         <div>
-          <div className="text-[#B87042] text-xs sm:text-sm font-semibold mb-1">
+          <div className={`${theme.text.accent} text-xs sm:text-sm font-semibold mb-1`}>
             01
           </div>
           <h3
@@ -407,23 +410,18 @@ const FeatureSection = () => (
           >
             Stay accountable
           </h3>
-          <p className="text-sm  leading-relaxed">
+          <p className="text-sm leading-relaxed">
             Stay consistent with simple check-ins, reminders, and supportive
             accountability.
           </p>
         </div>
       </div>
-      <div className="md:col-span-3 bg-white border border-[#B87042] rounded-[2rem] p-8 flex items-start gap-6">
-        <div
-          className={
-            theme.bgTertiary +
-            " w-14 h-14 shrink-0 rounded-full border border-[#E6D9CA] flex items-center justify-center text-[#B87042]"
-          }
-        >
+      <div className={`md:col-span-3 ${theme.card.feature}`}>
+        <div className={`${theme.icon.wrapper} shrink-0`}>
           <MtbFlameIcon className="w-8 h-8 stroke-1" />
         </div>
         <div>
-          <div className="text-[#B87042] text-xs sm:text-sm font-semibold mb-2.5">
+          <div className={`${theme.text.accent} text-xs sm:text-sm font-semibold mb-2.5`}>
             02
           </div>
           <h3
@@ -434,7 +432,7 @@ const FeatureSection = () => (
           >
             Build consistency
           </h3>
-          <p className="text-sm  leading-relaxed">
+          <p className="text-sm leading-relaxed">
             Create small routines that are easy to follow and strong enough to
             last.
           </p>
@@ -442,21 +440,13 @@ const FeatureSection = () => (
       </div>
 
       {/* Row 2 */}
-      <div className="md:col-span-2 bg-white border border-[#B87042] flex  p-8  gap-6 rounded-[2rem]">
-        <div
-          className={
-            theme.bgTertiary +
-            " w-14 h-14 shrink-0 rounded-full border border-[#E6D9CA] flex items-center justify-center text-[#B87042] mb-6"
-          }
-        >
+      <div className={`md:col-span-2 ${theme.card.base} flex p-8 gap-6`}>
+        <div className={`${theme.icon.wrapper} shrink-0 mb-6`}>
           <MtbBarChartIcon className="w-6 h-6 stroke-1" />
         </div>
         <div className="flex flex-col gap-1">
           <div
-            className={
-              theme.highLightTextColor +
-              " text-xs sm:text-sm font-semibold mb-2.5"
-            }
+            className={`${theme.text.accent} text-xs sm:text-sm font-semibold mb-2.5`}
           >
             03
           </div>
@@ -474,17 +464,12 @@ const FeatureSection = () => (
           </p>
         </div>
       </div>
-      <div className="md:col-span-2 bg-white border border-[#B87042] flex gap-6 rounded-[2rem] p-8">
-        <div
-          className={
-            theme.bgTertiary +
-            " w-14 h-14 shrink-0 rounded-full border border-[#E6D9CA] flex items-center justify-center text-[#B87042] mb-6"
-          }
-        >
+      <div className={`md:col-span-2 ${theme.card.base} flex gap-6 p-8`}>
+        <div className={`${theme.icon.wrapper} shrink-0 mb-6`}>
           <MtbThreeUsersIcon className="w-8 h-8 stroke-1" />
         </div>
         <div className="flex flex-col gap-1">
-          <div className="text-[#B87042] text-xs sm:text-sm font-semibold mb-2.5">
+          <div className={`${theme.text.accent} text-xs sm:text-sm font-semibold mb-2.5`}>
             04
           </div>
           <h3
@@ -495,23 +480,18 @@ const FeatureSection = () => (
           >
             Grow With Support
           </h3>
-          <p className="text-sm  leading-relaxed">
+          <p className="text-sm leading-relaxed">
             Join a supportive community of people focused on growth and
             self-improvement.
           </p>
         </div>
       </div>
-      <div className="md:col-span-2 bg-white border flex gap-6 border-[#B87042] rounded-[2rem] p-8">
-        <div
-          className={
-            theme.bgTertiary +
-            " w-14 h-14 shrink-0 rounded-full border border-[#E6D9CA] flex items-center justify-center text-[#B87042] mb-6"
-          }
-        >
+      <div className={`md:col-span-2 ${theme.card.base} flex gap-6 p-8`}>
+        <div className={`${theme.icon.wrapper} shrink-0 mb-6`}>
           <MtbCapIcon className="w-8 h-8 stroke-1" />
         </div>
         <div className="flex flex-col gap-1">
-          <div className="text-[#B87042] text-xs sm:text-sm font-semibold mb-2.5">
+          <div className={`${theme.text.accent} text-xs sm:text-sm font-semibold mb-2.5`}>
             05
           </div>
           <h3
@@ -522,7 +502,7 @@ const FeatureSection = () => (
           >
             Learn with structure
           </h3>
-          <p className="text-sm  leading-relaxed">
+          <p className="text-sm leading-relaxed">
             Learn through guided steps designed to turn knowledge into real
             progress.
           </p>
@@ -530,17 +510,12 @@ const FeatureSection = () => (
       </div>
 
       {/* Row 3 */}
-      <div className="md:col-span-3 bg-white border border-[#B87042] rounded-[2rem] p-8 flex items-start gap-6">
-        <div
-          className={
-            theme.bgTertiary +
-            " w-14 h-14 shrink-0 rounded-full border border-[#E6D9CA] flex items-center justify-center text-[#B87042]"
-          }
-        >
+      <div className={`md:col-span-3 ${theme.card.feature}`}>
+        <div className={`${theme.icon.wrapper} shrink-0`}>
           <MtbMessageIcon className="w-8 h-8 stroke-1" />
         </div>
         <div>
-          <div className="text-[#B87042] text-xs sm:text-sm font-semibold mb-2.5">
+          <div className={`${theme.text.accent} text-xs sm:text-sm font-semibold mb-2.5`}>
             06
           </div>
           <h3
@@ -551,23 +526,18 @@ const FeatureSection = () => (
           >
             Work with coaches
           </h3>
-          <p className="text-sm  leading-relaxed">
+          <p className="text-sm leading-relaxed">
             Work with experienced coaches who help you grow with clarity and
             confidence.
           </p>
         </div>
       </div>
-      <div className="md:col-span-3 bg-white border border-[#B87042] rounded-[2rem] p-8 flex items-start gap-6">
-        <div
-          className={
-            theme.bgTertiary +
-            " w-14 h-14 shrink-0 rounded-full border border-[#E6D9CA] flex items-center justify-center text-[#B87042]"
-          }
-        >
+      <div className={`md:col-span-3 ${theme.card.feature}`}>
+        <div className={`${theme.icon.wrapper} shrink-0`}>
           <MtbCompassIcon className="w-8 h-8 stroke-1" />
         </div>
         <div>
-          <div className="text-[#B87042] text-xs sm:text-sm font-semibold mb-2.5">
+          <div className={`${theme.text.accent} text-xs sm:text-sm font-semibold mb-2.5`}>
             07
           </div>
           <h3
@@ -586,11 +556,11 @@ const FeatureSection = () => (
       </div>
     </div>
 
-    <div className="bg-white border border-[#B87042] rounded-2xl p-6 flex items-center justify-start sm:pl-20 gap-3">
-      <div className={theme.bgTertiary + " rounded-full p-2"}>
+    <div className={`${theme.bg.base} border ${theme.border.accent} rounded-2xl p-6 flex items-center justify-start sm:pl-20 gap-3`}>
+      <div className={`${theme.bg.calm} rounded-full p-2`}>
         <MtbSparklesIcon className="h-3 w-3 sm:h-6 sm:w-6" />
       </div>
-      <p className="text-xs sm:text-lg text-[#B87042]">
+      <p className={`text-xs sm:text-lg ${theme.text.accent}`}>
         All in one Place. All designed to help you stay consistent and grow
         forward.
       </p>
@@ -599,27 +569,27 @@ const FeatureSection = () => (
 );
 
 const ProcessSection = () => (
-  <section className="py-14  sm:py-24 px-4 sm:px-6  md:px-12 max-w-[1440px] mx-auto text-center">
+  <section className={`${theme.layout.sectionY} ${theme.layout.container} text-center`}>
     {/* HEADER */}
     <div className="mb-10 sm:mb-20 max-w-3xl mx-auto">
       <div className="flex items-center justify-center gap-4 mb-7">
-        <div className={"h-px " + theme.highLightBgColor + " w-[750px]"}></div>
+        <div className="h-px bg-[var(--ink-accent)] w-[750px]"></div>
 
-        <h3 className="text-base sm:text-2xl uppercase tracking-widest whitespace-nowrap text-[#B87042]">
+        <h3 className={`text-base sm:text-2xl uppercase tracking-widest whitespace-nowrap ${theme.text.accent}`}>
           The Process
         </h3>
 
-        <div className={"h-px " + theme.highLightBgColor + " w-[750px]"}></div>
+        <div className="h-px bg-[var(--ink-accent)] w-[750px]"></div>
       </div>
 
       <h2
         className={
           instrument.className +
-          " text-2xl sm:text-3xl shrink-0 md:text-[2.75rem]  text-[#2C251F]"
+          ` text-2xl sm:text-3xl shrink-0 md:text-[2.75rem] ${theme.text.primary}`
         }
       >
         A{" "}
-        <span className={cormorant.className + " italic text-[#B87042]"}>
+        <span className={`${cormorant.className} italic ${theme.text.accent}`}>
           simple path designed
         </span>{" "}
         to help you
@@ -627,7 +597,7 @@ const ProcessSection = () => (
         keep going.
       </h2>
 
-      <p className="text-xs sm:text-sm mt-8 leading-relaxed text-[#5A5048]">
+      <p className={`text-xs sm:text-sm mt-8 leading-relaxed ${theme.text.secondary}`}>
         MTB helps you turn goals into routines, routines into momentum, and
         momentum into long-term growth.
       </p>
@@ -636,7 +606,7 @@ const ProcessSection = () => (
     {/* STEPS */}
     <div className="relative mb-12 md:mb-20 mx-auto md:pt-6 max-w-sm md:max-w-none">
       {/* HORIZONTAL LINE (Desktop Only) */}
-      <div className="absolute top-[92px] left-[10%] right-[10%] h-[1px] bg-[#D6C5B3] hidden md:block z-0"></div>
+      <div className="absolute top-[92px] left-[10%] right-[10%] h-[1px] bg-[var(--border-muted)] hidden md:block z-0"></div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-0 md:gap-8 relative z-10">
         {[
@@ -677,19 +647,19 @@ const ProcessSection = () => (
           >
             {/* --- MOBILE GRAPHIC --- */}
             <div className="flex md:hidden items-center shrink-0 mr-4 mt-1">
-              <span className="text-[#B87042] font-semibold text-[15px]  w-5 text-right tracking-tight">
+              <span className={`${theme.text.accent} font-semibold text-[15px] w-5 text-right tracking-tight`}>
                 {item.step}
               </span>
-              <div className="w-4 h-[1px] bg-[#B87042] mx-2"></div>
+              <div className="w-4 h-[1px] bg-[var(--ink-accent)] mx-2"></div>
 
               <div className="relative">
                 {/* Vertical Line connecting down to next step */}
                 {i !== 4 && (
-                  <div className="absolute top-14 left-1/2 -translate-x-1/2 w-px h-[45px] bg-[#B87042] z-0"></div>
+                  <div className="absolute top-14 left-1/2 -translate-x-1/2 w-px h-[45px] bg-[var(--ink-accent)] z-0"></div>
                 )}
 
                 {/* Circle Icon */}
-                <div className="w-14 h-14 rounded-full bg-[#FCFAF4] border border-[#E6D9CA] flex items-center justify-center text-[#B87042] relative z-10">
+                <div className={`w-14 h-14 rounded-full ${theme.bg.calm} border ${theme.border.light} flex items-center justify-center ${theme.text.accent} relative z-10`}>
                   {React.cloneElement(item.icon, {
                     className: "w-6 h-6 stroke-1",
                   })}
@@ -699,11 +669,11 @@ const ProcessSection = () => (
 
             {/* --- DESKTOP GRAPHIC (Original Code) --- */}
             <div className="hidden md:flex flex-col items-center">
-              <div className="text-[#B87042] rounded-full text-sm font-semibold bg-[#FCF9F3] p-3 mt-8 z-10">
+              <div className={`${theme.text.accent} rounded-full text-sm font-semibold ${theme.bg.card} p-3 mt-8 z-10`}>
                 {item.step}
               </div>
-              <div className={theme.highLightBgColor + " w-px h-12"}></div>
-              <div className="w-14 h-14 rounded-full bg-[#FCF9F3] border border-[#E6D9CA] flex items-center justify-center text-[#B87042] mb-6 z-10">
+              <div className="bg-[var(--ink-accent)] w-px h-12"></div>
+              <div className={`w-14 h-14 rounded-full ${theme.bg.card} border ${theme.border.light} flex items-center justify-center ${theme.text.accent} mb-6 z-10`}>
                 {React.cloneElement(item.icon, {
                   className: "w-6 h-6 stroke-1",
                 })}
@@ -715,12 +685,12 @@ const ProcessSection = () => (
               <h3
                 className={
                   cormorant.className +
-                  " md:whitespace-nowrap text-[16px] md:text-2xl mb-1 md:mb-2 font-bold md:font-normal text-[#2C251F]"
+                  ` md:whitespace-nowrap text-[16px] md:text-2xl mb-1 md:mb-2 font-bold md:font-normal ${theme.text.primary}`
                 }
               >
                 {item.title}
               </h3>
-              <p className="text-[12px] md:text-sm md:max-w-[180px] text-[#2C251F] md:text-[#5A5048] pr-2 md:pr-0">
+              <p className={`text-[12px] md:text-sm md:max-w-[180px] ${theme.text.secondary} pr-2 md:pr-0`}>
                 {item.desc}
               </p>
             </div>
@@ -730,29 +700,29 @@ const ProcessSection = () => (
     </div>
 
     {/* BOTTOM CARD */}
-    <div className="bg-white border border-[#B87042] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6  mx-auto">
+    <div className={`${theme.bg.base} border ${theme.border.accent} rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 mx-auto`}>
       <div className="flex items-center gap-4 pl-4">
-        <div className="h-6 w-6 sm:w-12 sm:h-12 bg-[#FCF9F3] rounded-full flex items-center justify-center text-[#B87042]">
+        <div className={`h-6 w-6 sm:w-12 sm:h-12 ${theme.bg.card} rounded-full flex items-center justify-center ${theme.text.accent}`}>
           <MtbSparklesIcon className="w-5 h-5" />
         </div>
 
-        <p className="font-bold text-xs sm:text-sm md:text-base text-[#2C251F]">
+        <p className={`font-bold text-xs sm:text-sm md:text-base ${theme.text.primary}`}>
           One System. Five steps. Endless growth.
         </p>
       </div>
 
-      <div className="hidden md:block w-px h-12 bg-[#E6D9CA]"></div>
+      <div className="hidden md:block w-px h-12 bg-[var(--border-light)]"></div>
 
       <div className="hidden md:flex items-center gap-4 pr-4">
-        <div className="w-12 h-12 bg-[#FCF9F3] rounded-full flex items-center justify-center text-[#B87042]">
+        <div className={`w-12 h-12 ${theme.bg.card} rounded-full flex items-center justify-center ${theme.text.accent}`}>
           <Leaf className="w-5 h-5" />
         </div>
 
         <div className="text-left">
-          <p className="text-lg text-[#B87042] italic">
+          <p className={`text-lg ${theme.text.accent} italic`}>
             You don't need perfection.
           </p>
-          <p className=" text-lg text-[#B87042] italic">
+          <p className={`text-lg ${theme.text.accent} italic`}>
             You just need a growth environment
           </p>
         </div>
@@ -762,17 +732,17 @@ const ProcessSection = () => (
 );
 
 const WhoItHelpsSection = () => (
-  <section className="py-14 sm:py-24 px-4 sm:px-6  md:px-12 max-w-[1440px] mx-auto text-center">
+  <section className={`${theme.layout.sectionY} ${theme.layout.container} text-center`}>
     {/* HEADER (SAME AS PROCESS SECTION) */}
     <div className="mb-10 sm:mb-20 max-w-3xl mx-auto">
       <div className="flex items-center justify-center gap-4 mb-7">
-        <div className={"h-px " + theme.highLightBgColor + " w-[750px]"}></div>
+        <div className="h-px bg-[var(--ink-accent)] w-[750px]"></div>
 
-        <h3 className="text-base sm:text-2xl uppercase tracking-widest whitespace-nowrap text-[#B87042]">
+        <h3 className={`text-base sm:text-2xl uppercase tracking-widest whitespace-nowrap ${theme.text.accent}`}>
           Who It Helps
         </h3>
 
-        <div className={"h-px " + theme.highLightBgColor + " w-[750px]"}></div>
+        <div className="h-px bg-[var(--ink-accent)] w-[750px]"></div>
       </div>
       <div className="flex flex-col items-center">
         <h2
@@ -781,12 +751,12 @@ const WhoItHelpsSection = () => (
             " text-2xl sm:text-5xl md:text-5xl leading-tight tracking-[0.02em] mb-6"
           }
         >
-          If this feels <span className="italic text-[#B87042]">familiar,</span>
+          If this feels <span className={`italic ${theme.text.accent}`}>familiar,</span>
           <br />
           MTB was built for you.
         </h2>
 
-        <p className="text-xs tracking-[0.05em] sm:text-base mt-1  max-w-lg text-center ">
+        <p className="text-xs tracking-[0.05em] sm:text-base mt-1 max-w-lg text-center ">
           Different journeys. Same goal: becoming the best version of yourself.
           We're here to help you get there.
         </p>
@@ -823,23 +793,13 @@ const WhoItHelpsSection = () => (
       ].map((item, i) => (
         <div
           key={i}
-          className={
-            "border " +
-            theme.hightLightBorderColor +
-            " bg-white border rounded-2xl p-8 flex flex-col items-center text-center h-full"
-          }
+          className={`${theme.card.problem} p-8 h-full`}
         >
           {/* SAME HEIGHT SYSTEM AS PROCESS */}
           <div className="flex flex-col items-center justify-start h-[140px]">
             {/* TITLE */}
             <h3
-              className={
-                "border " +
-                cormorant.className +
-                " " +
-                theme.hightLightBorderColor +
-                " px-6 py-2 rounded-full  bg-[#FCFAF4] text-base sm:text-2xl mb-4 flex items-center font-semibold justify-center h-[56px] text-center"
-              }
+              className={`${cormorant.className} border ${theme.border.accent} px-6 py-2 rounded-full ${theme.bg.calm} text-base sm:text-2xl mb-4 flex items-center font-semibold justify-center h-[56px] text-center`}
             >
               {item.title}
             </h3>
@@ -855,18 +815,18 @@ const WhoItHelpsSection = () => (
 
 const CTASection = () => (
   <section className="sm:py-24 px-0 sm:px-6 md:px-12 mt-4 sm:pb-[100px] max-w-[1440px] mx-auto">
-    <div className="bg-gradient-to-br from-[#433428] to-[#5A4535] sm:rounded-[3rem] p-10 md:p-24 text-center text-white relative overflow-hidden">
+    <div className={`${theme.bg.cta} sm:rounded-[3rem] p-10 md:p-24 text-center text-[var(--ink-inverse)] relative overflow-hidden`}>
       {/* Decorative Circles — bottom-left on desktop, top-right on mobile */}
-      <div className="absolute -top-16 -right-16 md:top-auto md:bottom-[-192px] md:left-[-96px] md:right-auto w-64 md:w-96 h-64 md:h-96 rounded-full border border-white/10"></div>
-      <div className="absolute -top-8 -right-8 md:top-auto md:bottom-[-96px] md:left-[-48px] md:right-auto w-44 md:w-64 h-44 md:h-64 rounded-full border border-white/10"></div>
+      <div className="absolute -top-16 -right-16 md:top-auto md:bottom-[-192px] md:left-[-96px] md:right-auto w-64 md:w-96 h-64 md:h-96 rounded-full border border-[rgb(255_255_255/0.1)]"></div>
+      <div className="absolute -top-8 -right-8 md:top-auto md:bottom-[-96px] md:left-[-48px] md:right-auto w-44 md:w-64 h-44 md:h-64 rounded-full border border-[rgb(255_255_255/0.1)]"></div>
 
       <div className="relative z-10 w-full sm:max-w-2xl mx-auto">
         {/* Eyebrow */}
         <div className="flex flex-col items-center justify-center gap-4 mb-8">
-          <h3 className="text-white tracking-widest text-base sm:text-2xl uppercase">
+          <h3 className="text-[var(--ink-inverse)] tracking-widest text-base sm:text-2xl uppercase">
             Ready To Begin
           </h3>
-          <div className="h-[2px] bg-white w-[80px]"></div>
+          <div className="h-[2px] bg-[var(--ink-inverse)] w-[80px]"></div>
         </div>
 
         {/* Heading */}
@@ -877,24 +837,24 @@ const CTASection = () => (
         </h2>
 
         {/* Subtext */}
-        <p className="text-white mb-10 text-sm md:text-base tracking-[0.05em] leading-relaxed">
+        <p className="text-[var(--ink-inverse)] mb-10 text-sm md:text-base tracking-[0.05em] leading-relaxed">
           MTB helps you stay focused, supported, and intentional — so growth
           becomes part of your everyday life.
         </p>
 
         {/* Buttons — stacked full width on mobile */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 w-full">
-          <button className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-[#433428] rounded-full font-medium hover:bg-stone-100 transition-colors w-full">
+          <button className={`flex items-center justify-center gap-2 px-8 py-4 ${theme.bg.base} text-[var(--brand-cta-ink)] rounded-full font-medium ${theme.bg.softHover} transition-colors w-full`}>
             Start Your Journey <ArrowRight className="w-5 h-5" />
           </button>
-          <button className="flex items-center justify-center gap-2 px-8 py-4 bg-transparent text-white border border-white/30 rounded-full font-medium hover:bg-white/10 transition-colors w-full">
+          <button className="flex items-center justify-center gap-2 px-8 py-4 bg-[transparent] text-[var(--ink-inverse)] border border-[rgb(255_255_255/0.3)] rounded-full font-medium hover:bg-[rgb(255_255_255/0.1)] transition-colors w-full">
             <PlayCircle className="w-5 h-5" /> Explore Inside MTB
           </button>
         </div>
 
         {/* Social proof */}
-        <div className="flex items-center justify-center gap-3 text-sm sm:text-base text-white tracking-[0.05em]">
-          <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+        <div className="flex items-center justify-center gap-3 text-sm sm:text-base text-[var(--ink-inverse)] tracking-[0.05em]">
+          <div className="h-10 w-10 rounded-full bg-[rgb(255_255_255/0.1)] flex items-center justify-center shrink-0">
             <Users className="w-6 h-6" />
           </div>
           Join 10,000+ people building healthier routines with MTB.
@@ -907,31 +867,31 @@ const CTASection = () => (
 export default function MyThriveBuddyLandingPage() {
   return (
     <div
-      className={`min-h-screen w-full  selection:bg-[#B87042] selection:text-white `}
+      className="min-h-screen w-full selection:bg-[var(--selection-bg)] selection:text-[var(--ink-inverse)]"
     >
       <Header />
       <main>
-        <section className="bg-[var(--bg-primary)]">
+        <section className={theme.bg.warm}>
           <Hero />
         </section>
-        <section className={`${theme.bgSecondary}`}>
+        <section className={theme.bg.base}>
           <ProblemSection />
         </section>
-        <section className={theme.bgTertiary}>
+        <section className={theme.bg.calm}>
           <FeatureSection />
         </section>
-        <section className={`${theme.bgSecondary}`}>
+        <section className={theme.bg.base}>
           <ProcessSection />
         </section>
-        <section className={theme.bgTertiary}>
+        <section className={theme.bg.calm}>
           <SuccessStoriesSection />
         </section>
-        <section className={`${theme.bgSecondary}`}>
+        <section className={theme.bg.base}>
           <WhoItHelpsSection />
           <CTASection />
         </section>
       </main>
-      <section className={theme.bgTertiary}>
+      <section className={theme.bg.calm}>
         <Footer />
       </section>
     </div>

@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React, { useRef, useState } from "react";
@@ -9,6 +10,7 @@ import {
   Trash2,
   PlusCircle,
   Pencil,
+  CheckCircle2,
 } from "lucide-react";
 import { DayPicker, type DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
@@ -36,6 +38,7 @@ import { toast } from "sonner";
 import { fromZonedTime } from "date-fns-tz";
 import { TimeSelect } from "@/components/ui/TimeSelect24based";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 const step3Schema = z.object({
   dateRange: z
@@ -86,23 +89,22 @@ const TIMEZONES = [
 ];
 
 export default function Step3({
-  onNext,
   setIsLoading,
   eventData,
   eventId,
-   isDraft,
+  isDraft,
   setIsDraft,
-  setIsDraftLoading
+  setIsDraftLoading,
 }: {
   onNext: () => void;
   setIsLoading: (loading: boolean) => void;
   eventData?: HostedEventResponse;
   eventId?: string | undefined | null;
   isDraft?: boolean;
-setIsDraft?: (v: boolean) => void;
-setIsDraftLoading?: (v: boolean) => void;
+  setIsDraft?: (v: boolean) => void;
+  setIsDraftLoading?: (v: boolean) => void;
 }) {
-  const router = useRouter()
+  const router = useRouter();
   const [activeDay, setActiveDay] = useState(1);
   const [timezone, setTimezone] = useState(
     eventData?.event?.timeZone ?? "Asia/Kolkata",
@@ -117,7 +119,7 @@ setIsDraftLoading?: (v: boolean) => void;
     }
     return undefined;
   });
-
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [agendaData, setAgendaData] = useState<Record<number, AgendaItem[]>>(
     () => {
       if (
@@ -189,8 +191,8 @@ setIsDraftLoading?: (v: boolean) => void;
 
   const updateStep3 = useMutation({
     mutationFn: async (payload: Step3Payload) => {
-        if (isDraft) setIsDraftLoading?.(true);
-  else setIsLoading(true);
+      if (isDraft) setIsDraftLoading?.(true);
+      else setIsLoading(true);
       const res = await axios.put(`/api/hosted-events/${eventId}`, payload);
       return res.data;
     },
@@ -199,11 +201,13 @@ setIsDraftLoading?: (v: boolean) => void;
       if (isDraft) {
         toast.success("Event saved as Draft");
         setIsDraft?.(false);
-      router.push(`/dashboard/events/coach`);
-         return;
+        router.push(`/dashboard/events/coach`);
+        return;
       }
-      toast.success("Step 3 saved");
-      onNext();
+      localStorage.removeItem("create-event-draft-id");
+      toast.success("Event submitted for review");
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      setShowSuccessModal(true);
     },
     onError: (err) => {
       const message = axios.isAxiosError(err)
@@ -213,10 +217,10 @@ setIsDraftLoading?: (v: boolean) => void;
         : "Failed to save agenda";
       toast.error(message);
     },
-   onSettled: () => {
-  setIsLoading(false);
-  setIsDraftLoading?.(false);
-},
+    onSettled: () => {
+      setIsLoading(false);
+      setIsDraftLoading?.(false);
+    },
   });
   const currentId = watch("id");
   const totalDays =
@@ -307,18 +311,18 @@ setIsDraftLoading?: (v: boolean) => void;
 
   const onFinalSubmit = async (values: z.infer<typeof step3Schema>) => {
     // Find first slot of day 1 (sorted by time string isn't reliable, use order)
-const parseTimeMinutes = (timeStr: string): number => {
-  if (timeStr.includes("AM") || timeStr.includes("PM")) {
-    const [time, meridiem] = timeStr.trim().split(" ");
-    const [h, m] = time.split(":").map(Number);
-    let hours = h;
-    if (meridiem?.toUpperCase() === "PM" && hours !== 12) hours += 12;
-    if (meridiem?.toUpperCase() === "AM" && hours === 12) hours = 0;
-    return hours * 60 + m;
-  }
-  const [h, m] = timeStr.split(":").map(Number);
-  return h * 60 + m;
-};
+    const parseTimeMinutes = (timeStr: string): number => {
+      if (timeStr.includes("AM") || timeStr.includes("PM")) {
+        const [time, meridiem] = timeStr.trim().split(" ");
+        const [h, m] = time.split(":").map(Number);
+        let hours = h;
+        if (meridiem?.toUpperCase() === "PM" && hours !== 12) hours += 12;
+        if (meridiem?.toUpperCase() === "AM" && hours === 12) hours = 0;
+        return hours * 60 + m;
+      }
+      const [h, m] = timeStr.split(":").map(Number);
+      return h * 60 + m;
+    };
 
     const day1Slots = [...(agendaData[1] ?? [])].sort(
       (a, b) => parseTimeMinutes(a.time) - parseTimeMinutes(b.time),
@@ -330,27 +334,34 @@ const parseTimeMinutes = (timeStr: string): number => {
     const firstSlotTime = day1Slots[0]?.time;
     const lastSlotTime = lastDaySlots[lastDaySlots.length - 1]?.time;
 
-   const parseSlotTime = (date: Date, timeStr: string): Date => {
-  let hours: number;
-  let minutes: number;
+    const parseSlotTime = (date: Date, timeStr: string): Date => {
+      let hours: number;
+      let minutes: number;
 
-  if (timeStr.includes("AM") || timeStr.includes("PM")) {
-    // Legacy AM/PM format e.g. "09:00 AM"
-    const [time, meridiem] = timeStr.trim().split(" ");
-    const [h, m] = time.split(":").map(Number);
-    hours = h;
-    minutes = m;
-    if (meridiem?.toUpperCase() === "PM" && hours !== 12) hours += 12;
-    if (meridiem?.toUpperCase() === "AM" && hours === 12) hours = 0;
-  } else {
-    // 24h format e.g. "14:30"
-    const [h, m] = timeStr.split(":").map(Number);
-    hours = h;
-    minutes = m;
-  }
+      if (timeStr.includes("AM") || timeStr.includes("PM")) {
+        // Legacy AM/PM format e.g. "09:00 AM"
+        const [time, meridiem] = timeStr.trim().split(" ");
+        const [h, m] = time.split(":").map(Number);
+        hours = h;
+        minutes = m;
+        if (meridiem?.toUpperCase() === "PM" && hours !== 12) hours += 12;
+        if (meridiem?.toUpperCase() === "AM" && hours === 12) hours = 0;
+      } else {
+        // 24h format e.g. "14:30"
+        const [h, m] = timeStr.split(":").map(Number);
+        hours = h;
+        minutes = m;
+      }
 
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes, 0);
-};
+      return new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        hours,
+        minutes,
+        0,
+      );
+    };
 
     const startLocal = firstSlotTime
       ? parseSlotTime(values.dateRange.from, firstSlotTime)
@@ -376,7 +387,13 @@ const parseTimeMinutes = (timeStr: string): number => {
 
     // Convert local time in selected timezone → UTC
     if (isNaN(startLocal.getTime()) || isNaN(endLocal.getTime())) {
-      console.log({ firstSlotTime, lastSlotTime, startLocal, endLocal, totalDays });
+      console.log({
+        firstSlotTime,
+        lastSlotTime,
+        startLocal,
+        endLocal,
+        totalDays,
+      });
       toast.error("Invalid date or time — please check your agenda slots");
       return;
     }
@@ -389,6 +406,7 @@ const parseTimeMinutes = (timeStr: string): number => {
       endTime: endUTC.toISOString(),
       timezone: timezone,
       agendaSlots: values.agendaSlots,
+      ...(!isDraft && { status: "UNDER_REVIEW" }),
     });
   };
   const prepareAndSubmit = async () => {
@@ -460,10 +478,10 @@ const parseTimeMinutes = (timeStr: string): number => {
         <div className="fixed bottom-0 left-0 w-1/4 h-1/3 bg-green-50 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
         <header className="mb-8">
-          <h2 className={`${theme.typography.h1} text-3xl mb-2`}>
+          <h2 className={`${theme.typography.h1} text-xl md:text-4xl mb-2`}>
             Time to map the journey.
           </h2>
-          <p className="text-lg opacity-70 max-w-2xl">
+          <p className="text-base opacity-70 max-w-2xl">
             Define when your transformation experience will take place and build
             a rhythmic agenda for your participants.
           </p>
@@ -475,7 +493,9 @@ const parseTimeMinutes = (timeStr: string): number => {
             <section
               className={`bg-white p-8 rounded-xl shadow-sm border ${theme.borderLight} overflow-hidden`}
             >
-              <h3 className="text-sm font-semibold uppercase tracking-widest mb-6 opacity-80">
+              <h3
+                className={theme.typography.h1 + " text-2xl md:text-3xl  mb-6"}
+              >
                 Event Duration
               </h3>
 
@@ -490,7 +510,7 @@ const parseTimeMinutes = (timeStr: string): number => {
                     <select
                       value={timezone}
                       onChange={(e) => setTimezone(e.target.value)}
-                      className={`w-full pl-10 pr-10 py-3 bg-gray-50 border ${theme.borderLight} focus:ring-0 focus:${theme.borderAccent} rounded-lg outline-none appearance-none cursor-pointer`}
+                      className={`w-full pl-10 pr-10 py-2 bg-gray-50 border  focus:ring-0 ${theme.borderAccent} rounded-xl outline-none appearance-none cursor-pointer`}
                     >
                       {TIMEZONES.map((tz) => (
                         <option key={tz.value} value={tz.value}>
@@ -508,7 +528,7 @@ const parseTimeMinutes = (timeStr: string): number => {
                   </label>
                   {range?.from && range?.to && (
                     <div
-                      className={`flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg border ${theme.borderLight}`}
+                      className={`flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-xl border ${theme.borderAccent} `}
                     >
                       <Calendar className="w-4 h-4 opacity-50 shrink-0" />
                       <span className="text-sm font-medium">
@@ -521,14 +541,15 @@ const parseTimeMinutes = (timeStr: string): number => {
               </div>
 
               {/* Calendar Widget */}
-              <div className={`mt-6 pt-8 border-t ${theme.borderLight} overflow-x-auto`}>
+              <div
+                className={`mt-6 pt-8 border-t ${theme.borderLight} overflow-x-auto`}
+              >
                 <DayPicker
                   mode="range"
                   selected={range}
                   onSelect={setRange}
                   defaultMonth={new Date()}
                   disabled={{ before: new Date() }}
-                  
                 />
                 {!range && (
                   <p className="text-red-500 text-xs mt-2">
@@ -542,20 +563,20 @@ const parseTimeMinutes = (timeStr: string): number => {
           {/* RIGHT COLUMN: Agenda */}
           <div ref={agendaRef} className="lg:col-span-8">
             <section
-              className={`bg-white p-8 rounded-xl shadow-sm border ${theme.borderLight} h-full`}
+              className={`bg-white p-4 sm:p-8 rounded-xl shadow-sm border ${theme.borderLight} h-full`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                  <h3 className={`${theme.typography.h1} text-2xl mb-1`}>
+                  <h3
+                    className={`${theme.typography.h1} text-2xl md:text-3xl mb-1`}
+                  >
                     Event Agenda
                   </h3>
-                  <p className="text-sm opacity-70">
-                    Design the flow of each day.
-                  </p>
+                  <p className="text-base">Design the flow of each day.</p>
                 </div>
 
                 {totalDays > 0 && (
-                  <div className="flex bg-gray-100 rounded-lg p-1 overflow-x-auto">
+                  <div className="flex bg-[var(--surface-calm)] rounded-lg p-1 overflow-x-auto">
                     {daysArray.map((day) => (
                       <button
                         type="button"
@@ -577,44 +598,57 @@ const parseTimeMinutes = (timeStr: string): number => {
                 )}
               </div>
 
-              <div className="space-y-4 relative">
-                <div
-                  className={`absolute left-[72px] top-6 bottom-6 w-[2px] ${theme.bgSecondary} z-0`}
-                ></div>
-
+              <div className="space-y-4 sm:space-y-4 relative">
                 {/* Render Agenda Slots */}
-                {currentAgenda.map((item) => (
+                {currentAgenda.map((item, index) => (
                   <div
                     key={item.id}
-                    className="relative z-10 flex flex-col sm:grid sm:grid-cols-[80px_1fr] gap-2 sm:gap-6 items-start group"
+                    className="relative z-10 grid grid-cols-[70px_1fr] sm:grid-cols-[80px_1fr] gap-3 sm:gap-6 items-start group"
                   >
-                    <div className="pt-0 sm:pt-4 text-left sm:text-right pr-0 sm:pr-2">
-                      <span className={`text-sm font-bold ${theme.textAccent}`}>
+                    {/* Connecting Line */}
+                    {index !== currentAgenda.length - 1 && (
+                      <div
+                        className={`absolute left-[35px] sm:left-[50px] -translate-x-1/2 top-[30px] sm:top-[36px] h-[calc(100%+12px)] sm:h-[calc(100%+16px)] w-[1px] sm:w-[2px] ${theme.bg.accent} z-0`}
+                      />
+                    )}
+
+                    {/* Time */}
+                    <div className="pt-4 sm:pt-4 text-center sm:text-right pr-0 sm:pr-2 bg-white relative z-10">
+                      <span
+                        className={`text-xs sm:text-base font-semibold ${theme.textAccent}`}
+                      >
                         {item.time}
                       </span>
                     </div>
 
-                    <div className="w-full bg-gray-50 p-5 rounded-lg flex justify-between group-hover:shadow-sm transition-all border border-transparent group-hover:border-gray-200">
-                      <div>
-                        <h4 className="text-base font-bold">{item.title}</h4>
-                        <p className="text-sm opacity-70 mt-1">
+                    {/* Card */}
+                    <div
+                      className={`${theme.bg.calm} w-full p-4 sm:p-5 rounded-xl flex justify-between items-start group-hover:shadow-sm transition-all border border-transparent group-hover:border-gray-200 z-0`}
+                    >
+                      <div className="pr-2">
+                        <h4 className="text-sm sm:text-base font-bold">
+                          {item.title}
+                        </h4>
+                        <p className="text-xs sm:text-sm opacity-70 mt-1">
                           {item.description}
                         </p>
                       </div>
-                      <div className="flex items-start gap-2  transition-opacity">
+
+                      {/* Actions */}
+                      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-2 transition-opacity shrink-0">
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(item)}
                           className={`${theme.hoverTextAccent} transition-colors p-1`}
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Pencil className="w-4 h-4 sm:w-4 sm:h-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(item.id)}
                           className="text-gray-400 hover:text-red-600 transition-colors p-1"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                     </div>
@@ -629,15 +663,15 @@ const parseTimeMinutes = (timeStr: string): number => {
                 )}
 
                 {/* Add New Slot Button */}
-                <div className="relative z-10 flex flex-col sm:grid sm:grid-cols-[80px_1fr] gap-2 sm:gap-6 items-start mt-8">
+                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-[80px_1fr] gap-3 sm:gap-6 items-start mt-6 sm:mt-8">
                   <div className="hidden sm:block"></div>
                   <button
                     type="button"
                     onClick={handleOpenAdd}
-                    className={`w-full border-2 border-dashed rounded-lg py-8 flex flex-col items-center gap-2 hover:bg-gray-50 transition-colors border-gray-200 hover:${theme.borderAccent}`}
+                    className={`w-full border-2 border-dashed rounded-xl py-6 sm:py-8 flex flex-col items-center gap-2 hover:bg-gray-50 transition-colors ${theme.borderAccent}`}
                   >
-                    <PlusCircle className="w-8 h-8 opacity-50" />
-                    <span className="text-sm uppercase tracking-widest font-semibold mt-1 opacity-70">
+                    <PlusCircle className="w-6 h-6 sm:w-8 sm:h-8 opacity-50" />
+                    <span className="text-xs sm:text-base uppercase tracking-widest font-semibold mt-1 opacity-70">
                       Add New Agenda Slot
                     </span>
                   </button>
@@ -671,7 +705,6 @@ const parseTimeMinutes = (timeStr: string): number => {
                     setValue("time", val, { shouldValidate: true })
                   }
                   placeholder="Select time"
-                  className="w-full"
                 />
                 {errors.time && (
                   <p className="text-red-500 text-xs">{errors.time.message}</p>
@@ -689,7 +722,7 @@ const parseTimeMinutes = (timeStr: string): number => {
                     },
                   })}
                   placeholder="e.g., Opening Ceremony"
-                  className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:${theme.borderAccent}`}
+                  className={`w-full px-3 py-2 border  rounded-xl focus:outline-none focus:ring-0 ${theme.borderAccent}`}
                 />
                 {errors.title && (
                   <p className="text-red-500 text-xs">{errors.title.message}</p>
@@ -707,7 +740,7 @@ const parseTimeMinutes = (timeStr: string): number => {
                     },
                   })}
                   placeholder="Describe what will happen..."
-                  className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-0 focus:${theme.borderAccent} resize-none h-24`}
+                  className={`w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-0 ${theme.borderAccent} resize-none h-24`}
                 />
                 {errors.description && (
                   <p className="text-red-500 text-xs">
@@ -735,6 +768,45 @@ const parseTimeMinutes = (timeStr: string): number => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white p-10 rounded-3xl max-w-md w-full text-center shadow-2xl animate-in zoom-in-95 duration-300">
+            <div
+              className={`w-20 h-20 bg-green-100 text-green-700 rounded-full flex items-center justify-center mx-auto mb-8`}
+            >
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
+
+            <h2 className={`${theme.typography.h1} text-4xl mb-4`}>
+              It's Official.
+            </h2>
+            <p className="text-base opacity-70 mb-10">
+              Your event has been submitted and is currently under review. We'll
+              notify you once it's approved.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <Button
+                variant="mtbPrimary"
+                size="mtbPill"
+                onClick={() => router.push("/dashboard/events/coach")}
+              >
+                Go to Dashboard
+              </Button>
+              {/* <Button
+                onClick={() => setShowSuccessModal(false)}
+                variant="mtbTertiary"
+                size="mtbPill"
+              >
+               
+                Share Link
+              </Button> */}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

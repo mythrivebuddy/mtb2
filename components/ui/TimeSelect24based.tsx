@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { theme } from "@/lib/new-home/theme/theme";
 
 const generateTimeOptions = (extraTimes: string[] = []) => {
   const times = new Set<string>();
@@ -25,7 +26,6 @@ interface TimeSelectProps {
   disabled?: boolean;
   placeholder?: string;
   extraTimes?: string[];
-  className?: string;
 }
 
 export function TimeSelect({
@@ -34,13 +34,32 @@ export function TimeSelect({
   disabled,
   placeholder = "Time",
   extraTimes = [],
-  className,
 }: TimeSelectProps) {
   const options = generateTimeOptions(extraTimes);
 
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger className={className ?? "w-[110px] shrink-0"}>
+      <SelectTrigger
+        className={`
+    w-full
+    rounded-xl
+    border
+    ${theme.borderAccent}
+    bg-white
+    shadow-none
+
+    !ring-0
+    !ring-offset-0
+
+    focus:!ring-0
+    focus-visible:!ring-0
+    focus-visible:!outline-none
+
+    data-[state=open]:!ring-0
+    data-[state=open]:!outline-none
+    data-[state=open]:border-[var(--brand-momentum)]
+  `}
+      >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent className="max-h-60 overflow-y-auto">

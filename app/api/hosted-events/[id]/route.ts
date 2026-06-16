@@ -150,8 +150,9 @@ export async function PUT(req: NextRequest, context: RouteContext) {
         { status: 404 },
       );
     }
-
+    
     if (event === "FORBIDDEN") {
+
       return NextResponse.json({ message: "Forbidden." }, { status: 403 });
     }
 

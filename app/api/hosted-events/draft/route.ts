@@ -4,6 +4,16 @@ import { checkRole } from "@/lib/utils/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { HostedEventType, Status } from "@prisma/client";
 import handleSupabaseImageUploadWithSharp from "@/lib/utils/supabase-image-upload-with-sharp";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
+import {
+  checkFeature,
+  checkFeatureAction,
+} from "@/lib/access-control/checkFeature";
+import { LimitType } from "@/lib/access-control/featureConfig";
+import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
+import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { handleSupabaseFileReplace } from "@/lib/utils/supabase-image-upload";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 interface ParsedTicket {
   price: number;
@@ -15,7 +25,38 @@ export async function POST(req: NextRequest) {
   try {
     const session = await checkRole(["USER", "ADMIN"]);
     const creatorId = session.user.id;
+    const normalizedUserType = normalizeUserType(session.user.userType);
 
+    const featureResult = await checkFeature({
+      feature: "hostedEvents", // 👈 use whatever key matches your featureConfig
+      user: {
+        userType: normalizedUserType ?? undefined,
+        membership: session.user.membership ?? undefined,
+      },
+    });
+
+    if (!featureResult.allowed) {
+      return NextResponse.json(
+        { message: featureResult.reason },
+        { status: 403 },
+      );
+    }
+
+    const canCreate = checkFeatureAction({
+      feature: featureResult.feature!,
+      action: "create",
+      userType: normalizedUserType ?? undefined,
+    });
+
+    if (!canCreate) {
+      return NextResponse.json(
+        {
+          message: "You are not allowed to create events.",
+          isUpgradeFlagShow: false,
+        },
+        { status: 403 },
+      );
+    }
     const formData = await req.formData();
 
     const eventId = formData.get("eventId") as string | null;
@@ -26,6 +67,21 @@ export async function POST(req: NextRequest) {
     const isPaid = formData.get("isPaid") === "true";
 
     const coverImageFile = formData.get("coverImage") as File | null;
+
+    const resourceFile =
+      (formData.get("resources") as File) || (formData.get("resource") as File);
+
+    if (resourceFile && resourceFile.size > 0) {
+      const ext = resourceFile.name.split(".").pop()?.toLowerCase();
+
+      if (resourceFile.size > 25 * 1024 * 1024) {
+        throw new Error("File must be under 25MB");
+      }
+
+      if (!["pdf", "docx", "key"].includes(ext || "")) {
+        throw new Error("Invalid file type");
+      }
+    }
 
     let event;
 
@@ -44,6 +100,43 @@ export async function POST(req: NextRequest) {
         },
       });
     } else {
+      const planConfig = featureResult.config as {
+        createLimit: number;
+        isUpgradeFlagShow?: boolean;
+        limitType: LimitType;
+        canCreatePaidEvents?: boolean;
+      };
+
+      const { createLimit, isUpgradeFlagShow, limitType } = planConfig;
+      const periodStart = getLimitPeriodStart(limitType);
+
+      const createdCount = await prisma.hostedEvent.count({
+        where: {
+          creatorId,
+          ...(periodStart && { createdAt: { gte: periodStart } }),
+        },
+      });
+
+      const limitResponse = await enforceLimitResponse({
+        limit: createLimit,
+        currentCount: createdCount,
+        message:
+          createLimit === 0
+            ? `You cannot create events on your current plan.${isUpgradeFlagShow ? " Please upgrade." : ""}`
+            : `You have reached your limit of ${createLimit}  event${createLimit === 1 ? "" : "s"}.${isUpgradeFlagShow ? " Please upgrade." : ""}`,
+      });
+
+      if (limitResponse) return limitResponse;
+      if (isPaid && !planConfig.canCreatePaidEvents) {
+        return NextResponse.json(
+          {
+            message:
+              "Your current plan doesn't support paid events. Upgrade your plan to create them.",
+            isUpgradeFlagShow: planConfig.isUpgradeFlagShow ?? true,
+          },
+          { status: 403 },
+        );
+      }
       event = await prisma.hostedEvent.create({
         data: {
           creatorId,
@@ -51,7 +144,6 @@ export async function POST(req: NextRequest) {
           description: description || null,
           type: type || HostedEventType.WORKSHOP,
           isPaid: isPaid ?? false,
-          startTime: new Date(),
           status: Status.DRAFT,
         },
       });
@@ -78,6 +170,42 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // =========================================================
+    // 🔥 RESOURCE UPLOAD
+    // =========================================================
+    let resourceUrl: string | null = null;
+
+    if (resourceFile && resourceFile.size > 0) {
+      resourceUrl = await handleSupabaseFileReplace({
+        file: resourceFile,
+        bucket: "events",
+        folder: event.id,
+        fileName: "resource.pdf",
+        upsert: true,
+      });
+
+      event = await prisma.hostedEvent.update({
+        where: { id: event.id },
+        data: {
+          resources: resourceUrl,
+        },
+      });
+    }
+    const clearResources = formData.get("clearResources");
+
+    if (clearResources === "true") {
+      // 🔥 direct path (no parsing needed)
+      const filePath = `${event.id}/resource.pdf`;
+
+      await supabaseAdmin.storage.from("events").remove([filePath]);
+
+      event = await prisma.hostedEvent.update({
+        where: { id: event.id },
+        data: {
+          resources: null,
+        },
+      });
+    }
     // =========================================================
     // 🔥 SINGLE TICKET UPSERT
     // =========================================================

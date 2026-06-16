@@ -34,8 +34,13 @@ export const GET = async () => {
     // let totalRevenue = 0;
 
     // Filter for events happening in the future
-    const upcomingEvents = events.filter((e) => new Date(e.startTime) >= now);
-    const pastEvents = events.filter((e) => new Date(e.startTime) < now);
+    const upcomingEvents = events.filter(
+      (e) => e.startTime && new Date(e.startTime) >= now,
+    );
+    const pastEvents = events.filter(
+      (e) => e.startTime && new Date(e.startTime) < now,
+    );
+    const draftEvents = events.filter((e) => !e.startTime);
     const upcomingEventsCount = upcomingEvents.length;
 
     // 4. Format the active events for the frontend UI
@@ -50,7 +55,7 @@ export const GET = async () => {
       const maxCapacity = ticket?.quantity || 0;
 
       const price = ticket?.price ?? null;
-const currency = ticket?.currency ?? "INR";
+      const currency = ticket?.currency ?? "INR";
 
       // Calculate Revenue
       //   if (event.isPaid) {
@@ -58,7 +63,9 @@ const currency = ticket?.currency ?? "INR";
       //   }
 
       // Calculate days until the event for the UI badge
-      const timeDiff = new Date(event.startTime).getTime() - now.getTime();
+      const timeDiff = event.startTime
+        ? new Date(event.startTime).getTime() - now.getTime()
+        : Infinity;
       const daysUntil = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
       let badge = "UPCOMING";
@@ -80,7 +87,7 @@ const currency = ticket?.currency ?? "INR";
       return {
         id: event.id,
         title: event.title,
-        date: `${new Date(event.startTime).toLocaleDateString("en-US", { month: "short", day: "2-digit" })} • ${locationString}`,
+        date: `${event.startTime ? new Date(event.startTime).toLocaleDateString("en-US", { month: "short", day: "2-digit" }) : ""} • ${locationString}`,
         progress: regCount,
         total: maxCapacity,
         price,
@@ -95,7 +102,7 @@ const currency = ticket?.currency ?? "INR";
       const ticket = event.tickets?.[0];
       const maxCapacity = ticket?.quantity || 0;
       const price = ticket?.price ?? null;
-const currency = ticket?.currency ?? "INR";
+      const currency = ticket?.currency ?? "INR";
       const locationString =
         event.format === "IN_PERSON"
           ? event.venueName || event.address || "In Person"
@@ -104,20 +111,35 @@ const currency = ticket?.currency ?? "INR";
       return {
         id: event.id,
         title: event.title,
-        date: `${new Date(event.startTime).toLocaleDateString("en-US", {
-          month: "short",
-          day: "2-digit",
-        })} • ${locationString}`,
+        date: `${event.startTime ? new Date(event.startTime).toLocaleDateString("en-US", { month: "short", day: "2-digit" }) : "TBD"} • ${locationString}`,
         progress: regCount,
         total: maxCapacity,
-          price,
-  currency,
+        price,
+        currency,
         badge: "COMPLETED",
         badgeLight: true,
         imgSrc: event.coverImage || "/api/placeholder/400/200",
       };
     });
+const draftEventsFormatted = draftEvents.map((event) => {
+  const ticket = event.tickets?.[0];
+  const maxCapacity = ticket?.quantity || 0;
+  const price = ticket?.price ?? null;
+  const currency = ticket?.currency ?? "INR";
 
+  return {
+    id: event.id,
+    title: event.title,
+    date: "Draft • Not scheduled",
+    progress: 0,
+    total: maxCapacity,
+    price,
+    currency,
+    badge: "DRAFT",
+    badgeLight: true,
+    imgSrc: event.coverImage || "/api/placeholder/400/200",
+  };
+});
     // 5. Return structured payload for the frontend
     return NextResponse.json(
       {
@@ -129,7 +151,7 @@ const currency = ticket?.currency ?? "INR";
             upcomingEventsCount > 0 ? upcomingEventsCount : "N/A",
           averageRating: "N/A", // Mocked rating (requires a Review schema implementation)
         },
-        activeEvents: activeEventsFormatted,
+    activeEvents: [...draftEventsFormatted, ...activeEventsFormatted],
         pastEvents: pastEventsFormatted,
       },
       { status: 200 },

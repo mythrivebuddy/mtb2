@@ -163,7 +163,9 @@ const FeaturedSection = ({
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
     const now = new Date();
-    return sorted.find((e) => new Date(e.startTime) > now) ?? null; // ✅ null if all passed
+    return (
+      sorted.find((e) => e?.startTime && new Date(e.startTime) > now) ?? null
+    );
   };
   // For the sake of preserving the layout with limited data,
   // we fallback to the first event if there are fewer than 3 events.
@@ -382,8 +384,8 @@ const TrendingSection = ({
   if (!events || events.length === 0) return null;
 
   const now = new Date();
-  const trendingEvents = [...events]
-    .filter((e) => new Date(e.startTime) > now) // ✅ exclude past events
+ const trendingEvents = [...events]
+    .filter((e) => !e.startTime || new Date(e.startTime) > now) // ✅ Keep nulls AND future events
     .sort(
       (a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),

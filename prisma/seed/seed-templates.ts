@@ -477,7 +477,7 @@ async function main() {
         </tr>
         <tr style="border-top:2px solid #e5e7eb;">
           <td style="padding:8px 0;color:#065f46;font-weight:700;font-size:15px;">Your Earnings</td>
-          <td style="padding:8px 0;color:#16a34a;font-weight:700;font-size:16px;text-align:right;">₹{{coachEarning}}</td>
+          <td style="padding:8px 0;color:#16a34a;font-weight:700;font-size:16px;text-align:right;">₹{{creatorEarning}}</td>
         </tr>
       </table>
       <p style="margin:10px 0 0;color:#9ca3af;font-size:12px;">
@@ -1916,11 +1916,11 @@ async function main() {
   `.trim(),
     },
     {
-  templateId: "admin-subscription-cmp",
-  subject: "💳 New {{billingType}} Purchased",
-  description:
-    "Admin notification when a user purchases a subscription or CMP plan",
-  htmlContent: `
+      templateId: "admin-subscription-cmp",
+      subject: "💳 New {{billingType}} Purchased",
+      description:
+        "Admin notification when a user purchases a subscription or CMP plan",
+      htmlContent: `
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;">
 
   <!-- HEADER -->
@@ -1979,7 +1979,173 @@ async function main() {
 
 </div>
   `.trim(),
-}
+    },
+    // 1. FREE Hosted event joiner (user)
+    {
+      templateId: "hosted-event-enrolled-user",
+      subject: "You're in! {{programName}} 🎪",
+      description: "Sent when a user joins a free hosted event",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+  <div style="padding:28px;text-align:center;background:#fdf4ff;">
+    <h1 style="margin:0;color:#7e22ce;font-size:24px;">You're In! 🎪</h1>
+    <p style="margin:6px 0 0;color:#4b5563;">Your spot is confirmed</p>
+  </div>
+  <div style="padding:28px;">
+    <p style="font-size:15px;color:#374151;">Hi <strong>{{username}}</strong>,</p>
+    <p style="color:#4b5563;">You've successfully registered for:</p>
+    <h2 style="margin:8px 0 20px;color:#111827;">{{programName}}</h2>
+    <div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:8px;padding:14px;margin-bottom:20px;">
+      <p style="margin:0;color:#7e22ce;font-size:14px;">✅ Free access confirmed</p>
+    </div>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{programUrl}}" style="background:#7e22ce;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">
+        View Event →
+      </a>
+    </div>
+  </div>
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy. All rights reserved.</p>
+  </div>
+</div>`.trim(),
+    },
+
+    // 2. CREATOR (free + paid, financials spread in for paid) hosted event enrollments
+    {
+      templateId: "hosted-event-enrolled-creator",
+      subject: "🎪 New Registration for {{programName}}",
+      description:
+        "Sent to creator when someone registers for their hosted event common for both free and paid events",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+  <div style="padding:28px;text-align:center;background:#fdf4ff;">
+    <h1 style="margin:0;color:#7e22ce;font-size:24px;">New Registration 🎪</h1>
+    <p style="margin:6px 0 0;color:#4b5563;">Someone signed up for your event</p>
+  </div>
+  <div style="padding:28px;">
+    <p style="font-size:15px;color:#374151;">Hi <strong>{{creatorName}}</strong>,</p>
+    <p style="color:#4b5563;"><strong>{{username}}</strong> registered for:</p>
+    <h2 style="margin:8px 0 20px;color:#111827;">{{programName}}</h2>
+
+    {{#if baseAmount}}
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:18px;border-radius:8px;margin-bottom:20px;">
+      <h3 style="margin:0 0 12px;color:#166534;font-size:15px;">💳 Payment Breakdown</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Base Price</td>
+          <td style="text-align:right;">₹{{baseAmount}}</td>
+        </tr>
+        <tr style="border-top:1px solid #dcfce7;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Discount</td>
+          <td style="text-align:right;color:#dc2626;">− ₹{{discount}}</td>
+        </tr>
+        <tr style="border-top:1px solid #dcfce7;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Net Amount</td>
+          <td style="text-align:right;">₹{{netBase}}</td>
+        </tr>
+        <tr style="border-top:1px solid #dcfce7;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">GST</td>
+          <td style="text-align:right;">₹{{gst}}</td>
+        </tr>
+        <tr style="border-top:2px solid #16a34a;">
+          <td style="padding:8px 0;font-weight:700;">Total Paid</td>
+          <td style="text-align:right;color:#16a34a;font-weight:700;">₹{{totalPaid}}</td>
+        </tr>
+      </table>
+    </div>
+
+    {{#if showEarnings}}
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px;">
+      <h3 style="margin:0 0 12px;color:#374151;font-size:14px;">🏢 Your Earnings</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Platform Fee ({{commissionPercent}}% of ₹{{netBase}})</td>
+          <td style="text-align:right;color:#dc2626;">− ₹{{platformFee}}</td>
+        </tr>
+        <tr style="border-top:2px solid #e5e7eb;">
+          <td style="padding:8px 0;color:#065f46;font-weight:700;">Your Earnings</td>
+          <td style="text-align:right;color:#16a34a;font-weight:700;">₹{{creatorEarning}}</td>
+        </tr>
+      </table>
+      <p style="margin:10px 0 0;color:#9ca3af;font-size:12px;">GST is collected as tax and is not part of your earnings.</p>
+      <p style="margin:6px 0 0;color:#9ca3af;font-size:13px;">Payment Date: {{paymentDate}}</p>
+    </div>
+    {{/if}}
+    {{/if}}
+
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{programUrl}}" style="background:#7e22ce;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">
+        View Event →
+      </a>
+    </div>
+  </div>
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy. All rights reserved.</p>
+  </div>
+</div>`.trim(),
+    },
+
+    // 3. ADMIN (free + paid) hosted event enrollments
+    {
+      templateId: "hosted-event-enrolled-admin",
+      subject: "New Event Registration — {{programName}}",
+      description:
+        "Sent to admin when someone registers for a hosted event common for both free and paid events",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;">
+  <div style="padding:24px;text-align:center;background:#f1f5f9;">
+    <h2 style="margin:0;color:#111827;">New Event Registration</h2>
+    <p style="color:#6b7280;font-size:13px;">Hosted Event</p>
+  </div>
+  <div style="padding:24px;">
+    <p><strong>{{username}}</strong> registered for:</p>
+    <h3 style="margin:8px 0 16px;">{{programName}}</h3>
+    <p>Creator: <strong>{{creatorName}}</strong></p>
+
+    {{#if baseAmount}}
+    <div style="background:#f0fdf4;padding:16px;border-radius:8px;margin-top:16px;">
+      <h3 style="margin:0 0 12px;font-size:15px;">💳 Payment Breakdown</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td>Base Price</td><td style="text-align:right;">₹{{baseAmount}}</td></tr>
+        <tr><td>Discount</td><td style="text-align:right;color:#dc2626;">− ₹{{discount}}</td></tr>
+        <tr><td>Net Amount</td><td style="text-align:right;">₹{{netBase}}</td></tr>
+        <tr><td>GST</td><td style="text-align:right;">₹{{gst}}</td></tr>
+        <tr style="border-top:2px solid #16a34a;">
+          <td><strong>Total Paid</strong></td>
+          <td style="text-align:right;color:#16a34a;"><strong>₹{{totalPaid}}</strong></td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-top:20px;">
+      <h3 style="margin:0 0 12px;font-size:15px;">🏢 Revenue Split</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td>Platform Fee ({{commissionPercent}}%)</td>
+          <td style="text-align:right;color:#2563eb;">₹{{platformFee}}</td>
+        </tr>
+        <tr>
+          <td>Creator Earning</td>
+          <td style="text-align:right;color:#16a34a;">₹{{creatorEarning}}</td>
+        </tr>
+        <tr style="border-top:2px solid #e5e7eb;">
+          <td><strong>Platform Revenue</strong></td>
+          <td style="text-align:right;color:#2563eb;"><strong>₹{{platformEarning}}</strong></td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="margin-top:16px;font-size:13px;color:#6b7280;">
+      Payment Date: {{paymentDate}}<br/>
+      Transaction ID: {{transactionId}}
+    </p>
+    {{/if}}
+  </div>
+  <div style="background:#f9fafb;padding:14px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy</p>
+  </div>
+</div>`.trim(),
+    },
   ];
 
   let createdCount = 0;

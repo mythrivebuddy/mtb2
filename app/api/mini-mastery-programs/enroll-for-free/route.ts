@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 
 import { inngest } from "@/lib/inngest";
+import { PaymentContextType } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
       name: "mmp-challenge-store.notify",
       data: {
         userId: currentUserId,
-        entityType: "MMP",
+        entityType: PaymentContextType.MMP_PROGRAM,
         entityId: program.id,
         isFree: true, //  FREE MMP FLOW
       },

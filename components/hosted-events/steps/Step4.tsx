@@ -115,7 +115,9 @@ export default function Step4({
         router.push(`/dashboard/events/coach`);
         return;
       }
+    localStorage.removeItem("create-event-draft-id");
       toast.success("Event submitted for review");
+      queryClient.invalidateQueries({ queryKey: ["events"] });
       setShowSuccessModal(true);
     },
     onError: () => toast.error("Failed to publish event"),
