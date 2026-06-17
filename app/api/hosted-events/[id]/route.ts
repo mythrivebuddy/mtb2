@@ -8,9 +8,9 @@ import {
   toHostedEventUpdateData,
   validationError,
 } from "@/lib/hosted-event";
-import { inngest } from "@/lib/inngest";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 import { updateHostedEventSchema } from "@/schema/hosted-event";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -164,7 +164,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     }
     const ticket = event.tickets?.[0] ?? null;
     if (event.status === "UNDER_REVIEW") {
-      await inngest.send({
+      await safeInngestSend({
         name: "notification/send",
         data: {
           types: ["HOSTED_EVENT_CREATED_ADMIN"],
