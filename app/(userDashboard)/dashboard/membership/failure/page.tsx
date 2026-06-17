@@ -29,7 +29,7 @@ export default function FailurePage() {
           ? "Program Purchase Failed"
           : typeParam === "store_product"
             ? "Product Purchase Failed"
-            : typeParam === "hosted_event"
+            : typeParam === "event"
               ? "Event Registration Failed"
               : "Payment Failed";
 
@@ -42,7 +42,7 @@ export default function FailurePage() {
           ? "Your purchase of this Mini Mastery Program could not be completed."
           : typeParam === "store_product"
             ? "Your product purchase could not be completed."
-            : typeParam === "hosted_event"
+            : typeParam === "event"
               ? "Your registration for this event could not be completed."
               : "Your payment could not be completed.";
 
@@ -65,7 +65,7 @@ export default function FailurePage() {
           ? storeOrderId
             ? `/dashboard/store/product/${storeOrderId}`
             : "/dashboard/store"
-          : typeParam === "hosted_event" // ← ADD
+          : typeParam === "event" // ← ADD
             ? eventId
               ? `/dashboard/membership/checkout?context=HOSTED_EVENT&eventId=${eventId}`
               : "/dashboard/events"
@@ -143,7 +143,7 @@ export default function FailurePage() {
                 typeParam == "challenge" ||
                 typeParam == "store_product" ||
                 typeParam === "mmp_program" ||
-                typeParam === "hosted_event"
+                typeParam === "event"
               ) && (
                 <Button asChild variant="outline" className="text-sm">
                   <Link href="/pricing">

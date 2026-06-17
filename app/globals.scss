@@ -57,9 +57,12 @@
     --surface-cta: linear-gradient(to bottom right, #433428, #5A4535);
 
     /* ===== TEXT ===== */
-    --ink-primary: #2C251F;
+    --ink-primary: #000000;
     --ink-secondary: #5A5048;
-    --ink-accent: #B1673D;
+    --ink-accent: #B1673D;  // used in event discovery
+    --ink-tertiary:#4F453E;  // used in event discovery
+   
+    --ink-inverse: #FFFFFF;
 
     /* ===== BRAND ===== */
     --brand-deep: #432E1D;
@@ -67,7 +70,7 @@
     --brand-warm: #FFA97A;
     --brand-streak: #E77C53;
     --brand-momentum: #B1673D;
-
+    // --brand-soft-warm: #FFB690; // used 
     /* ===== BORDER ===== */
     --border-light: #E6D9CA;
     --border-accent: #B1673D;
@@ -76,8 +79,7 @@
     /* ===== EXTRA ===== */
     --selection-bg: #B1673D;
 
-    --ink-black: #000000;
-    --ink-inverse: #FFFFFF;
+   
     --brand-cta-ink: #433428;
     --border-muted: #D6C5B3;
     --border-soft: #F5F5F4;

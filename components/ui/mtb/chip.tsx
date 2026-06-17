@@ -8,6 +8,7 @@ import { theme } from "@/lib/new-home/theme/theme"
 const chipVariants = cva(
   cn(
     theme.chip,
+       "whitespace-nowrap", 
   ),
   {
     variants: {
@@ -16,9 +17,10 @@ const chipVariants = cva(
         false: theme.chipInactive,
       },
       size: {
-        default: "", // Empty! It safely relies entirely on theme.chip for standard sizing
+        default: ``, // Empty! It safely relies entirely on theme.chip for standard sizing
         lg: "px-10 sm:px-24", // Automatically overrides theme.chip padding/text
         stretch: "flex-1 text-center", // Automatically overrides theme.chip
+         pill: "px-3 py-1 text-xs rounded-full",
       }
     },
     defaultVariants: {
