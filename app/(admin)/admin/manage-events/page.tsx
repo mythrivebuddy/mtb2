@@ -681,7 +681,7 @@ function EventsTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-sm text-slate-600">
-                    {formatDate(event.startTime)}
+                    {event.startTime ? formatDate(event.startTime): "Not Scheduled"}
                   </TableCell>
                   <TableCell>
                     <Link

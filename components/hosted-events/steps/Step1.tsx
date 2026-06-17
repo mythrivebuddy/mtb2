@@ -572,7 +572,7 @@ export default function Step1({
     setValue("coverImage", file, { shouldValidate: true });
   };
   return (
-    <div className={`${theme.textDark} min-h-screen flex flex-col`}>
+    <div className={`${theme.text.primary} min-h-screen flex flex-col`}>
       <main className="flex-1 pb-12 pt-4 px-4 sm:px-6">
         {/* Form */}
         <form
@@ -899,13 +899,13 @@ export default function Step1({
                 />
 
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 group ${theme.borderAccent} transition-colors cursor-pointer bg-[var(--surface-calm)]`}
+                  className={`border-2 border-dashed rounded-xl p-8 group ${theme.border.accent} transition-colors cursor-pointer bg-[var(--surface-calm)]`}
                 >
                   <div className="flex flex-col items-center justify-center text-center group-hover:scale-105 transition-transform">
                     <div
                       className={`w-14 h-14 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm `}
                     >
-                      <FileText className={`w-6 h-6 ${theme.textDark}`} />
+                      <FileText className={`w-6 h-6 ${theme.text.primary}`} />
                     </div>
 
                     <h4 className="text-sm font-bold mb-1">
@@ -930,10 +930,10 @@ export default function Step1({
               <div className="mt-4 space-y-3">
                 {(resourceFile || existingResource) && (
                   <div
-                    className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg border ${theme.borderLight}`}
+                    className={`flex items-center justify-between p-4 bg-gray-50 rounded-lg border ${theme.border.light}`}
                   >
                     <div className="flex items-center gap-4">
-                      <FileText className={`w-6 h-6 ${theme.textAccent}`} />
+                      <FileText className={`w-6 h-6 ${theme.text.accent}`} />
 
                       <div>
                         {resourceFile ? (

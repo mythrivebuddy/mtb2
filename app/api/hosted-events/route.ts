@@ -71,46 +71,59 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    // await checkRole(["USER", "ADMIN"]);
-const session = await getServerSession(authOptions); 
+    const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
+    const { searchParams } = new URL(req.url);
+    const includePast = searchParams.get("past") === "true";
+
+    const now = new Date();
+
     const events = await prisma.hostedEvent.findMany({
       where: {
         status: Status.PUBLISHED,
-        // startTime: { gt: new Date() },
+        // If not including past, only fetch upcoming/ongoing
+        ...(!includePast && { startTime: { gt: now } }),
       },
       include: {
         ...hostedEventInclude,
         ...(userId && {
           enrollments: {
-            where: { userId: userId },
+            where: { userId },
             select: { id: true },
           },
         }),
       },
       orderBy: { createdAt: "asc" },
     });
-    const formattedEvents = events.map((event) => {
 
-    const typedEvent = event as typeof event & { enrollments?: { id: string }[] };
+    const formattedEvents = events.map((event) => {
+      const typedEvent = event as typeof event & {
+        enrollments?: { id: string }[];
+      };
       const { enrollments, ...rest } = typedEvent;
-      
       return {
         ...rest,
-        // If the user has an enrollment record, they are enrolled
         isEnrolled: enrollments ? enrollments.length > 0 : false,
       };
     });
 
-    return NextResponse.json({ events: formattedEvents });
+    // Split into upcoming and past on the server
+    const upcomingEvents = formattedEvents.filter(
+      (e) => !e.startTime || new Date(e.startTime) > now,
+    );
+    const pastEvents = includePast
+      ? formattedEvents.filter(
+          (e) => e.startTime && new Date(e.startTime) <= now,
+        )
+      : [];
 
+    return NextResponse.json({ events: upcomingEvents, pastEvents });
   } catch (error) {
     if (error instanceof Error && error.message.includes("authorized")) {
       return authErrorResponse(error);
     }
-
     return errorResponse(error);
   }
 }
