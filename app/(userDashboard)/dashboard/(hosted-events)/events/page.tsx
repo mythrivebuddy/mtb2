@@ -765,7 +765,7 @@ const PastEventsSection = ({
                   >
                     <MapPin size={12} />
                     {event.venueName || event.address || "Online"} · On{" "}
-                    {formatDate(event?.startTime)}
+                   {event.startTime ? formatDate(event?.startTime):""}
                   </p>
                 )}
                 <p
