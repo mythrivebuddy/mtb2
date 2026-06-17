@@ -127,6 +127,7 @@ export async function POST(req: NextRequest) {
         planId: plan.id,
         userId,
         paymentOrderId: paymentOrder.id,
+        source:"SUBSCRIPTION"
       },
     });
 

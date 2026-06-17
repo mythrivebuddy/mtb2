@@ -70,7 +70,6 @@ export async function parseHostedEventCreateBody(
       fileName: "resource.pdf", // fixed name
       upsert: true, // overwrite instead of delete+upload
     });
-
   }
   return body;
 }
@@ -127,12 +126,24 @@ export function errorResponse(error: unknown) {
       error.message.includes("Resource");
 
     if (isUploadValidationError) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+      return NextResponse.json(
+        { message: error.message, error },
+        { status: 400 },
+      );
     }
   }
 
   return NextResponse.json(
-    { message: "Something went wrong." },
+    {
+      message: "Something went wrong.",
+      error:
+        error instanceof Error
+          ? {
+              message: error.message,
+              stack: error.stack,
+            }
+          : error,
+    },
     { status: 500 },
   );
 }

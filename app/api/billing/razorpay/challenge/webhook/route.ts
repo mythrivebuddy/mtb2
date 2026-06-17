@@ -60,6 +60,13 @@ export async function POST(req: NextRequest) {
         status: 200,
       });
     }
+    if(payment?.notes.source === "SUBSCRIPTION") {
+      console.log("Subscription payment - ignored here");
+      
+   return new NextResponse("Subscription payment - ignored here", {
+        status: 200,
+      });
+    }
     const razorpayOrderId = payment.order_id;
     const paymentId = payment.id;
 
@@ -75,7 +82,7 @@ export async function POST(req: NextRequest) {
       return new NextResponse("Already processed", { status: 200 });
     }
     if (existingOrder.contextType === "SUBSCRIPTION") {
-      return new NextResponse("Subscription payment - ignored here", {
+      return new NextResponse("Subscription payment - ignored ", {
         status: 200,
       });
     }
@@ -145,7 +152,6 @@ export async function POST(req: NextRequest) {
             data: {
               userId: existingOrder.userId,
               orderId: existingOrder.id,
-              seId: existingOrder.userId,
               isFree: false, // paid flow
               entityType: existingOrder.contextType,
               entityId:existingOrder.contextType === "CHALLENGE" ? existingOrder.challengeId : existingOrder.contextType === "HOSTED_EVENT"? existingOrder.hostedEventId : existingOrder.contextType === "MMP_PROGRAM"? existingOrder.programId : ""

@@ -50,6 +50,11 @@ export const POST = async (req: NextRequest) => {
     /* ========================================================= */
     if (event.event === "payment.captured") {
       const payment = event.payload.payment.entity;
+      const source = payment.notes?.source;
+      if (source == "NOT_SUBSCRIPTION") {
+        console.log("This is not subscription hence return ",source)
+        return NextResponse.json({ received: true });
+      }
       if (payment.status !== "captured")
         return NextResponse.json({ received: true });
       // ✅ Ignore subscription payments
@@ -69,6 +74,9 @@ export const POST = async (req: NextRequest) => {
             "Order not found for subscription",
             payment.subscription_id,
           );
+          return NextResponse.json({ received: true });
+        }
+        if (order.contextType !== "SUBSCRIPTION") {
           return NextResponse.json({ received: true });
         }
         if (!order.planId || !order?.plan) {
@@ -132,8 +140,14 @@ export const POST = async (req: NextRequest) => {
         },
       });
 
+      
       if (!order || order.status === PaymentStatus.PAID)
         return NextResponse.json({ received: true });
+
+       if (order.contextType !== "SUBSCRIPTION") {
+          return NextResponse.json({ received: true });
+        }
+      
       const redemption = order.couponId
         ? await prisma.couponRedemption.findFirst({
             where: {
@@ -292,7 +306,7 @@ export const POST = async (req: NextRequest) => {
         include: {
           user: {
             select: {
-              id:true,
+              id: true,
               name: true,
             },
           },
@@ -548,7 +562,7 @@ export const POST = async (req: NextRequest) => {
           billingType: "Subscription", // OR "CMP"
           context: {
             userName: order.user?.name ?? "A user",
-            userId:order.user.id,
+            userId: order.user.id,
             planName: order.plan.name,
             orderId: order.id,
             amountSection,
