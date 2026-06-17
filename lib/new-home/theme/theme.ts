@@ -143,3 +143,6 @@ export const theme = {
 
   inputGroup: "grid grid-cols-1 md:grid-cols-3 gap-6",
 };
+
+
+// used in event creation stepper chip button TimeSelect of step 3 component 

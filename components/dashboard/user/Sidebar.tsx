@@ -36,7 +36,26 @@ type NavItemProps = {
   label: string;
   onLinkClick?: () => void; // Add prop for handling link click
 };
+function formatUserName(name?: string) {
+  if (!name) return "Your Name";
 
+  const parts = name.trim().split(" ");
+  const first = parts[0];
+
+  // only first name
+  if (parts.length === 1) return first;
+
+  // first + last
+  if (parts.length === 2) {
+    const last = parts[1];
+
+    // return full → CSS will truncate if needed
+    return `${first} ${last}`;
+  }
+
+  // 3+ names → first + middle initial
+  return `${first} ${parts[1][0]}`;
+}
 const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -101,7 +120,7 @@ type SidebarProps = {
 };
 
 const NavSection = ({ title, children, className }: NavSectionProps) => (
-  <div className={cn("space-y-2", className)}>
+  <div className={cn("", className)}>
     <h4 className="text-[#405D9F] font-normal text-sm dark:text-slate-400">
       {title}
     </h4>
@@ -125,6 +144,10 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
   const session = useSession();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  const isCoachOrSoloprenuer =
+    session.data?.user.userType == "COACH" ||
+    session.data?.user.userType == "SOLOPRENEUR";
 
   return (
     <div className="px-1 md:px-2">
@@ -202,35 +225,28 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
             <div className="flex items-center gap-3">
               <div>
                 <div className="flex items-center gap-1">
-                  <p className="text-sm dark:text-slate-400">Hello</p>
-                  <span className="text-amber-400">👋</span>
+                  <p className="text-lg dark:text-slate-400">Hello</p>
+                  <h3 className="font-bold text-lg dark:text-slate-50 max-w-[140px] truncate whitespace-nowrap">
+                    {formatUserName(user?.name)}
+                  </h3>
+                  <span className="text-amber-400 text-lg">👋</span>
                 </div>
-                <h3 className="font-bold text-lg dark:text-slate-50">
-                  {user?.name ? user.name : "Your Name"}
-                </h3>
               </div>
             </div>
 
-            <div className="flex flex-col gap-5 mt-6">
+            <div className="flex flex-col  mt-4">
               {/* Menu Section */}
-              <NavSection title="Menu">
+              <NavSection title="">
                 <NavItem
                   href="/dashboard"
                   icon={<LayoutDashboard size={20} />}
                   label="Dashboard"
                   onLinkClick={toggleSidebar}
                 />
-                {/* <NavItem
-                  href="/dashboard/leaderboard"
-                  icon={<LayoutList size={20} />}
-                  label="Leaderboard"
-                  onLinkClick={toggleSidebar}
-                /> */}
               </NavSection>
               {/* Settings Section */}
-              {(session.data?.user.userType == "COACH" ||
-                session.data?.user.userType == "SOLOPRENEUR") && (
-                <NavSection title="For Coach/Solopreneur">
+              {isCoachOrSoloprenuer && (
+                <NavSection title="">
                   <NavItem
                     href="/dashboard/business-profile"
                     icon={<User size={20} />}
@@ -267,7 +283,7 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                   <NavItem
                     href="/dashboard/events/coach"
                     icon={<Calendar size={20} />}
-                    label="Create Events"
+                    label="Manage Events"
                     onLinkClick={toggleSidebar}
                   />
                   <NavItem
@@ -277,12 +293,20 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
 
-                  <NavItem
-                    href="/dashboard/accountability/home"
-                    icon={<LayoutDashboard size={20} />}
-                    label="Create Accountability Group"
-                    onLinkClick={toggleSidebar} // Pass toggleSidebar
-                  />
+                  <div className="flex items-center ">
+                    <Link
+                      href="/dashboard/accountability/home"
+                      onClick={toggleSidebar}
+                      className={`flex items-center  py-2 text-[#6C7894] dark:text-slate-300  ${pathname === "/dashboard/accountability/home" ? "text-jp-orange" : ""}`}
+                    >
+                      <LayoutDashboard size={20} className="w-7" />
+
+                      {/* Extra gap added here */}
+                      <span className="font-normal text-[17px] ml-2">
+                        Create Accountability Group
+                      </span>
+                    </Link>
+                  </div>
                   <NavItem
                     href="/dashboard/buddy-lens"
                     icon={<HomeIcon size={20} />}
@@ -332,82 +356,95 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                   </ComingSoonWrapper> */}
                 </NavSection>
               )}
-              <NavSection title="Features">
-                <NavItem
-                  href={`/dashboard/complete-makeover-program/onboarding?planId=${cmpPlan?.id}`}
-                  icon={<Compass size={20} />}
-                  label="Life Blueprint"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/aligned-actions"
-                  icon={<TrendingUp size={20} />}
-                  label="Set Today's Focus"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/daily-bloom"
-                  icon={<Flower size={20} />}
-                  label="Plan The Day"
-                  onLinkClick={toggleSidebar}
-                />
-                <NavItem
-                  href="/dashboard/reminders"
-                  icon={<BellRing />}
-                  label="Set Reminders"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/progress-vault"
-                  icon={<LucideSignalHigh size={20} />}
-                  label="Log 1% Progress"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/miracle-log"
-                  icon={<WandSparklesIcon size={20} />}
-                  label="Log Miracles"
-                  onLinkClick={toggleSidebar}
-                />
-                <NavItem
-                  href="/dashboard/challenge?tab=join"
-                  icon={<Swords size={20} />}
-                  label="Join Challenges"
-                  onLinkClick={toggleSidebar}
-                />
-                <NavItem
-                  href="/dashboard/mini-mastery-programs"
-                  icon={<GraduationCap size={20} />}
-                  label="Join Mini Mastery Programs"
-                  onLinkClick={toggleSidebar}
-                />
-                <NavItem
-                  href="/dashboard/events"
-                  icon={<Calendar size={20} />}
-                  label="Join Events"
-                  onLinkClick={toggleSidebar}
-                />
-                <div className="flex items-center ">
-                  <Link href="/MTB-2026-the-complete-makeover-program">
-                    <span className="flex items-center gap-3 py-2 cursor-pointer text-[#6C7894] dark:text-slate-300 ">
-                      <Crown size={20} className="w-7" />
-                      2026 Complete Makeover Program
-                    </span>
-                  </Link>
-                </div>
-                <NavItem
-                  href="/dashboard/store"
-                  icon={<ShoppingCartIcon size={20} />}
-                  label="Growth Store"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/accountability/home?view=true"
-                  icon={<LayoutDashboard size={20} />}
-                  label="View Groups"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-              </NavSection>
+              <section className={`${isCoachOrSoloprenuer ? "mt-4" : ""}`}>
+                <NavSection title={`${isCoachOrSoloprenuer ? "Personal Growth Tools" : ""}`}>
+                  <div className={`${isCoachOrSoloprenuer ? "mt-2" : ""}`}>
+                    <NavItem
+                      href={`/dashboard/complete-makeover-program/onboarding?planId=${cmpPlan?.id}`}
+                      icon={<Compass size={20} />}
+                      label="Life Blueprint"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                    <NavItem
+                      href="/dashboard/aligned-actions"
+                      icon={<TrendingUp size={20} />}
+                      label="Set Today's Focus"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                    <NavItem
+                      href="/dashboard/daily-bloom"
+                      icon={<Flower size={20} />}
+                      label="Plan The Day"
+                      onLinkClick={toggleSidebar}
+                    />
+                    <NavItem
+                      href="/dashboard/reminders"
+                      icon={<BellRing />}
+                      label="Set Reminders"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                    <NavItem
+                      href="/dashboard/progress-vault"
+                      icon={<LucideSignalHigh size={20} />}
+                      label="Log 1% Progress"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                    <NavItem
+                      href="/dashboard/miracle-log"
+                      icon={<WandSparklesIcon size={20} />}
+                      label="Log Miracles"
+                      onLinkClick={toggleSidebar}
+                    />
+                    <NavItem
+                      href="/dashboard/challenge?tab=join"
+                      icon={<Swords size={20} />}
+                      label="Join Challenges"
+                      onLinkClick={toggleSidebar}
+                    />
+
+                    <div className="flex items-center ">
+                      <Link
+                        href="/dashboard/mini-mastery-programs"
+                        onClick={toggleSidebar}
+                        className={`flex items-center  py-2 text-[#6C7894] dark:text-slate-300  ${pathname === "/dashboard/mini-mastery-programs" ? "text-jp-orange" : ""}`}
+                      >
+                        <GraduationCap size={20} className="w-7" />
+
+                        {/* Extra gap added here */}
+                        <span className="font-normal text-[17px] ml-2">
+                          Join Mini Mastery Programs
+                        </span>
+                      </Link>
+                    </div>
+                    <NavItem
+                      href="/dashboard/events"
+                      icon={<Calendar size={20} />}
+                      label="Join Events"
+                      onLinkClick={toggleSidebar}
+                    />
+                    <div className="flex items-center ">
+                      <Link href="/MTB-2026-the-complete-makeover-program">
+                        <span className="flex items-center gap-3 py-2 cursor-pointer text-[#6C7894] dark:text-slate-300 ">
+                          <Crown size={20} className="w-7" />
+                          2026 Complete Makeover Program
+                        </span>
+                      </Link>
+                    </div>
+                    <NavItem
+                      href="/dashboard/store"
+                      icon={<ShoppingCartIcon size={20} />}
+                      label="Growth Store"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                    <NavItem
+                      href="/dashboard/accountability/home?view=true"
+                      icon={<LayoutDashboard size={20} />}
+                      label="View Groups"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                  </div>
+                </NavSection>
+              </section>
             </div>
           </div>
         </aside>
