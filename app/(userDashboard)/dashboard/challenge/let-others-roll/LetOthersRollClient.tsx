@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import ChallengeDescription from "@/components/Dompurify";
+import { useSession } from "next-auth/react";
 
 // Define the structure of your challenge data
 interface ChallengeDetails {
@@ -17,6 +18,7 @@ interface ChallengeDetails {
 // This is your original component, now in its own file.
 export default function LetOthersRollClient() {
   const router = useRouter();
+  const session = useSession();
   const searchParams = useSearchParams();
   const [shareableLink, setShareableLink] = useState("");
   const [isCopied, setIsCopied] = useState(false);
@@ -37,7 +39,7 @@ export default function LetOthersRollClient() {
       return;
     }
 
-    const newShareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${uuid}`;
+    const newShareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${uuid}?refId=${session.data?.user.id}`;
     setShareableLink(newShareableLink);
 
     const fetchChallengeDetails = async () => {

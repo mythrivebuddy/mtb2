@@ -15,9 +15,6 @@ import {
   PartyPopper,
   CalendarX,
   CalendarDays,
-  Share2,
-  Link2 as CopyIcon,
-  X as CloseIcon,
   ChevronRight,
   CheckCircle2,
   XCircle,
@@ -43,6 +40,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ParticipantEntry } from "../certificates/page";
+import Share from "@/components/common/ShareModal";
 
 // --- TYPE DEFINITIONS ---
 interface CompletionRecord {
@@ -105,7 +103,9 @@ const StatCard = ({
     </div>
     <div>
       <p className="text-sm text-gray-500 dark:text-slate-400">{label}</p>
-      <p className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-slate-100">{value}</p>
+      <p className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-slate-100">
+        {value}
+      </p>
     </div>
     {cornerIcon && <div className="absolute top-2 right-2">{cornerIcon}</div>}
   </div>
@@ -295,84 +295,6 @@ const ChallengeCalendar = ({
   );
 };
 
-const socialLinksData = [
-  {
-    name: "X",
-    icon: (
-      <svg
-        role="img"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-5 h-5 fill-current"
-      >
-        {" "}
-        <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />{" "}
-      </svg>
-    ),
-    template: `https://x.com/intent/tweet?url={url}&text={text}`,
-  },
-  {
-    name: "Facebook",
-    icon: (
-      <svg
-        role="img"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-5 h-5 fill-current"
-      >
-        {" "}
-        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073Z" />{" "}
-      </svg>
-    ),
-    template: `https://www.facebook.com/sharer/sharer.php?u={url}`,
-  },
-  {
-    name: "LinkedIn",
-    icon: (
-      <svg
-        role="img"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-5 h-5 fill-current"
-      >
-        {" "}
-        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z" />{" "}
-      </svg>
-    ),
-    template: `https://www.linkedin.com/sharing/share-offsite/?url={url}`,
-  },
-  {
-    name: "Telegram",
-    icon: (
-      <svg
-        role="img"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-5 h-5 fill-current"
-      >
-        {" "}
-        <path d="M.48 11.727c-1.256.49-1.233 1.21.05 1.57l4.38 1.353 1.353 4.38c.36.118 1.08.103 1.57-.05L9.63 17.85l5.523 4.08c1.02.75 1.83.343 2.138-.853l3.96-18.498c.39-1.84-.89-2.52-2.19-1.995L.48 11.727z" />{" "}
-      </svg>
-    ),
-    template: `https://t.me/share/url?url={url}&text={text}`,
-  },
-  {
-    name: "WhatsApp",
-    icon: (
-      <svg
-        role="img"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-5 h-5 fill-current"
-      >
-        {" "}
-        <path d="M12.04 2.004c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.5 1.36 5.06l-1.43 5.23 5.36-1.42c1.48.82 3.16 1.25 4.88 1.25 5.46 0 9.91-4.45 9.91-9.91 0-5.47-4.45-9.91-9.91-9.91m0 18.26c-1.63 0-3.24-.44-4.65-1.28l-.34-.2-3.44.91.93-3.35-.22-.36c-.92-1.48-1.4-3.2-1.4-5.01 0-4.57 3.71-8.28 8.28-8.28 4.57 0 8.28 3.71 8.28 8.28 0 4.57-3.71 8.28-8.28 8.28m4.51-6.15c-.24-.12-1.42-.7-1.64-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.37-1.94-1.2-.72-.65-1.2-1.45-1.34-1.7-.14-.24 0-.37.11-.48.1-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.29-.74-1.77s-.4-.41-.54-.41-.28-.01-.42-.01c-.14 0-.38.06-.58.3-.2.24-.76.74-.76 1.8 0 1.06.78 2.08.88 2.22.1.14 1.55 2.5 3.76 3.32.53.2 1 .32 1.34.4.45.1.86.08 1.18-.06.38-.16 1.25-1.03 1.42-1.29.17-.26.17-.48.12-.6z" />{" "}
-      </svg>
-    ),
-    template: `https://api.whatsapp.com/send?text={text}%20{url}`,
-  },
-];
-
 // --- MAIN PAGE COMPONENT ---
 export default function ChallengeManagementPage({
   challengeId,
@@ -390,8 +312,7 @@ export default function ChallengeManagementPage({
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
   const [calendarPosition, setCalendarPosition] = useState("top-full mt-2");
   // const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -535,26 +456,6 @@ export default function ChallengeManagementPage({
     (typeof window !== "undefined" ? window.location.origin : "");
   const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug}`;
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareableLink).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  const shareText = encodeURIComponent(
-    `Check out this challenge: ${challenge?.title}!`,
-  );
-  const shareUrl = encodeURIComponent(shareableLink);
-  const socialLinks = socialLinksData.map((social) => ({
-    name: social.name,
-    icon: social.icon,
-
-    onClick: () =>
-      window.open(
-        social.template.replace("{url}", shareUrl).replace("{text}", shareText),
-      ),
-  }));
   const deleteUserMutation = async (
     challengeId: string,
     userId: string,
@@ -771,13 +672,11 @@ export default function ChallengeManagementPage({
                 <span className="font-medium">Back</span>
               </button>
 
-              <button
-                onClick={() => setIsShareModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-amber-600 text-white rounded-full text-md font-semibold hover:bg-amber-700 transition-colors"
-              >
-                <Share2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Share</span>
-              </button>
+              <Share
+                url={shareableLink}
+                title={`Check out this challenge: ${challenge.title}!`}
+                userId={session.data?.user?.id}
+              />
             </div>
 
             <div className="flex items-center gap-8 justify-between mb-4">
@@ -817,7 +716,9 @@ export default function ChallengeManagementPage({
           {/* SOCIAL LINK */}
           {challenge.social_link_task?.trim() && (
             <div className="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm mb-6 dark:border-slate-700 dark:bg-slate-900">
-              <p className="text-gray-700 font-semibold mb-1 dark:text-slate-200">Related Links:</p>
+              <p className="text-gray-700 font-semibold mb-1 dark:text-slate-200">
+                Related Links:
+              </p>
               <Link
                 href={challenge.social_link_task}
                 target="_blank"
@@ -968,7 +869,9 @@ export default function ChallengeManagementPage({
                       />
                     ))
                   ) : (
-                    <p className="text-gray-500 dark:text-slate-400">No tasks defined.</p>
+                    <p className="text-gray-500 dark:text-slate-400">
+                      No tasks defined.
+                    </p>
                   )}
                 </div>
               </div>
@@ -1085,7 +988,9 @@ export default function ChallengeManagementPage({
             <h2 className="text-2xl font-bold text-slate-800 mb-2 dark:text-slate-50">
               Challenge Not Active
             </h2>
-            <p className="text-slate-600 mb-6 dark:text-slate-300">{errorMessage}</p>
+            <p className="text-slate-600 mb-6 dark:text-slate-300">
+              {errorMessage}
+            </p>
             <button
               onClick={() => setIsErrorModalOpen(false)}
               className="w-full bg-slate-800 text-white p-3 rounded-lg font-semibold hover:bg-slate-700"
@@ -1096,57 +1001,6 @@ export default function ChallengeManagementPage({
         </div>
       )}
 
-      {/* ✅ SHARE MODAL */}
-      {isShareModalOpen && (
-        <div
-          onClick={() => setIsShareModalOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 sm:p-8 dark:border dark:border-slate-700 dark:bg-slate-900"
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-50">Share</h2>
-              <button
-                onClick={() => setIsShareModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <CloseIcon size={24} />
-              </button>
-            </div>
-
-            <h3 className="text-sm font-semibold text-slate-500 mb-3">
-              Share link via
-            </h3>
-
-            <div className="flex items-center justify-start gap-4 text-slate-700 mb-6 flex-wrap">
-              {socialLinks.map((social) => (
-                <button
-                  key={social.name}
-                  onClick={social.onClick}
-                  aria-label={`Share on ${social.name}`}
-                  className="w-12 h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-full"
-                >
-                  {social.icon}
-                </button>
-              ))}
-            </div>
-
-            <h3 className="text-sm font-semibold text-slate-500 mb-3">
-              Page direct
-            </h3>
-
-            <button
-              onClick={handleCopyLink}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm"
-            >
-              <CopyIcon className="w-5 h-5" />
-              <span>{copied ? "Copied!" : "Copy link"}</span>
-            </button>
-          </div>
-        </div>
-      )}
       {/* ✅ Remove User Dialog (only one instance globally) */}
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
         <DialogContent className="sm:max-w-md">

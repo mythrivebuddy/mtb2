@@ -200,6 +200,7 @@ function EventCard({
   imgSrc: string;
 }) {
   const router = useRouter();
+  const session = useSession();
   const safeTotal = total > 0 ? total : 1;
   const percentage = (progress / safeTotal) * 100;
   const eventUrl =
@@ -220,8 +221,17 @@ function EventCard({
             <h3 className={`${theme.typography.h1} text-2xl`}>{title}</h3>
             <div className="flex flex-col items-end gap-4">
               {/* Stop propagation so share click doesn't navigate */}
-              <div onClick={(e) => e.preventDefault()}>
-                <Share url={eventUrl} title={title} />
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                <Share
+                  url={eventUrl}
+                  title={title}
+                  userId={session.data?.user.id}
+                />
               </div>
 
               <span
