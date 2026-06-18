@@ -11,8 +11,8 @@ import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse"
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import { LimitType } from "@/lib/access-control/featureConfig";
 import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
-import { inngest } from "@/lib/inngest";
 import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
+import { safeInngestSend } from "@/lib/utils/inngest/utils";
 
 // Define this interface near the top of the file or in your featureConfig types
 interface ChallengesFeatureConfig {
@@ -246,7 +246,7 @@ export async function POST(request: Request) {
 
     // ✅ ONLY trigger for FREE
     if (!isPaid) {
-      await inngest.send({
+      await safeInngestSend({
         name: "mmp-challenge-store.notify",
         id: `notify-free-challenge-${challengeToJoin.id}-${joinerId}`, // optional but good
         data: {

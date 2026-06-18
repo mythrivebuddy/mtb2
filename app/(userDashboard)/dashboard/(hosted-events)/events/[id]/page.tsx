@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import EventDetailsPage from "@/components/hosted-events/event-details/EventDetails.page";
 import { prisma } from "@/lib/prisma";
 import assets from "@/lib/constants/assets";
+import { stripHtml } from "@/lib/utils/html";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -39,15 +40,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = `${event.title} | MyThriveBuddy`;
 
-  const description =
-    event.description
-      ?.replace(/<[^>]*>/g, "")
-      .replace(/&ndash;/g, "–")
-      .replace(/&amp;/g, "&")
-      .replace(/&bull;/g, "•")
-      .replace(/&nbsp;/g, " ")
-      .trim()
-      .slice(0, 160) ?? "Explore this event on MyThriveBuddy";
+ const description =
+  stripHtml(event.description, 155) || "Explore this event...";
   const image =
     event.coverImage ?? `${process.env.NEXT_URL}${assets.logo.current}?v=2`;
   const url = `${process.env.NEXT_URL}/dashboard/events/${id}`;

@@ -307,8 +307,8 @@ export default function ChallengeDetailView({
     if (sessionStatus === "loading") return;
 
     if (sessionStatus !== "authenticated") {
-      const redirectPath = `/dashboard/challenge/upcoming-challenges/${challenge.id}`;
-      router.push(`/signin?redirect=${redirectPath}`);
+      const redirectPath = window.location.href;
+      router.push(`/signin?callbackUrl=${redirectPath}`);
       return;
     }
 

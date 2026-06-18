@@ -203,10 +203,14 @@ function EventCard({
   const session = useSession();
   const safeTotal = total > 0 ? total : 1;
   const percentage = (progress / safeTotal) * 100;
+  const ref = session?.data?.user?.referralCode;
+
+  const eventPath = `/dashboard/events/${id}${ref ? `?ref=${ref}` : ""}`;
+
   const eventUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/dashboard/events/${id}`
-      : `/dashboard/events/${id}`;
+      ? `${window.location.origin}${eventPath}`
+      : eventPath;
   return (
     <div
       onClick={() => router.push(`/dashboard/events/${id}`)}
@@ -230,7 +234,7 @@ function EventCard({
                 <Share
                   url={eventUrl}
                   title={title}
-                  userId={session.data?.user.id}
+              
                 />
               </div>
 

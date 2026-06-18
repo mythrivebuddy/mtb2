@@ -22,6 +22,7 @@ import Link from "next/link";
 import { useEnrollFreeEvent } from "@/hooks/use-free-event-enroll";
 import { Chip } from "@/components/ui/mtb/chip";
 import { Button } from "@/components/ui/button";
+import { stripHtml } from "@/lib/utils/html";
 
 // --- CATEGORY DATA ---
 const eventTypes = [
@@ -57,11 +58,6 @@ type HostedEventsListResponse = {
   pastEvents: HostedEventWithTickets[];
 };
 
-// --- HELPER FUNCTIONS ---
-const stripHtml = (html: string) => {
-  if (!html) return "";
-  return html.replace(/<[^>]*>?/gm, "");
-};
 
 const getPrice = (event: HostedEventWithTickets) => {
   if (event?.tickets && event.tickets.length > 0) {
@@ -104,7 +100,7 @@ const HeroSection = ({
   searchValue: string;
   onSearchChange: (val: string) => void;
 }) => (
-  <section className="relative w-full h-[600px] md:h-[700px] flex items-center justify-center text-center overflow-hidden">
+  <section className="relative w-full h-[584px]  flex items-center justify-center text-center overflow-hidden">
     <div className="absolute inset-0 z-0">
       <Image
         src="/event-mountains.jpeg"
@@ -248,7 +244,7 @@ const FeaturedSection = ({
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[420px]">
         {/* Main large card */}
-        <div className="md:col-span-2 relative rounded-2xl overflow-hidden group cursor-pointer h-[400px] md:h-full">
+        <div className="md:col-span-2 relative rounded-2xl overflow-hidden group  h-[400px] md:h-full">
           <Image
             src={mainEvent.coverImage || FALLBACK_IMAGE}
             alt={mainEvent.title}
@@ -269,7 +265,7 @@ const FeaturedSection = ({
             <p
               className={`${theme.text.inverse} text-base sm:text-lg max-w-md mb-8 line-clamp-2`}
             >
-              {stripHtml(mainEvent.description || "")}
+              {stripHtml(mainEvent.description,140)}
             </p>
             <Button
               onClick={() => router.push(`/dashboard/events/${mainEvent.id}`)}
@@ -434,9 +430,9 @@ const RecommendedSection = ({
         "
       >
         {recommended.map((event) => (
-          <Link
+          <div
             key={event.id}
-            href={`/dashboard/events/${event.id}`}
+          
             className="
               bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm group flex flex-col hover:shadow-md transition-shadow
               shrink-0 w-[55vw] sm:w-auto
@@ -487,14 +483,16 @@ const RecommendedSection = ({
                 <span className={`font-bold text-base ${theme.text.brandDeep}`}>
                   {event.isPaid ? getPrice(event) : "Free"}
                 </span>
-                <span
+                <Link
+            key={event.id}
+            href={`/dashboard/events/${event.id}`}
                   className={`text-xs font-medium ${theme.text.brandDeep} transition`}
                 >
                   View Event
-                </span>
+                </Link>
               </div>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
 

@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 
 // 1. --- ADD THIS IMPORT ---
 import jwt from "jsonwebtoken";
+import { nanoid } from "nanoid";
 
 
 // --- FIX: ADDED MODULE AUGMENTATION BLOCK ---
@@ -28,6 +29,7 @@ declare module "next-auth" {
       lastSurveyTime: string | null;
       authMethod: AuthMethod;
       isAffiliate?: boolean;
+      referralCode?: string | null;
     } & DefaultSession["user"];
   }
 
@@ -42,6 +44,7 @@ declare module "next-auth" {
     membership: string | null;
     lastSurveyTime: Date | null;
     authMethod: AuthMethod;
+    referralCode?:string | null; 
   }
 }
 
@@ -61,6 +64,7 @@ declare module "next-auth/jwt" {
     supabaseAccessToken?: string;
      authMethod: AuthMethod;
       isAffiliate?: boolean; 
+      referralCode?: string | null;
   }
 }
 // --- END AUGMENTATION ---
@@ -190,6 +194,7 @@ export const authConfig: AuthOptions = {
               authMethod: AuthMethod.GOOGLE,
               isEmailVerified: true,
               isFirstTimeSurvey: true,
+              referralCode: nanoid(8),
             },
             include: {
               plan: true,
@@ -221,6 +226,7 @@ export const authConfig: AuthOptions = {
           user.id = createdUser.id;
           user.isFirstTimeSurvey = createdUser.isFirstTimeSurvey ?? true;
           user.lastSurveyTime = createdUser.lastSurveyTime ?? null;
+          user.referralCode = createdUser.referralCode;
         } else {
           const updatedUser: UserWithPlan = await prisma.user.update({ // <-- FIX: Use UserWithPlan type
             where: { email: user.email! },
@@ -273,6 +279,7 @@ export const authConfig: AuthOptions = {
             lastSurveyTime: true,
             authMethod: true,
             isAffiliate: true,
+            referralCode:true
           }
         });
         // Overwrite token with fresh DB data
@@ -283,6 +290,7 @@ export const authConfig: AuthOptions = {
           token.isFirstTimeSurvey = dbUser.isFirstTimeSurvey ?? token.isFirstTimeSurvey;
           token.lastSurveyTime = dbUser.lastSurveyTime?.toISOString() || token.lastSurveyTime;
           token.isAffiliate = dbUser.isAffiliate ?? false; 
+          token.referralCode = dbUser.referralCode;
         }
       }
       if (trigger === "update" && session) {
@@ -337,6 +345,7 @@ export const authConfig: AuthOptions = {
         session.user.image = token.picture;
         session.user.authMethod = token.authMethod
         session.user.isAffiliate = token.isAffiliate ?? false; 
+        session.user.referralCode = token.referralCode;
       }
       session.expires = new Date(Date.now() + token.maxAge * 1000).toISOString();
 

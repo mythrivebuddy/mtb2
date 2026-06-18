@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
@@ -16,7 +16,7 @@ import FirstVisitNotificationPopup from "../dashboard/user/FirstNotificationPopU
 import UserTypeSelection from "../dashboard/user/UserTypeSelection";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const { status: sessionStatus, data: session } = useSession();
+  const { status: sessionStatus, data: session, update } = useSession();
 
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
@@ -40,13 +40,11 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     pathname.startsWith("/dashboard/challenge/") ||
     pathname === "/dashboard/store" ||
     pathname.startsWith("/dashboard/store/") ||
-    pathname === "/dashboard/mini-mastery-programs"
-    ||  pathname === "/dashboard/events" ||
-      (
-    /^\/dashboard\/events\/[^/]+$/.test(pathname) &&
-    !pathname.startsWith("/dashboard/events/coach") &&
-    !pathname.startsWith("/dashboard/events/create")
-  );
+    pathname === "/dashboard/mini-mastery-programs" ||
+    pathname === "/dashboard/events" ||
+    (/^\/dashboard\/events\/[^/]+$/.test(pathname) &&
+      !pathname.startsWith("/dashboard/events/coach") &&
+      !pathname.startsWith("/dashboard/events/create"));
   const shouldUseInheritBg = isChallengeRoute && isGuest && !isLoading;
 
   useEffect(() => {
@@ -70,6 +68,32 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
     updateTimezone();
   }, [user]);
+
+  const isGenerating = useRef(false);
+
+  useEffect(() => {
+    if (!session?.user?.id || session.user.referralCode) return;
+    if (isGenerating.current) return;
+
+    const generateReferral = async () => {
+      isGenerating.current = true;
+      try {
+        const res = await axios.post("/api/user/generate-referral");
+
+        await update({
+          user: {
+            ...session.user,
+            referralCode: res.data.referralCode,
+          },
+        });
+      } catch (err) {
+        console.error("Failed to generate referral code", err);
+        isGenerating.current = false; // reset only on error so retry is possible
+      }
+    };
+
+    generateReferral();
+  }, [session?.user?.id]); // only depend on user ID, not referralCode
 
   if (sessionStatus === "loading") {
     return (
