@@ -9,13 +9,11 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import PageSkeleton from "@/components/PageSkeleton";
 import { getGreetingData } from "@/lib/utils/utils";
-import Link from "next/link";
 import Share from "@/components/common/ShareModal";
 import { HostedEventDashboardData } from "@/types/client/events";
-
+import { Button } from "@/components/ui/button";
 
 export default function CoachDashboard() {
-
   const { data, isLoading, isError } = useQuery<HostedEventDashboardData>({
     queryKey: ["events"],
     queryFn: async () => {
@@ -27,9 +25,9 @@ export default function CoachDashboard() {
   const session = useSession();
   const { text } = getGreetingData();
   const combinedEvents = [
-  ...(data?.activeEvents || []),
-  ...(data?.pastEvents || []),
-];
+    ...(data?.activeEvents || []),
+    ...(data?.pastEvents || []),
+  ];
   if (isLoading) {
     return <PageSkeleton type="events" />;
   }
@@ -51,13 +49,14 @@ export default function CoachDashboard() {
                 week and a 12% increase in new registrations since Monday. */}
               </p>
             </div>
-            <button
+            <Button
               onClick={() => router.push("/dashboard/events/create")}
-              className={`${theme.buttonDark} flex items-center justify-center gap-2 px-6 py-3 rounded-full font-medium w-full md:w-auto shrink-0 transition-colors ease-linear`}
+              variant="mtbPrimary"
+              size="mtbPill"
             >
               <Plus size={18} />
               Create Event
-            </button>
+            </Button>
           </div>
 
           {/* STATS GRID */}
@@ -88,9 +87,7 @@ export default function CoachDashboard() {
             <div
               className={`bg-white rounded-2xl p-6 border ${theme.borderLight}`}
             >
-              <h3 className="text-sm tracking-widest mb-4">
-                AVERAGE RATING
-              </h3>
+              <h3 className="text-sm tracking-widest mb-4">AVERAGE RATING</h3>
               <div className="text-3xl font-medium mb-2">
                 {data?.stats?.averageRating ?? "N/A"}
               </div>
@@ -114,9 +111,7 @@ export default function CoachDashboard() {
                   <h2 className={`${theme.typography.h1} text-2xl`}>
                     Active Event
                   </h2>
-                  <p
-                    className={`text-sm ${theme.textAccent} hover:underline`}
-                  >
+                  <p className={`text-sm ${theme.textAccent} hover:underline`}>
                     View all
                   </p>
                 </div>
@@ -128,13 +123,11 @@ export default function CoachDashboard() {
                     </div>
                   )}
 
-                  {!isLoading &&
-                    !isError &&
-                    combinedEvents.length === 0 && (
-                      <div className="text-center p-8 bg-gray-50 rounded-2xl border border-gray-100 text-gray-500">
-                        No active events scheduled.
-                      </div>
-                    )}
+                  {!isLoading && !isError && combinedEvents.length === 0 && (
+                    <div className="text-center p-8 bg-gray-50 rounded-2xl border border-gray-100 text-gray-500">
+                      No active events scheduled.
+                    </div>
+                  )}
 
                   {!isLoading &&
                     !isError &&
@@ -176,9 +169,7 @@ function StatCard({
     <div
       className={`bg-white rounded-2xl p-5 md:p-6 border ${theme.borderLight} flex flex-col justify-between`}
     >
-      <h3 className="text-sm tracking-widest mb-4 uppercase">
-        {title}
-      </h3>
+      <h3 className="text-sm tracking-widest mb-4 uppercase">{title}</h3>
       <div>
         <div className="text-2xl md:text-3xl font-medium mb-2">{value}</div>
         <div className={`text-xs md:text-sm ${theme.textAccent}`}>
@@ -199,7 +190,7 @@ function EventCard({
   badgeLight,
   imgSrc,
 }: {
-  id:string
+  id: string;
   title: string;
   date: string;
   progress: number;
@@ -208,13 +199,17 @@ function EventCard({
   badgeLight: boolean;
   imgSrc: string;
 }) {
+  const router = useRouter();
+  const session = useSession();
   const safeTotal = total > 0 ? total : 1;
   const percentage = (progress / safeTotal) * 100;
-    const eventUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/dashboard/events/${id}`
-    : `/dashboard/events/${id}`;
+  const eventUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/dashboard/events/${id}`
+      : `/dashboard/events/${id}`;
   return (
-    <Link href={`/dashboard/events/${id}`}
+    <div
+      onClick={() => router.push(`/dashboard/events/${id}`)}
       className={`bg-white rounded-2xl border ${theme.borderLight} overflow-hidden flex flex-col md:flex-row group cursor-pointer hover:shadow-md transition-shadow`}
     >
       <div className="h-48 md:h-auto md:w-64 bg-gray-200 relative shrink-0">
@@ -225,23 +220,30 @@ function EventCard({
           <div className="flex justify-between items-start mb-2">
             <h3 className={`${theme.typography.h1} text-2xl`}>{title}</h3>
             <div className="flex flex-col items-end gap-4">
-                     {/* Stop propagation so share click doesn't navigate */}
-              <div onClick={(e) => e.preventDefault()}>
-                <Share url={eventUrl} title={title} />
+              {/* Stop propagation so share click doesn't navigate */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                <Share
+                  url={eventUrl}
+                  title={title}
+                  userId={session.data?.user.id}
+                />
               </div>
 
-            <span
-              className={`text-[10px] font-bold px-2 py-1 rounded tracking-wider ${
-                badgeLight
-                ? "bg-gray-200 text-gray-700"
-                  : "bg-[#C47D55] text-white"
-              }`}
+              <span
+                className={`text-[10px] font-bold px-2 py-1 rounded tracking-wider ${
+                  badgeLight
+                    ? "bg-gray-200 text-gray-700"
+                    : "bg-[#C47D55] text-white"
+                }`}
               >
-              {badge}
-            </span>
-      
-                </div>
-                
+                {badge}
+              </span>
+            </div>
           </div>
           <p className={theme.highLightTextColor + " text-sm mb-6"}>{date}</p>
         </div>
@@ -261,12 +263,19 @@ function EventCard({
               />
             </div>
           </div>
-          {/* <button className="px-6 py-2 border border-gray-300 rounded-full text-sm font-medium hover:border-gray-900 transition-colors shrink-0">
+          <Button
+            variant="mtbTertiary"
+            size="mtbPill"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/dashboard/events/create?eventId=${id}`);
+            }}
+          >
             Manage
-          </button> */}
+          </Button>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 

@@ -296,6 +296,7 @@ export const POST = async (req: NextRequest) => {
       notes: {
         paymentOrderId: paymentOrder.id,
         userId,
+        source:"SUBSCRIPTION"
       },
     });
 

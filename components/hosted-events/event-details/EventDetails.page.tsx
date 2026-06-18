@@ -66,15 +66,15 @@ const HeroSection = ({ event }: { event: EventDetail }) => {
       className="relative h-[60vh] min-h-[500px] w-full flex items-end pb-16"
       // style={{ backgroundImage: `url('${event.coverImage ?? ""}')` }}
     >
-    <Image
-    src={event?.coverImage ?? assets.logo.current}
-    alt={event.title}
-    fill
-    className="object-cover object-center  " // object-top shows the top of image (faces/subjects)
-    priority
-    quality={100}
-    unoptimized
-  />
+      <Image
+        src={event?.coverImage ?? assets.logo.current}
+        alt={event.title}
+        fill
+        className="object-cover object-center  " // object-top shows the top of image (faces/subjects)
+        priority
+        quality={100}
+        unoptimized
+      />
       {/* <div className="absolute inset-0 bg-black/40" /> */}
       {/* Share button top-right */}
       <div className="absolute top-4 right-4 z-20">
@@ -102,7 +102,11 @@ const GuideCard = ({ event }: { event: EventDetail }) => {
     <div
       className={`${theme.bgPrimary} p-6 md:p-8 rounded-xl border ${theme.borderLight} mt-8`}
     >
-      <div className="flex flex-col sm:flex-row gap-6 items-start">
+      <Link
+        href={`/profile/${event.creator.id}`}
+        target="_blank"
+        className="flex flex-col sm:flex-row gap-6 items-start"
+      >
         <Image
           src={event.creator.image ?? ""}
           alt={event.creator.name}
@@ -121,7 +125,7 @@ const GuideCard = ({ event }: { event: EventDetail }) => {
             {bp?.shortBio ?? event.creator.bio ?? ""}
           </p>
         </div>
-      </div>
+      </Link>
     </div>
   );
 };
@@ -231,8 +235,11 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
       year: "numeric",
     });
   const sameDay = event.endTime
-    ? isSameDay(new Date(event.startTime), new Date(event.endTime))
+    ? isSameDay(new Date(event?.startTime), new Date(event.endTime))
     : true;
+
+  const isEventOver = new Date(event?.startTime) < new Date();
+
   const queryKeys = useMemo(
     () => [["all-events"], ["event-detail", event.id]],
     [event.id],
@@ -272,7 +279,7 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
           <div className={`flex items-center gap-3 text-sm ${theme.textDark}`}>
             <Calendar className="w-5 h-5 opacity-50" />
             <span>
-              {formatDate(event.startTime)}
+              {event.startTime ? formatDate(event.startTime) : "Not Scheduled"}
               {event.endTime && !sameDay
                 ? ` — ${formatDate(event.endTime)}`
                 : ""}
@@ -280,35 +287,39 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
           </div>
         </div>
 
-        <button
-          disabled={isEnrolled || loadingId === event.id}
-          onClick={() => {
-            if (session.data?.user.role === "ADMIN") {
-              toast.error("Admins cannot enroll for events");
-              return;
-            }
-            freeEnroll({
-              id: event.id,
-              isPaid: event.isPaid,
-              isEnrolled: event.isEnrolled,
-            });
-          }}
-          className={`${theme.buttonDark} w-full py-4 rounded-xl font-medium text-lg flex items-center justify-center gap-2 transition-colors ease-linear ${
-            isEnrolled ? "opacity-75 cursor-not-allowed" : ""
-          }`}
-        >
-          {loadingId === event.id ? (
-            "Enrolling..."
-          ) : event.isEnrolled ? (
-            "You are enrolled"
-          ) : event.isPaid ? (
-            <>
-              Enroll Now <ArrowRight className="w-5 h-5" />
-            </>
-          ) : (
-            "Enroll for Free"
-          )}
-        </button>
+        {event.status == "PUBLISHED" && (
+          <button
+            disabled={isEnrolled || loadingId === event.id || isEventOver}
+            onClick={() => {
+              if (session.data?.user.role === "ADMIN") {
+                toast.error("Admins cannot enroll for events");
+                return;
+              }
+              freeEnroll({
+                id: event.id,
+                isPaid: event.isPaid,
+                isEnrolled: event.isEnrolled,
+              });
+            }}
+            className={`${theme.buttonDark} w-full py-4 rounded-xl font-medium text-lg flex items-center justify-center gap-2 transition-colors ease-linear ${
+              isEnrolled || isEventOver ? "opacity-75 cursor-not-allowed" : ""
+            }`}
+          >
+            {loadingId === event.id ? (
+              "Enrolling..."
+            ) : event.isEnrolled ? (
+              "You are enrolled"
+            ) : isEventOver ? (
+              "Enrollment Closed"
+            ) : event.isPaid ? (
+              <>
+                Enroll Now <ArrowRight className="w-5 h-5" />
+              </>
+            ) : (
+              "Enroll for Free"
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
