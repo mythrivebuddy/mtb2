@@ -47,6 +47,7 @@ type PageSkeletonProps = {
     | "events"
     | "events-discovery-page"
     | "events-detail-page"
+    | "events-discovery-page-inner"
 };
 
 export default function PageSkeleton({ type }: PageSkeletonProps) {
@@ -1572,6 +1573,48 @@ if (type === "events-discovery-page") {
           <Skeleton key={i} className="h-10 w-24 rounded-full" />
         ))}
       </div>
+
+      {/* FEATURED */}
+      <div className="px-4 space-y-6">
+        <Skeleton className="h-8 w-48" />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* main */}
+          <Skeleton className="h-[400px] md:col-span-2 rounded-2xl" />
+
+          {/* side */}
+          <div className="flex flex-col gap-6">
+            <Skeleton className="h-[180px] rounded-2xl" />
+            <Skeleton className="h-[180px] rounded-2xl" />
+          </div>
+        </div>
+      </div>
+
+      {/* TRENDING */}
+      <div className="px-4 py-12 space-y-6">
+        <Skeleton className="h-8 w-56" />
+
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <Skeleton className="h-6 w-6" />
+              <Skeleton className="h-16 w-16 rounded-xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+              <Skeleton className="h-4 w-12" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+if (type === "events-discovery-page-inner") {
+  return (
+    <div className="animate-pulse min-h-screen w-full">
+ 
 
       {/* FEATURED */}
       <div className="px-4 space-y-6">

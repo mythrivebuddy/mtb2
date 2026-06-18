@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Search,
   MapPin,
@@ -8,6 +8,7 @@ import {
   Clock,
   Calendar,
   TrendingUp,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import { theme } from "@/lib/new-home/theme/theme";
@@ -23,6 +24,9 @@ import { useEnrollFreeEvent } from "@/hooks/use-free-event-enroll";
 import { Chip } from "@/components/ui/mtb/chip";
 import { Button } from "@/components/ui/button";
 import { stripHtml } from "@/lib/utils/html";
+import z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
 // --- CATEGORY DATA ---
 const eventTypes = [
@@ -58,6 +62,10 @@ type HostedEventsListResponse = {
   pastEvents: HostedEventWithTickets[];
 };
 
+const locationSchema = z.object({
+  location: z.string().min(2, "Enter at least 2 characters"),
+});
+type LocationFormValues = z.infer<typeof locationSchema>;
 
 const getPrice = (event: HostedEventWithTickets) => {
   if (event?.tickets && event.tickets.length > 0) {
@@ -96,9 +104,17 @@ const FALLBACK_IMAGE =
 const HeroSection = ({
   searchValue,
   onSearchChange,
+  activeLocation, // add
+  onLocationClick,
+  onClearLocation,
+  onDiscoverClick,
 }: {
   searchValue: string;
   onSearchChange: (val: string) => void;
+  activeLocation: string; // add
+  onLocationClick: () => void; // add
+  onClearLocation: () => void;
+  onDiscoverClick: () => void;
 }) => (
   <section className="relative w-full h-[584px]  flex items-center justify-center text-center overflow-hidden">
     <div className="absolute inset-0 z-0">
@@ -138,19 +154,31 @@ const HeroSection = ({
         <div className="flex px-2">
           <div className="flex items-center px-4 gap-2 py-2 md:py-0">
             <MapPin size={18} className="text-gray-400" />
-            <input
-              type="text"
-              readOnly
-              placeholder="Anywhere"
-              className="w-full bg-transparent outline-none text-sm placeholder:text-gray-400"
-            />
+            <button
+              onClick={onLocationClick}
+              className="w-full bg-transparent outline-none text-sm text-left text-gray-400"
+            >
+              {activeLocation || "Anywhere"}
+            </button>
+            {activeLocation && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClearLocation();
+                }}
+                aria-label="Clear location"
+                className="text-gray-400 hover:text-gray-600 transition"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
           <Button
             variant="mtbPrimary"
             size="mtbPill"
             onClick={() => {
-              const el = document.getElementById("events-results");
-              el?.scrollIntoView({ behavior: "smooth" });
+              // Incrementing forces TanStack Query to fetch immediately with the latest input value
+              if (onDiscoverClick) onDiscoverClick();
             }}
           >
             Discover
@@ -265,7 +293,7 @@ const FeaturedSection = ({
             <p
               className={`${theme.text.inverse} text-base sm:text-lg max-w-md mb-8 line-clamp-2`}
             >
-              {stripHtml(mainEvent.description,140)}
+              {stripHtml(mainEvent.description, 140)}
             </p>
             <Button
               onClick={() => router.push(`/dashboard/events/${mainEvent.id}`)}
@@ -432,7 +460,6 @@ const RecommendedSection = ({
         {recommended.map((event) => (
           <div
             key={event.id}
-          
             className="
               bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm group flex flex-col hover:shadow-md transition-shadow
               shrink-0 w-[55vw] sm:w-auto
@@ -484,8 +511,8 @@ const RecommendedSection = ({
                   {event.isPaid ? getPrice(event) : "Free"}
                 </span>
                 <Link
-            key={event.id}
-            href={`/dashboard/events/${event.id}`}
+                  key={event.id}
+                  href={`/dashboard/events/${event.id}`}
                   className={`text-xs font-medium ${theme.text.brandDeep} transition`}
                 >
                   View Event
@@ -721,7 +748,7 @@ const PastEventsSection = ({
   if (!events || events.length === 0) return null;
 
   return (
-    <section className="py-14 px-4">
+    <section id="past-events" className="py-14 px-4">
       <div className=" mx-auto">
         <h2
           className={`${theme.typography.h1} text-2xl md:text-3xl lg:text-5xl  mb-1`}
@@ -763,7 +790,7 @@ const PastEventsSection = ({
                   >
                     <MapPin size={12} />
                     {event.venueName || event.address || "Online"} · On{" "}
-                   {event.startTime ? formatDate(event?.startTime):""}
+                    {event.startTime ? formatDate(event?.startTime) : ""}
                   </p>
                 )}
                 <p
@@ -780,107 +807,263 @@ const PastEventsSection = ({
   );
 };
 
+const LocationDialog = ({
+  open,
+  onClose,
+  onApply,
+  currentLocation,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onApply: (location: string) => void;
+  currentLocation: string;
+}) => {
+  const [detecting, setDetecting] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<LocationFormValues>({
+    resolver: zodResolver(locationSchema),
+    defaultValues: { location: currentLocation },
+  });
+
+  useEffect(() => {
+    if (open) setValue("location", currentLocation);
+  }, [open, currentLocation, setValue]);
+
+  const useCurrentLocation = () => {
+    setDetecting(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`,
+          );
+          const data = await res.json();
+          const district =
+            data.address?.county ||
+            data.address?.state_district ||
+            data.address?.city ||
+            data.address?.town ||
+            "Current Location";
+          setValue("location", district, { shouldValidate: true }); // prefill input
+        } catch {
+          setValue("location", "Current Location");
+        } finally {
+          setDetecting(false);
+        }
+      },
+      () => setDetecting(false),
+    );
+  };
+
+  const onSubmit = (values: LocationFormValues) => {
+    onApply(values.location);
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl mx-4"
+      >
+        <h3 className="text-lg font-semibold mb-4">Filter by Location</h3>
+
+        <input
+          {...register("location")}
+          placeholder="Enter city, district or area..."
+          className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-amber-500 mb-1"
+        />
+        {errors.location && (
+          <p className="text-red-500 text-xs mb-3">{errors.location.message}</p>
+        )}
+
+        <button
+          type="button"
+          onClick={useCurrentLocation}
+          disabled={detecting}
+          className="w-full flex items-center justify-center gap-2 border border-amber-200 bg-amber-50 text-amber-800 rounded-lg px-4 py-2.5 text-sm font-medium mb-4 mt-3 hover:bg-amber-100 transition"
+        >
+          <MapPin size={15} />
+          {detecting ? "Detecting..." : "Use My Current Location"}
+        </button>
+
+        <div className="flex flex-col gap-2">
+          <Button variant="mtbPrimary" size="mtbPill" type="submit">
+            Apply
+          </Button>
+          <Button
+            type="button"
+            variant="mtbTertiary"
+            size="mtbPill"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 // ─────────────────────────────────────────────
 // MAIN PAGE
 // ─────────────────────────────────────────────
 export default function EventsDiscoveryPage() {
-  const { data, isLoading } = useQuery<HostedEventsListResponse>({
-    queryKey: ["all-events"],
-    queryFn: async () => {
-      const res = await axios.get(`/api/hosted-events?past=true`);
-      return res.data;
-    },
-  });
-
   const { status: authStatus } = useSession();
   const [activeType, setActiveType] = useState("All");
 
-    const [searchQuery, setSearchQuery] = useState("");
-    
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [activeLocation, setActiveLocation] = useState("");
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [appliedLocation, setAppliedLocation] = useState("");
+
+  const [isDiscovering, setIsDiscovering] = useState(false);
+
+  // REPLACE the existing useQuery with:
+  const { data, isLoading } = useQuery<HostedEventsListResponse>({
+    queryKey: ["all-events", appliedSearch, appliedLocation],
+    queryFn: async () => {
+      const params = new URLSearchParams({ past: "true" });
+      if (appliedSearch.trim()) params.set("search", appliedSearch.trim());
+      if (appliedLocation) params.set("location", appliedLocation);
+      const res = await axios.get(`/api/hosted-events?${params.toString()}`);
+      return res.data;
+    },
+  });
+  useEffect(() => {
+    // Only run this logic if we just clicked Discover and data finished loading
+    if (!isLoading && data && isDiscovering) {
+      const hasNoUpcoming = data.events.length === 0;
+      const hasPastEvents = data.pastEvents.length > 0;
+
+      setTimeout(() => {
+        if (hasNoUpcoming && hasPastEvents) {
+          // Scroll to past events if there are no upcoming events
+          const pastEventsElement = document.getElementById("past-events");
+          pastEventsElement?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        } else {
+          // Otherwise, scroll normally to the results section
+          const resultsElement = document.getElementById("events-results");
+          resultsElement?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+
+        // Reset the state so it doesn't run again until the next click
+        setIsDiscovering(false);
+      }, 150);
+    }
+  }, [isLoading, data, isDiscovering]);
+
   const eventsList = data?.events || [];
   const pastEventsList = data?.pastEvents || [];
 
-  const filteredByType =
-    activeType === "All"
-      ? eventsList
-      : eventsList.filter(
-          (event) => event.type === activeType.toUpperCase().replace(" ", "_"),
-        );
-
   const filteredEvents = React.useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return filteredByType;
-    return filteredByType.filter((event) => {
-      const title = event.title?.toLowerCase() || "";
-      const description = stripHtml(event.description || "").toLowerCase();
-      const creatorName = event.creator?.name?.toLowerCase() || "";
-      const venue = (event.venueName || event.address || "").toLowerCase();
-      return (
-        title.includes(q) ||
-        description.includes(q) ||
-        creatorName.includes(q) ||
-        venue.includes(q)
-      );
-    });
-  }, [filteredByType, searchQuery]);
+    if (activeType === "All") return eventsList;
+    return eventsList.filter(
+      (event) => event.type === activeType.toUpperCase().replace(" ", "_"),
+    );
+  }, [eventsList, activeType]);
 
   const pageContent = (
     <div className="min-h-screen w-full">
       <main>
         {/* 1. Hero */}
-        <HeroSection searchValue={searchQuery} onSearchChange={setSearchQuery} />
+        <LocationDialog
+          open={locationDialogOpen}
+          onClose={() => setLocationDialogOpen(false)}
+          onApply={(loc) => setActiveLocation(loc)}
+          currentLocation={activeLocation} // add this
+        />
 
-        <div className="mx-auto px-4">
-          {/* 2. Filter chips */}
+        <HeroSection
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          activeLocation={activeLocation}
+          onLocationClick={() => setLocationDialogOpen(true)}
+          onClearLocation={() => setActiveLocation("")}
+          onDiscoverClick={() => {
+            setAppliedSearch(searchQuery);
+            setAppliedLocation(activeLocation);
+            setIsDiscovering(true);
+          }}
+        />
+
+        <div id="events-results" className="mx-auto px-4">
           <FilterSection
             activeType={activeType}
             setActiveType={setActiveType}
           />
 
-              {/* No results state for search */}
-          {!isLoading && searchQuery.trim() && filteredEvents.length === 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 flex flex-col items-center justify-center text-center py-16 px-6 mb-12">
-              <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mb-4">
-                <Search className="w-7 h-7 text-amber-700" />
-              </div>
-              <h3 className={`${theme.typography.h1} text-xl md:text-2xl mb-2`}>
-                No events found
-              </h3>
-              <p className="text-gray-500 text-sm max-w-md">
-                We couldn&apos;t find anything matching &quot;{searchQuery}&quot;. Try a different search term.
-              </p>
+          {/* 4. Target the loading skeleton ONLY to the data block */}
+          {isLoading ? (
+            <div className="py-10">
+              <PageSkeleton type="events-discovery-page-inner" />
             </div>
+          ) : (
+            <>
+              {/* 5. Use appliedSearch here so it ignores live typing */}
+              {appliedSearch.trim() && filteredEvents.length === 0 && (
+                <div className="bg-white rounded-2xl border border-gray-100 flex flex-col items-center justify-center text-center py-16 px-6 mb-12">
+                  <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mb-4">
+                    <Search className="w-7 h-7 text-amber-700" />
+                  </div>
+                  <h3
+                    className={`${theme.typography.h1} text-xl md:text-2xl mb-2`}
+                  >
+                    No events found
+                  </h3>
+                  <p className="text-gray-500 text-sm max-w-md">
+                    We couldn&apos;t find anything matching &quot;
+                    {appliedSearch}&quot;. Try a different search term.
+                  </p>
+                </div>
+              )}
+
+              <FeaturedSection events={filteredEvents} />
+
+              {filteredEvents.length > 0 && (
+                <RecommendedSection events={filteredEvents} />
+              )}
+
+              <WeekendEventsSection events={filteredEvents} />
+            </>
           )}
-
-
-          {/* 3. Featured Events */}
-          {!isLoading && <FeaturedSection events={filteredEvents} />}
-
-          {/* 4. Recommended for You */}
-          {!isLoading && filteredEvents.length > 0 && (
-            <RecommendedSection events={filteredEvents} />
-          )}
-
-          {/* 5. Weekend Events */}
-          {!isLoading && <WeekendEventsSection events={filteredEvents} />}
         </div>
 
-        {/* 6. Trending This Week — full-bleed dark section */}
-        {!isLoading && <TrendingSection events={filteredEvents} />}
-
-        {/* 7. Past Events */}
-        {!isLoading && pastEventsList.length > 0 && (
-          <PastEventsSection events={pastEventsList} />
+        {/* These sections also go inside the isLoading check so they hide while fetching */}
+        {!isLoading && (
+          <>
+            <TrendingSection events={filteredEvents} />
+            {pastEventsList.length > 0 && (
+              <PastEventsSection events={pastEventsList} />
+            )}
+          </>
         )}
       </main>
     </div>
   );
 
-  const content = isLoading ? (
-    <PageSkeleton type="events-discovery-page" />
-  ) : (
-    pageContent
-  );
+  const content =
+    authStatus === "loading" ? (
+      <PageSkeleton type="events-discovery-page" />
+    ) : (
+      pageContent
+    );
 
   return authStatus === "authenticated" ? (
     content

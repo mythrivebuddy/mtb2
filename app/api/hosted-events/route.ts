@@ -77,15 +77,34 @@ export async function GET(req: NextRequest) {
     const userId = session?.user?.id;
     const { searchParams } = new URL(req.url);
     const includePast = searchParams.get("past") === "true";
+    const search = searchParams.get("search")?.trim() || "";
+    const location = searchParams.get("location")?.trim() || "";
 
     const now = new Date();
 
     const events = await prisma.hostedEvent.findMany({
-      where: {
-        status: Status.PUBLISHED,
-        // If not including past, only fetch upcoming/ongoing
-        ...(!includePast && { startTime: { gt: now } }),
-      },
+ where: {
+    status: Status.PUBLISHED,
+    ...(!includePast && { startTime: { gt: now } }),
+  ...(search
+  ? {
+      OR: [
+        { title: { contains: search, mode: "insensitive" as const } },
+        { description: { contains: search, mode: "insensitive" as const } },
+        { creator: { name: { contains: search, mode: "insensitive" as const } } },
+        { venueName: { contains: search, mode: "insensitive" as const } },
+        { address: { contains: search, mode: "insensitive" as const } },
+      ],
+    }
+  : location
+  ? {
+      OR: [
+        { venueName: { contains: location, mode: "insensitive" as const } },
+        { address: { contains: location, mode: "insensitive" as const } },
+      ],
+    }
+  : {}),
+  },
       include: {
         ...hostedEventInclude,
         ...(userId && {
