@@ -22,7 +22,8 @@ export default function LetOthersRollClient() {
   const searchParams = useSearchParams();
   const [shareableLink, setShareableLink] = useState("");
   const [isCopied, setIsCopied] = useState(false);
-  const [challengeDetails, setChallengeDetails] = useState<ChallengeDetails | null>(null);
+  const [challengeDetails, setChallengeDetails] =
+    useState<ChallengeDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +40,11 @@ export default function LetOthersRollClient() {
       return;
     }
 
-    const newShareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${uuid}?refId=${session.data?.user.id}`;
+    const ref = session.data?.user?.referralCode;
+
+    const newShareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${uuid}${
+      ref ? `?ref=${ref}` : ""
+    }`;
     setShareableLink(newShareableLink);
 
     const fetchChallengeDetails = async () => {
@@ -47,16 +52,21 @@ export default function LetOthersRollClient() {
         setIsLoading(true);
         setError(null);
         const response = await axios.get(`/api/challenge/${uuid}`);
-        
+
         if (response.data && response.data.success) {
           setChallengeDetails(response.data.challenge);
         } else {
-          setError(response.data.message || "Failed to load challenge details.");
+          setError(
+            response.data.message || "Failed to load challenge details.",
+          );
         }
       } catch (err) {
         console.error("Error fetching challenge details:", err);
         if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.message || "An error occurred fetching the data.");
+          setError(
+            err.response?.data?.message ||
+              "An error occurred fetching the data.",
+          );
         } else {
           setError("An unexpected error occurred.");
         }
@@ -70,12 +80,15 @@ export default function LetOthersRollClient() {
 
   const handleCopyLink = () => {
     if (!shareableLink) return;
-    navigator.clipboard.writeText(shareableLink).then(() => {
+    navigator.clipboard
+      .writeText(shareableLink)
+      .then(() => {
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
-    }).catch(err => {
-        console.error('Failed to copy link: ', err);
-    });
+      })
+      .catch((err) => {
+        console.error("Failed to copy link: ", err);
+      });
   };
 
   // Your JSX is untouched
@@ -90,18 +103,18 @@ export default function LetOthersRollClient() {
         </p>
         <div className="bg-white p-8 rounded-2xl shadow-xl space-y-6 text-center border border-slate-100 dark:border-slate-700 dark:bg-slate-900">
           {isLoading && (
-            <p className="text-slate-600 dark:text-slate-300">Loading challenge details...</p>
+            <p className="text-slate-600 dark:text-slate-300">
+              Loading challenge details...
+            </p>
           )}
-          {error && (
-            <p className="text-red-500">{error}</p>
-          )}
+          {error && <p className="text-red-500">{error}</p>}
           {challengeDetails && (
             <div className="mb-6">
               <h2 className="text-3xl font-bold text-purple-700 mb-2 dark:text-purple-300">
                 {challengeDetails.title}
               </h2>
               {challengeDetails.description && (
-                <ChallengeDescription html={challengeDetails.description}/>
+                <ChallengeDescription html={challengeDetails.description} />
                 // <p className="text-slate-600 text-md">
                 //   {challengeDetails.description}
                 // </p>
