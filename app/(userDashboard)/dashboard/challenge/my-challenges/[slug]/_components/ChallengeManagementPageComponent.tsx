@@ -451,10 +451,15 @@ export default function ChallengeManagementPage({
     });
   };
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "");
-  const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug}`;
+const ref = session?.data?.user?.referralCode;
+
+const baseUrl =
+  process.env.NEXT_PUBLIC_BASE_URL ||
+  (typeof window !== "undefined" ? window.location.origin : "");
+
+const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug}${
+  ref ? `?ref=${ref}` : ""
+}`;
 
   const deleteUserMutation = async (
     challengeId: string,
@@ -675,7 +680,6 @@ export default function ChallengeManagementPage({
               <Share
                 url={shareableLink}
                 title={`Check out this challenge: ${challenge.title}!`}
-                userId={session.data?.user?.id}
               />
             </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Share2, X, Copy, Twitter, Facebook, Send } from "lucide-react";
 import { theme } from "@/lib/new-home/theme/theme";
@@ -9,14 +9,13 @@ interface ShareProps {
   url: string;
   title: string;
   buttonLabel?: string;
-  userId?: string;
+ 
 }
 
 export default function Share({
   url,
   title,
   buttonLabel = "Share",
-  userId,
 }: ShareProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -26,17 +25,10 @@ export default function Share({
     setMounted(true);
   }, []);
   
-  const shareUrl = useMemo(() => {
-    try {
-      const u = new URL(url);
-      if (userId) u.searchParams.set("refId", userId);
-      return u.toString();
-    } catch {
-      return url;
-    }
-  }, [url, userId]);
+
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl);
+    navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -77,7 +69,7 @@ export default function Share({
     },
   ];
 
-  const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedUrl = encodeURIComponent(url);
   const encodedText = encodeURIComponent(title);
 
   const socialLinks = socialLinksData.map((social) => ({

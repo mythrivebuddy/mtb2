@@ -10,6 +10,7 @@ import axios from "axios";
 import { addOrUpdateBrevoContact } from "@/lib/brevo";
 import { splitFullName } from "@/lib/utils/utils";
 import { generateVerificationToken, sendVerificationEmail } from "@/lib/auth/emailVerification";
+import { nanoid } from "nanoid";
 
 export async function POST(request: NextRequest) {
   try {
@@ -94,6 +95,7 @@ export async function POST(request: NextRequest) {
         emailVerificationToken: token,
         emailVerificationTokenExpires: expires,
         emailVerificationLastSentAt: new Date(),
+        referralCode:nanoid(8)
       },
       omit: { password: true },
       include: { plan: true },

@@ -250,7 +250,27 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
   const isLoggedIn = authStatus === "authenticated";
   const router = useRouter();
 
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const shareUrl = (() => {
+  if (typeof window === "undefined") return "";
+
+  const url = new URL(window.location.href);
+
+  const searchParams = new URLSearchParams(url.search);
+  const refFromUrl = searchParams.get("ref");
+
+  const ref =
+    refFromUrl || session?.user?.referralCode;
+
+  // ✅ clean existing ref
+  url.searchParams.delete("ref");
+
+  // ✅ append only if valid
+  if (ref) {
+    url.searchParams.set("ref", ref);
+  }
+
+  return url.toString();
+})();
 
   const { data: statusData } = useQuery({
     queryKey: ["mmp-my-status"],
@@ -293,7 +313,6 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
           <Share
             url={shareUrl}
             title={program.name}
-            userId={session?.user?.id}
           />
         </div>
 
