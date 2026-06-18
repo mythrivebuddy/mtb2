@@ -19,6 +19,7 @@ import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { useEnrollFreeEvent } from "@/hooks/use-free-event-enroll";
 import assets from "@/lib/constants/assets";
+import SafeHTML from "@/components/common/SafeHTML";
 
 type EventDetailResponse = {
   event: HostedEvent & {
@@ -57,10 +58,15 @@ async function fetchEventDetail(id: string): Promise<EventDetail> {
 
 // ── sub-components ─────────────────────────────────────────────────────────
 const HeroSection = ({ event }: { event: EventDetail }) => {
+  const session = useSession();
+  const ref = session?.data?.user?.referralCode;
+
+  const eventPath = `/dashboard/events/${event.id}${ref ? `?ref=${ref}` : ""}`;
+
   const eventUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/dashboard/events/${event.id}`
-      : `/dashboard/events/${event.id}`;
+      ? `${window.location.origin}${eventPath}`
+      : eventPath;
   return (
     <section
       className="relative h-[60vh] min-h-[500px] w-full flex items-end pb-16"
@@ -369,18 +375,21 @@ export default function EventDetailsPage({ eventId }: { eventId: string }) {
                 <h2
                   className={`text-2xl sm:text-4xl mb-6 ${theme.textDark} ${cormorant.className} font-medium`}
                 >
-                  Nurture Your Flourishing
+                  {data.title}
                 </h2>
-                <div
+                <SafeHTML
                   className="prose prose-sm  max-w-none text-gray-700 dark:prose-invert dark:text-slate-300 space-y-4 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: data.description ?? "" }}
+                  html={data.description}
                 />
                 <GuideCard event={data} />
               </section>
               <div className="mt-8 lg:hidden">
                 <PricingSidebar event={data} />
               </div>
-              <JourneyTimeline slots={data.agendaSlots} />
+              {data?.agendaSlots?.length != 0 && (
+                <JourneyTimeline slots={data.agendaSlots} />
+              )}
+
               {data.format === "IN_PERSON" && (
                 <SanctuaryLocation event={data} />
               )}

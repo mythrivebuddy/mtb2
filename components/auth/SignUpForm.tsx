@@ -1,103 +1,154 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
 import { useRouter, useSearchParams } from "next/navigation";
+
 import { useForm, SubmitHandler } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import { useMutation } from "@tanstack/react-query";
+
 import Cookies from "js-cookie";
+
 import axios from "axios";
 
 import { Input } from "@/components/ui/input";
+
 import { Button } from "@/components/ui/button";
+
 import { toast } from "sonner";
+
 import { getAxiosErrorMessage } from "@/utils/ax";
+
 import { SignupFormType, signupSchema } from "@/schema/zodSchema";
+
 import GoogleIcon from "../icons/GoogleIcon";
+
 import { signIn } from "next-auth/react";
+
 import { Eye, EyeOff } from "lucide-react";
+
 import Link from "next/link";
+
 import ReCAPTCHA from "react-google-recaptcha";
+
 import { Checkbox } from "@/components/ui/checkbox";
-import {isInAppBrowser} from "@/lib/utils/isInAppBrowser";
+
+import { isInAppBrowser } from "@/lib/utils/isInAppBrowser";
+
 import OpenInBrowserDialog from "./OpenInBrowserDialog";
 
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
+
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const searchParams = useSearchParams();
+
   const router = useRouter();
+
   // Recaptcha states
+
   const captchaRef = useRef<ReCAPTCHA | null>(null);
+
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
   const [captchaError, setCaptchaError] = useState<string | null>(null);
+
   const [prefilledTypes, setPrefilledTypes] = useState<string[]>([]);
+
   const [userHasChosen, setUserHasChosen] = useState(false);
 
   // state for Open in Browser dialog
+
   const [showOpenBrowserDialog, setShowOpenBrowserDialog] = useState(false);
 
   const userType = searchParams.get("user-type");
 
   const referralCodeFromURL = searchParams.get("ref");
 
+   const redirect =
+    searchParams.get("redirect") ||
+    searchParams.get("callbackUrl") ||
+    "/signin";
+
   const {
     register,
+
     handleSubmit,
+
     watch,
+
     setValue,
+
     formState: { errors },
   } = useForm<SignupFormType>({
     resolver: zodResolver(signupSchema),
   });
+
   useEffect(() => {
     if (!userType) return;
 
     if (userType === "coach-solopreneur") {
       setPrefilledTypes(["coach"]);
+
       setValue("userType", "coach", { shouldValidate: true });
+
       setUserHasChosen(false);
+
       return;
     }
 
     if (userType === "coach" || userType === "enthusiast") {
       setPrefilledTypes([userType]);
+
       setValue("userType", userType as "coach" | "enthusiast", {
         shouldValidate: true,
       });
+
       setUserHasChosen(false);
     }
   }, [userType, setValue]);
 
   // ✅ Store referral code in cookie if present
+
   useEffect(() => {
     if (referralCodeFromURL) {
       setValue("referralCode", referralCodeFromURL);
+
       Cookies.set("referralCode", referralCodeFromURL, { expires: 7 });
     }
   }, [referralCodeFromURL, setValue]);
 
   // ✅ React Query mutation for signup
+
   const signupMutation = useMutation({
     mutationFn: async (data: SignupFormType & { captchaToken?: string }) => {
       const res = await axios.post("/api/auth/signup", data);
-      return res.data;
+
+      return { res: res.data, input: data };
     },
-    onSuccess: async (data, variables) => {
+
+    onSuccess: async ({ res, input }) => {
       toast.success("Signup successful");
-      const referralCode =
-        variables.referralCode || Cookies.get("referralCode");
+
+      const referralCode = input.referralCode || Cookies.get("referralCode");
 
       if (referralCode) {
         try {
           const referralRes = await axios.post("/api/refer-friend/process", {
             referralCode,
-            userId: data.userId,
+
+            userId: res.userId,
           });
 
           if (referralRes.status >= 200 && referralRes.status < 300) {
             toast.success("Referral processed successfully!");
+
             Cookies.remove("referralCode"); // remove after processing
           }
         } catch (refErr) {
@@ -105,10 +156,16 @@ export default function SignUpForm() {
         }
       }
 
-      router.push("/signin");
+     router.push(
+  `/signin?callbackUrl=${encodeURIComponent(
+    redirect || "/dashboard"
+  )}`
+);
     },
+
     onError: (err) => {
       toast.error(getAxiosErrorMessage(err, "Signup failed"));
+
       captchaRef.current?.reset();
     },
   });
@@ -116,12 +173,15 @@ export default function SignUpForm() {
   const onSubmit: SubmitHandler<SignupFormType> = async (formData) => {
     if (!captchaToken) {
       setCaptchaError("Please complete the CAPTCHA to continue.");
+
       return;
     }
 
     setIsLoading(true);
+
     signupMutation.mutate(
       { ...formData, captchaToken: captchaToken as string },
+
       {
         onSettled: () => setIsLoading(false),
       },
@@ -131,22 +191,29 @@ export default function SignUpForm() {
   const handleGoogleLogin = async () => {
     try {
       // Get referral code from URL or cookies
+
       // const referralCode = searchParams.get('ref');
+
       if (isInAppBrowser()) {
         setShowOpenBrowserDialog(true);
+
         return;
       }
 
       signIn("google", {
         // redirect: false,
+
         callbackUrl: "/dashboard",
+
         // state: "gggggggggg",
       });
     } catch (error) {
       console.error("Error signing in", error);
+
       toast.error(
         getAxiosErrorMessage(
           error,
+
           "Google Sign in failed. Please try again later.",
         ),
       );
@@ -155,7 +222,9 @@ export default function SignUpForm() {
 
   const handleCaptchaChange = (token: string | null) => {
     // This token is what you send to your backend for verification
+
     setCaptchaError(null);
+
     setCaptchaToken(token);
   };
 
@@ -171,10 +240,20 @@ export default function SignUpForm() {
         />
 
         <Input {...register("name")} placeholder="Your Name" />
-        {errors.name && <p className="text-red-500 dark:text-red-400">{errors.name.message}</p>}
+
+        {errors.name && (
+          <p className="text-red-500 dark:text-red-400">
+            {errors.name.message}
+          </p>
+        )}
 
         <Input {...register("email")} placeholder="Email" type="email" />
-        {errors.email && <p className="text-red-500 dark:text-red-400">{errors.email.message}</p>}
+
+        {errors.email && (
+          <p className="text-red-500 dark:text-red-400">
+            {errors.email.message}
+          </p>
+        )}
 
         <div className="relative">
           <Input
@@ -182,14 +261,18 @@ export default function SignUpForm() {
             type={showPassword ? "text" : "password"}
             placeholder="Password"
           />
+
           <div
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
           >
             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </div>
+
           {errors.password && (
-            <p className="text-red-500 dark:text-red-400">{errors.password.message}</p>
+            <p className="text-red-500 dark:text-red-400">
+              {errors.password.message}
+            </p>
           )}
         </div>
 
@@ -199,14 +282,18 @@ export default function SignUpForm() {
             type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirm Password"
           />
+
           <div
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
           >
             {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </div>
+
           {errors.confirmPassword && (
-            <p className="text-red-500 dark:text-red-400">{errors.confirmPassword.message}</p>
+            <p className="text-red-500 dark:text-red-400">
+              {errors.confirmPassword.message}
+            </p>
           )}
         </div>
 
@@ -215,9 +302,13 @@ export default function SignUpForm() {
           placeholder="Referral Code (optional)"
           readOnly={!!referralCodeFromURL}
         />
+
         {errors.referralCode && (
-          <p className="text-red-500 dark:text-red-400">{errors.referralCode.message}</p>
+          <p className="text-red-500 dark:text-red-400">
+            {errors.referralCode.message}
+          </p>
         )}
+
         {referralCodeFromURL && (
           <p className="text-gray-500 dark:text-gray-400 text-sm">
             Referral code auto-filled from link
@@ -225,16 +316,19 @@ export default function SignUpForm() {
         )}
 
         {/* USER TYPE SELECTION */}
+
         <div className="space-y-3">
           <label className="font-medium text-gray-700 dark:text-gray-300 text-sm">
             Select Your Type
           </label>
 
           {/* Enthusiast */}
+
           <div
             className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
             onClick={() => {
               setUserHasChosen(true);
+
               setValue("userType", "enthusiast", { shouldValidate: true });
             }}
           >
@@ -247,8 +341,10 @@ export default function SignUpForm() {
               }
               onCheckedChange={() => {
                 setUserHasChosen(true);
+
                 setValue("userType", "enthusiast", {
                   shouldValidate: true,
+
                   shouldTouch: true,
                 });
               }}
@@ -268,6 +364,7 @@ export default function SignUpForm() {
             className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
             onClick={() => {
               setUserHasChosen(true);
+
               setValue("userType", "coach", { shouldValidate: true });
             }}
           >
@@ -280,8 +377,10 @@ export default function SignUpForm() {
               }
               onCheckedChange={() => {
                 setUserHasChosen(true);
+
                 setValue("userType", "coach", {
                   shouldValidate: true,
+
                   shouldTouch: true,
                 });
               }}
@@ -296,9 +395,13 @@ export default function SignUpForm() {
               Coach / Solopreneur
             </label>
           </div>
+
           {/* ZOD ERROR */}
-            {errors.userType && (
-            <p className="text-red-500 dark:text-red-400 text-sm">{errors.userType.message}</p>
+
+          {errors.userType && (
+            <p className="text-red-500 dark:text-red-400 text-sm">
+              {errors.userType.message}
+            </p>
           )}
         </div>
 
@@ -318,7 +421,11 @@ export default function SignUpForm() {
           )}
         </div>
 
-        <Button type="submit"  disabled={isLoading} className="w-full dark:text-slate-950 dark:bg-white">
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="w-full dark:text-slate-950 dark:bg-white"
+        >
           {isLoading ? "Creating account..." : "Sign Up"}
         </Button>
       </form>
@@ -327,8 +434,11 @@ export default function SignUpForm() {
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-gray-200 dark:border-gray-600"></div>
         </div>
+
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400">or</span>
+          <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400">
+            or
+          </span>
         </div>
       </div>
 
@@ -338,6 +448,7 @@ export default function SignUpForm() {
         onClick={handleGoogleLogin}
       >
         <GoogleIcon />
+
         <span>Sign in with Google</span>
       </Button>
 
@@ -356,7 +467,9 @@ export default function SignUpForm() {
         onOpenChange={setShowOpenBrowserDialog}
         onConfirm={() => {
           // IMPORTANT: navigation happens INSIDE dialog
+
           // so here we just close the dialog (optional)
+
           setShowOpenBrowserDialog(false);
         }}
       />

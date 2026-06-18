@@ -17,6 +17,7 @@ import { isInAppBrowser } from "@/lib/utils/isInAppBrowser";
 import OpenInBrowserDialog from "./OpenInBrowserDialog";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,12 +36,15 @@ function SignInFormContent() {
   const [showOpenBrowserDialog, setShowOpenBrowserDialog] = useState(false);
   const [isAdminSignedIn, setIsAdminSignedIn] = useState(false);
 
+  const [computedHref, setComputedHref] = useState("/signup");
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect =
     searchParams.get("redirect") ||
     searchParams.get("callbackUrl") ||
     "/dashboard";
+
   const errorFromUrl = searchParams.get("error");
 
   const {
@@ -82,7 +86,32 @@ function SignInFormContent() {
 
     resendMutation.mutate(email);
   };
+  useEffect(() => {
+    let cleanRedirect = redirect;
+    let refFromCallback: string | null = null;
 
+    try {
+      const url = new URL(redirect, window.location.origin);
+
+      refFromCallback = url.searchParams.get("ref");
+
+      if (refFromCallback) {
+        url.searchParams.delete("ref");
+        cleanRedirect = url.pathname + url.search;
+
+        // ✅ set cookie here
+        Cookies.set("referralCode", refFromCallback, {
+          expires: 7,
+        });
+      }
+    } catch {}
+
+    const finalHref = `/signup?callbackUrl=${encodeURIComponent(cleanRedirect)}${
+      refFromCallback ? `&ref=${refFromCallback}` : ""
+    }`;
+
+    setComputedHref(finalHref);
+  }, [redirect]);
   // ── Show URL errors on mount ───────────────────────────────────────────
   useEffect(() => {
     if (errorFromUrl === "account-exists-with-credentials") {
@@ -137,6 +166,7 @@ function SignInFormContent() {
         setIsAdminSignedIn(true);
         return;
       }
+      Cookies.remove("referralCode");
       toast.success("Signin successful");
       router.push(redirect);
     },
@@ -278,7 +308,7 @@ function SignInFormContent() {
             </label>
             <a
               href="/forgot-password"
-     className="text-[#1E2875] dark:text-blue-400 hover:underline"
+              className="text-[#1E2875] dark:text-blue-400 hover:underline"
               target="_blank"
             >
               Forgot password?
@@ -301,10 +331,12 @@ function SignInFormContent() {
         {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center pointer-events-none">
-          <div className="w-full border-t border-gray-200 dark:border-gray-700" />
+            <div className="w-full border-t border-gray-200 dark:border-gray-700" />
           </div>
           <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">or</span>
+            <span className="px-2 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+              or
+            </span>
           </div>
         </div>
 
@@ -321,8 +353,8 @@ function SignInFormContent() {
         <p className="text-center text-sm text-gray-600 dark:text-gray-400">
           Don&apos;t have an account?{" "}
           <Link
-            href="/signup"
-           className="text-[#1E2875] dark:text-blue-400 hover:underline font-medium"
+            href={computedHref}
+            className="text-[#1E2875] dark:text-blue-400 hover:underline font-medium"
           >
             Sign up
           </Link>
