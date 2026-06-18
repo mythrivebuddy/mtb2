@@ -1,20 +1,37 @@
 // /lib/new-home/theme/theme.ts
 import { cormorant } from "../fonts/fonts";
 
+const sharedTokens = {
+  bg: {
+    base: "bg-[var(--surface-base)]",
+    calm: "bg-[var(--surface-calm)]",
+    brand_deep: "bg-[var(--brand-deep)]",
+  },
+  border: {
+    accent: "border-[var(--border-accent)]",
+    light: "border-[var(--border-light)]",
+  },
+  text: {
+    accent: "text-[var(--ink-accent)]",
+     inverse: "text-[var(--ink-inverse)]",
+  },
+};
+
 export const theme = {
   /* ================= BACKGROUNDS ================= */
   // Surface colors aligned with brand emotion (calm, warm, structured)
   bg: {
     warm: "bg-[var(--surface-warm)]",
-    base: "bg-[var(--surface-base)]",
-    calm: "bg-[var(--surface-calm)]",
+    base: sharedTokens.bg.base, // used in event discovery
+    calm: sharedTokens.bg.calm,
     card: "bg-[var(--surface-card)]",
     soft: "bg-[var(--surface-soft)]",
     softHover: "hover:bg-[var(--surface-soft)]",
     warmAccent: "bg-[var(--brand-warm)]",
     // uses [background:] because Tailwind bg- only supports background-color
     cta: "[background:var(--surface-cta)]",
-    accent: "bg-[var(--ink-accent)]",
+    accent: "bg-[var(--ink-accent)]", // used in event discovery
+    brandDeep: sharedTokens.bg.brand_deep,
   },
 
   /* ================= TEXT ================= */
@@ -22,23 +39,28 @@ export const theme = {
   text: {
     primary: "text-[var(--ink-primary)]",
     secondary: "text-[var(--ink-secondary)]",
-    accent: "text-[var(--ink-accent)]",
+    brandDeep: "text-[var(--brand-deep)]",
+    tertiary: "text-[var(--ink-tertiary)]", // used in event discovery
+    accent: sharedTokens.text.accent, // used in event discovery
     muted: "text-[var(--ink-muted)]",
     soft: "text-[var(--ink-soft)]",
+    inverse: sharedTokens.text.inverse,
+    warmAccent: "text-[var(--brand-warm)]",
   },
 
   /* ================= BORDERS ================= */
   border: {
-    light: "border-[var(--border-light)]",
-    accent: "border-[var(--border-accent)]",
+    light: sharedTokens.border.light,
+    accent: sharedTokens.border.accent,
     soft: "border-[var(--border-soft)]",
+    brandDeep:"border-[var(--brand-deep)]"
   },
 
   /* ================= BUTTONS ================= */
   // Primary CTA actions
   button: {
     primary:
-      "bg-[var(--brand-deep)] text-[var(--ink-inverse)] hover:bg-[var(--brand-deep-hover)]",
+      `${sharedTokens.bg.brand_deep} ${sharedTokens.text.inverse} hover:bg-[var(--brand-deep-hover)]`,
   },
 
   /* ================= TYPOGRAPHY ================= */
@@ -52,18 +74,15 @@ export const theme = {
   /* ================= CARD PATTERNS ================= */
   // Reusable UI patterns used across sections
   card: {
-    base: "bg-[var(--surface-base)] border border-[var(--border-accent)] rounded-[2rem]",
-    feature:
-      "bg-[var(--surface-base)] border border-[var(--border-accent)] rounded-[2rem] p-8 flex items-start gap-6",
-    problem:
-      "bg-[var(--surface-base)] border border-[var(--border-accent)] rounded-2xl flex flex-col items-center text-center",
+    base: `${sharedTokens.bg.base} border ${sharedTokens.border.accent} rounded-[2rem]`,
+    feature: `${sharedTokens.bg.base} border ${sharedTokens.border.accent}  rounded-[2rem] p-8 flex items-start gap-6`,
+    problem: `${sharedTokens.bg.base} border ${sharedTokens.border.accent}  rounded-2xl flex flex-col items-center text-center`,
   },
 
   /* ================= ICON WRAPPERS ================= */
   // Circular icon containers
   icon: {
-    wrapper:
-      "w-14 h-14 rounded-full flex items-center justify-center border border-[var(--border-light)] bg-[var(--surface-calm)] text-[var(--ink-accent)]",
+    wrapper: `w-14 h-14 rounded-full flex items-center justify-center border ${sharedTokens.border.light} ${sharedTokens.bg.calm} ${sharedTokens.text.accent}`,
     streak: "text-[var(--brand-streak)]",
   },
 
@@ -77,20 +96,20 @@ export const theme = {
 
   // DEPRECATED — use theme.bg.*, theme.text.*, etc
   bgPrimary: "bg-[var(--surface-warm)]",
-  bgSecondary: "bg-[var(--surface-base)]",
-  bgTertiary: "bg-[var(--surface-calm)]",
+  bgSecondary: sharedTokens.bg.base,
+  bgTertiary: sharedTokens.bg.calm,
   highLightBgColor: "bg-[var(--ink-accent)]",
-  highLightTextColor: "text-[var(--ink-accent)]",
-  hightLightBorderColor: "border-[var(--border-accent)]",
+  highLightTextColor: sharedTokens.text.accent,
+  hightLightBorderColor: sharedTokens.border.accent,
 
   textDark: "text-[var(--ink-primary)]",
   textAccent: "text-[var(--ink-accent)]",
   hoverTextAccent: "hover:text-[var(--ink-accent)]",
-  borderLight: "border-[var(--border-light)]",
-  borderAccent: "border-[var(--border-accent)]",
+  borderLight: sharedTokens.border.light,
+  borderAccent: sharedTokens.border.accent,
   bgDark: "bg-[var(--brand-deep)]",
   buttonDark:
-    "bg-[var(--brand-deep)] text-[var(--ink-inverse)] hover:bg-[var(--brand-deep-hover)]",
+    `${sharedTokens.bg.brand_deep}  text-[var(--ink-inverse)] hover:bg-[var(--brand-deep-hover)]`,
   buttonLight: "bg-[var(--brand-deep-hover)] hover:bg-[var(--brand-deep)]",
 
   // new for events step 1 step 2 majorly
@@ -99,35 +118,31 @@ export const theme = {
 
   chip: "text-base px-6 py-2 rounded-full border text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-accent)] disabled:opacity-50 disabled:pointer-events-none cursor-pointer",
 
-  chipActive: "bg-[var(--brand-deep)] text-[var(--ink-inverse)]",
+  chipActive: `bg-[var(--brand-deep)] ${sharedTokens.text.inverse}`,
 
-  chipInactive: "hover:text-[var(--brand-deep)]",
+  chipInactive: `hover:text-[var(--brand-deep)] ${sharedTokens.bg.base}`,
 
   editorContainer:
     "border border-[var(--brand-momentum)] rounded-lg overflow-hidden focus-within:ring-1 transition-all",
 
-  editorToolbar:
-    "p-3 flex gap-4 border-b border-[var(--border-light)] bg-[var(--surface-base)]",
+  editorToolbar: `p-3 flex gap-4 border-b ${sharedTokens.border.light} ${sharedTokens.bg.base}`,
 
   dropzoneBase:
     "group relative w-full h-64 border-2 border-dashed border-[var(--brand-momentum)] rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer overflow-hidden",
 
-  dropzoneIdle: "border-[var(--brand-momentum)] bg-[var(--surface-calm)]",
+  dropzoneIdle: `border-[var(--brand-momentum)] ${sharedTokens.bg.calm}`,
 
   dropzoneActive: "border-[var(--brand-momentum)] bg-[var(--ink-accent)]",
 
-  footer:
-    "bg-[var(--surface-base)]  border-t rounded-lg border-[var(--border-accent)] shadow-[0_-4px_10px_rgba(0,0,0,0.03)]",
+  footer: `${sharedTokens.bg.base} border-t rounded-lg shadow-[0_-4px_10px_rgba(0,0,0,0.03)]`,
   /* ========= STEPPER ========= */
 
   stepperCircleBase:
     "w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-[14px] rounded-full flex items-center justify-center font-bold",
 
-  stepperCircleActive:
-    "bg-[var(--brand-deep)] text-[var(--ink-inverse)] shadow-lg",
+  stepperCircleActive: `${sharedTokens.bg.brand_deep} ${sharedTokens.text.inverse} shadow-lg`,
 
-  stepperCircleInactive:
-    "border-2 border-[var(--border-light)] bg-[var(--surface-base)] opacity-60",
+  stepperCircleInactive: `${sharedTokens.bg.base} border-2 ${sharedTokens.border.light}  opacity-60`,
 
   stepperLabelActive: "text-[var(--brand-deep)] text-xs sm:text-sm",
 
@@ -136,13 +151,12 @@ export const theme = {
 
   stepperLine: "flex-1  mx-4 -mt-8 border-t border-[var(--border-stepper)]",
   inputBase:
-    "w-full bg-[transparent] border border-[var(--border-light)] rounded-lg px-4 py-3 outline-none focus:border-[var(--border-accent)] transition-all",
+    `w-full bg-[transparent] border ${sharedTokens.border.light} rounded-lg px-4 py-3 outline-none focus:${sharedTokens.border.accent} transition-all`,
 
   select:
-    "w-full bg-[transparent] border border-[var(--border-light)] rounded-lg px-4 py-3 outline-none focus:border-[var(--border-accent)]",
+    `w-full bg-[transparent] border ${sharedTokens.border.light} rounded-lg px-4 py-3 outline-none focus:${sharedTokens.border.accent}`,
 
   inputGroup: "grid grid-cols-1 md:grid-cols-3 gap-6",
 };
 
-
-// used in event creation stepper chip button TimeSelect of step 3 component 
+// used in event creation stepper chip button TimeSelect of step 3 component

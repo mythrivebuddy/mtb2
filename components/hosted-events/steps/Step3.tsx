@@ -29,6 +29,7 @@ import { theme } from "@/lib/new-home/theme/theme";
 import {
   AgendaSlot,
   AgendaSlotPayload,
+  HostedEventDashboardData,
   HostedEventResponse,
 } from "@/types/client/events";
 import z from "zod";
@@ -82,7 +83,8 @@ type Step3Payload = {
   timezone: string;
   agendaSlots: AgendaSlotPayload[];
 };
-
+type DashboardEventItem =
+  HostedEventDashboardData["activeEvents"][number];
 const TIMEZONES = [
   { label: "India (IST - Asia/Kolkata)", value: "Asia/Kolkata" },
   { label: "UTC (Coordinated Universal Time)", value: "UTC" },
@@ -196,7 +198,7 @@ export default function Step3({
       const res = await axios.put(`/api/hosted-events/${eventId}`, payload);
       return res.data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.setQueryData(["event", eventId], data);
       if (isDraft) {
         toast.success("Event saved as Draft");
@@ -206,7 +208,61 @@ export default function Step3({
       }
       localStorage.removeItem("create-event-draft-id");
       toast.success("Event submitted for review");
-      queryClient.invalidateQueries({ queryKey: ["events"] });
+
+      await queryClient.setQueryData<HostedEventDashboardData>(
+        ["events"],
+        (old) => {
+          if (!old) return old;
+
+          const updatedEvent = data.event;
+          const ticket = data.ticket;
+
+          const formattedDate = `${format(
+            new Date(updatedEvent.startTime),
+            "MMM dd",
+          )} • ${
+            updatedEvent.format === "ONLINE"
+              ? "Online"
+              : (updatedEvent.venueName ?? "Offline")
+          }`;
+
+          const updateList = (list: DashboardEventItem[]) =>
+            list.map((e) => {
+              if (e.id !== updatedEvent.id) return e;
+              const now = new Date();
+              const start = new Date(updatedEvent.startTime);
+              const end = updatedEvent.endTime
+                ? new Date(updatedEvent.endTime)
+                : null;
+
+              let badge = "";
+
+              if (end && now > end) {
+                badge = "COMPLETED";
+              } else {
+                const diffTime = start.getTime() - now.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                badge = `IN ${diffDays} day${diffDays !== 1 ? "s" : ""}`;
+              }
+              return {
+                ...e,
+                title: updatedEvent.title,
+                date: formattedDate, // ✅ FIXED
+                total: ticket?.quantity ?? e.total,
+                imgSrc: updatedEvent.coverImage,
+
+                badge: badge,
+              };
+            });
+
+          return {
+            ...old,
+            activeEvents: updateList(old.activeEvents || []),
+            pastEvents: updateList(old.pastEvents || []),
+          };
+        },
+      );
       setShowSuccessModal(true);
     },
     onError: (err) => {

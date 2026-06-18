@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
     // 5️⃣ CREATE RAZORPAY ORDER
     // --------------------------
 
-    const { order, key } = await createRazorpayOrder(totalAmount, currency);
+    const { order, key } = await createRazorpayOrder(totalAmount, currency,{notes:{ source: "NOT_SUBSCRIPTION"}});
 
     // --------------------------
     // 6️⃣ SAVE BILLING
