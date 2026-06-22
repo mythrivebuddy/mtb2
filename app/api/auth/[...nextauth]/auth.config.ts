@@ -11,7 +11,6 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { nanoid } from "nanoid";
 
-
 // --- FIX: ADDED MODULE AUGMENTATION BLOCK ---
 declare module "next-auth" {
   /**
@@ -44,7 +43,7 @@ declare module "next-auth" {
     membership: string | null;
     lastSurveyTime: Date | null;
     authMethod: AuthMethod;
-    referralCode?:string | null; 
+    referralCode?: string | null;
   }
 }
 
@@ -62,9 +61,9 @@ declare module "next-auth/jwt" {
     lastSurveyTime: string | null;
     maxAge: number;
     supabaseAccessToken?: string;
-     authMethod: AuthMethod;
-      isAffiliate?: boolean; 
-      referralCode?: string | null;
+    authMethod: AuthMethod;
+    isAffiliate?: boolean;
+    referralCode?: string | null;
   }
 }
 // --- END AUGMENTATION ---
@@ -77,7 +76,6 @@ type AuthUser = Prisma.UserGetPayload<{
 type UserWithPlan = Prisma.UserGetPayload<{
   include: { plan: true };
 }>;
-
 
 const DEFAULT_MAX_AGE = 24 * 60 * 60;
 const REMEMBER_ME_MAX_AGE = 10 * 365 * 24 * 60 * 60;
@@ -97,7 +95,8 @@ export const authConfig: AuthOptions = {
       },
       async authorize(credentials) {
         try {
-          const user: AuthUser | null = await prisma.user.findUnique({ // <-- FIX: Use AuthUser type
+          const user: AuthUser | null = await prisma.user.findUnique({
+            // <-- FIX: Use AuthUser type
             where: {
               email: credentials?.email,
             },
@@ -109,7 +108,9 @@ export const authConfig: AuthOptions = {
 
           if (!user) throw new Error("No user found");
           if (user.authMethod !== "CREDENTIALS") {
-            throw new Error("This account is registered using an external provider");
+            throw new Error(
+              "This account is registered using an external provider",
+            );
           }
 
           if (user.isBlocked) {
@@ -121,7 +122,7 @@ export const authConfig: AuthOptions = {
               // It's a single object, not an array, so access it directly.
               const blockedInfo = user.blockedUsers;
               blockedMessage += ` Reason: ${blockedInfo.reason}. Blocked on: ${new Date(
-                blockedInfo.blockedAt
+                blockedInfo.blockedAt,
               ).toLocaleString()}.`;
             }
             // --- END FIX ---
@@ -130,12 +131,17 @@ export const authConfig: AuthOptions = {
           }
 
           if (!user.isEmailVerified) {
-            throw new Error("Your email is not verified. Please verify your email before signing in.");
+            throw new Error(
+              "Your email is not verified. Please verify your email before signing in.",
+            );
           }
 
           if (!credentials?.password) throw new Error("Password is required");
 
-          const isValid = await bcrypt.compare(credentials.password, user.password!);
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.password!,
+          );
           if (!isValid) throw new Error("Invalid credentials");
 
           assignJp(user, ActivityType.DAILY_LOGIN);
@@ -145,12 +151,14 @@ export const authConfig: AuthOptions = {
             name: user.name,
             email: user.email,
             role: user.role,
-            rememberMe: ["true", "on", "1"].includes(String(credentials.rememberMe)),
+            rememberMe: ["true", "on", "1"].includes(
+              String(credentials.rememberMe),
+            ),
             isFirstTimeSurvey: user.isFirstTimeSurvey ?? false,
             lastSurveyTime: user.lastSurveyTime ?? null,
             userType: user.userType ?? null,
             membership: user.membership ?? null,
-            authMethod: user.authMethod
+            authMethod: user.authMethod,
           };
         } catch (error) {
           if (error instanceof Error) throw new Error(error.message);
@@ -178,14 +186,19 @@ export const authConfig: AuthOptions = {
         let referredById = null;
 
         if (!dbUser) {
-          const role = user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
+          const role =
+            user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
 
           if (referralCode) {
-            const referrer = await prisma.user.findUnique({ where: { referralCode } });
+            const referrer = await prisma.user.findUnique({
+              where: { referralCode },
+            });
+
             if (referrer) referredById = referrer.id;
           }
 
-          const createdUser: UserWithPlan = await prisma.user.create({ // <-- FIX: Use UserWithPlan type
+          const createdUser: UserWithPlan = await prisma.user.create({
+            // <-- FIX: Use UserWithPlan type
             data: {
               role,
               email: user.email!,
@@ -208,10 +221,18 @@ export const authConfig: AuthOptions = {
                 referredId: createdUser.id,
               },
             });
+            const updatedUser = await prisma.user.update({
+              where: { id: createdUser.id },
+              data: {
+                referredById: referredById,
+              },
+              include: { plan: true },
+            });
 
-            assignJp(createdUser, ActivityType.REFER_TO);
+            assignJp(updatedUser, ActivityType.REFER_TO);
 
-            const referrer: UserWithPlan | null = await prisma.user.findUnique({ // <-- FIX: Use UserWithPlan type
+            const referrer: UserWithPlan | null = await prisma.user.findUnique({
+              // <-- FIX: Use UserWithPlan type
               where: { id: referredById },
               include: { plan: true },
             });
@@ -228,7 +249,8 @@ export const authConfig: AuthOptions = {
           user.lastSurveyTime = createdUser.lastSurveyTime ?? null;
           user.referralCode = createdUser.referralCode;
         } else {
-          const updatedUser: UserWithPlan = await prisma.user.update({ // <-- FIX: Use UserWithPlan type
+          const updatedUser: UserWithPlan = await prisma.user.update({
+            // <-- FIX: Use UserWithPlan type
             where: { email: user.email! },
             data: {
               name: user.name!,
@@ -261,12 +283,15 @@ export const authConfig: AuthOptions = {
         token.role = user.role;
         token.id = user.id;
         token.rememberMe = user.rememberMe ?? false; // <-- FIX: Restored '?? false'
-        token.maxAge = (user.rememberMe ?? false) ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE; // <-- FIX: Added '?? false'
+        token.maxAge =
+          (user.rememberMe ?? false) ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE; // <-- FIX: Added '?? false'
         token.isFirstTimeSurvey = user.isFirstTimeSurvey;
-        token.lastSurveyTime = user.lastSurveyTime ? user.lastSurveyTime.toISOString() : null;
+        token.lastSurveyTime = user.lastSurveyTime
+          ? user.lastSurveyTime.toISOString()
+          : null;
         token.userType = user.userType ?? null;
         token.membership = user.membership ?? null;
-        token.authMethod = user.authMethod
+        token.authMethod = user.authMethod;
         // token.exp = Math.floor(Date.now() / 1000) + token.maxAge;
       }
       if (token.id) {
@@ -279,17 +304,19 @@ export const authConfig: AuthOptions = {
             lastSurveyTime: true,
             authMethod: true,
             isAffiliate: true,
-            referralCode:true
-          }
+            referralCode: true,
+          },
         });
         // Overwrite token with fresh DB data
         if (dbUser) {
           token.membership = dbUser.membership || "FREE";
           token.userType = dbUser.userType;
-          token.authMethod = dbUser.authMethod
-          token.isFirstTimeSurvey = dbUser.isFirstTimeSurvey ?? token.isFirstTimeSurvey;
-          token.lastSurveyTime = dbUser.lastSurveyTime?.toISOString() || token.lastSurveyTime;
-          token.isAffiliate = dbUser.isAffiliate ?? false; 
+          token.authMethod = dbUser.authMethod;
+          token.isFirstTimeSurvey =
+            dbUser.isFirstTimeSurvey ?? token.isFirstTimeSurvey;
+          token.lastSurveyTime =
+            dbUser.lastSurveyTime?.toISOString() || token.lastSurveyTime;
+          token.isAffiliate = dbUser.isAffiliate ?? false;
           token.referralCode = dbUser.referralCode;
         }
       }
@@ -311,7 +338,8 @@ export const authConfig: AuthOptions = {
         // Standard fields (name/picture)
         if (session.name !== undefined) token.name = session.name;
         if (session.picture !== undefined) token.picture = session.picture;
-        if (session.authMethod !== undefined) token.authMethod = session.authMethod
+        if (session.authMethod !== undefined)
+          token.authMethod = session.authMethod;
       }
 
       // --- ADD THIS BLOCK TO SIGN THE SUPABASE TOKEN ---
@@ -321,9 +349,12 @@ export const authConfig: AuthOptions = {
           sub: token.id as string, // This MUST be the user's Supabase UUID
           role: "authenticated",
           // Set expiry to be 1 hour
-          exp: Math.floor(Date.now() / 1000) + (60 * 60),
+          exp: Math.floor(Date.now() / 1000) + 60 * 60,
         };
-        token.supabaseAccessToken = jwt.sign(payload, process.env.SUPABASE_JWT_SECRET);
+        token.supabaseAccessToken = jwt.sign(
+          payload,
+          process.env.SUPABASE_JWT_SECRET,
+        );
       }
       // --- END NEW BLOCK ---
 
@@ -343,11 +374,13 @@ export const authConfig: AuthOptions = {
         session.user.membership = token.membership;
         session.user.name = token.name;
         session.user.image = token.picture;
-        session.user.authMethod = token.authMethod
-        session.user.isAffiliate = token.isAffiliate ?? false; 
+        session.user.authMethod = token.authMethod;
+        session.user.isAffiliate = token.isAffiliate ?? false;
         session.user.referralCode = token.referralCode;
       }
-      session.expires = new Date(Date.now() + token.maxAge * 1000).toISOString();
+      session.expires = new Date(
+        Date.now() + token.maxAge * 1000,
+      ).toISOString();
 
       // --- ADD THIS LINE TO PASS THE TOKEN TO THE CLIENT ---
       session.supabaseAccessToken = token.supabaseAccessToken; // <-- This is correct now
@@ -373,12 +406,11 @@ export const authConfig: AuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
-      
       // you only redirect to it if it is on the same host (optional security check)
       if (url.startsWith(baseUrl)) return url;
 
       // If the URL is relative (e.g., '/dashboard/membership'), prepend the base URL
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
 
       // Fallback to a default if a valid URL isn't present
       return baseUrl;
@@ -391,7 +423,7 @@ export const authConfig: AuthOptions = {
   },
   pages: {
     // ... (Your existing pages config stays the same)
-    signIn: '/signin',
+    signIn: "/signin",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

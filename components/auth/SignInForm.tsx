@@ -19,6 +19,44 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
 
+const normalizeRedirect = (url: string) => {
+  try {
+    // 🔥 decode first (important)
+    const decoded = decodeURIComponent(url);
+
+    const parsed = new URL(decoded, window.location.origin);
+
+    // only return relative path
+    return parsed.pathname + parsed.search + parsed.hash;
+  } catch {
+    return "/dashboard";
+  }
+};
+
+
+
+const getCleanRedirect = (raw: string) => {
+  try {
+    const decoded = decodeURIComponent(raw);
+    const url = new URL(decoded, window.location.origin);
+
+    const ref = url.searchParams.get("ref");
+
+    if (ref) {
+      url.searchParams.delete("ref");
+    }
+
+    return {
+      clean: url.toString(),
+      ref,
+    };
+  } catch {
+    return {
+      clean: "/dashboard",
+      ref: null,
+    };
+  }
+};
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SessionResponse {
@@ -40,10 +78,17 @@ function SignInFormContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect =
-    searchParams.get("redirect") ||
-    searchParams.get("callbackUrl") ||
-    "/dashboard";
+  const callbackFromUrl = searchParams.get("callbackUrl");
+  const callbackFromCookie = Cookies.get("callbackUrl");
+
+const rawRedirect =
+  callbackFromUrl ?? callbackFromCookie ?? "/dashboard";
+
+const { clean: cleanRedirect, ref: refFromRedirect } =
+  getCleanRedirect(rawRedirect);
+
+const redirect = rawRedirect;
+
 
   const errorFromUrl = searchParams.get("error");
 
@@ -86,32 +131,48 @@ function SignInFormContent() {
 
     resendMutation.mutate(email);
   };
+
   useEffect(() => {
-    let cleanRedirect = redirect;
-    let refFromCallback: string | null = null;
+    const callbackFromUrl = searchParams.get("callbackUrl");
+    const callbackFromCookie = Cookies.get("callbackUrl");
+   
+    // ✅ if URL missing but cookie exists → push into URL
+    if (!callbackFromUrl && callbackFromCookie) {
+      const params = new URLSearchParams(searchParams.toString());
 
-    try {
-      const url = new URL(redirect, window.location.origin);
+      params.set("callbackUrl", callbackFromCookie);
 
-      refFromCallback = url.searchParams.get("ref");
+      router.replace(`${window.location.pathname}?${params.toString()}`);
+    }
+  }, [searchParams, router]);
 
-      if (refFromCallback) {
-        url.searchParams.delete("ref");
-        cleanRedirect = url.pathname + url.search;
+  useEffect(() => {
+    if (!redirect) return;
 
-        // ✅ set cookie here
-        Cookies.set("referralCode", refFromCallback, {
-          expires: 7,
-        });
-      }
-    } catch {}
+   
+  
 
-    const finalHref = `/signup?callbackUrl=${encodeURIComponent(cleanRedirect)}${
-      refFromCallback ? `&ref=${refFromCallback}` : ""
+    const refFromUrl = searchParams.get("ref");
+    const existingRef = Cookies.get("referralCode");
+
+    // 🔥 priority
+    const latestRef = refFromRedirect || refFromUrl;
+
+    if (latestRef && latestRef !== existingRef) {
+      Cookies.set("referralCode", latestRef, { expires: 7 });
+    }
+
+    const finalRef = latestRef || existingRef;
+
+    const safeRedirect = normalizeRedirect(cleanRedirect);
+
+    const finalHref = `/signup?callbackUrl=${encodeURIComponent(safeRedirect)}${
+      finalRef ? `&ref=${finalRef}` : ""
     }`;
 
     setComputedHref(finalHref);
-  }, [redirect]);
+  }, [redirect, searchParams]);
+
   // ── Show URL errors on mount ───────────────────────────────────────────
   useEffect(() => {
     if (errorFromUrl === "account-exists-with-credentials") {
@@ -144,12 +205,14 @@ function SignInFormContent() {
   // ── Credentials sign-in mutation ──────────────────────────────────────
   const signinMutation = useMutation({
     mutationFn: async (data: SigninFormType) => {
+        const safeRedirect = normalizeRedirect(cleanRedirect);
+   
       const response = await signIn("credentials", {
         redirect: false,
         email: data.email,
         password: data.password,
         rememberMe: data.rememberMe,
-        callbackUrl: redirect,
+        callbackUrl: `${window.location.origin}${safeRedirect}`,
       });
 
       if (!response?.ok) {
@@ -166,9 +229,19 @@ function SignInFormContent() {
         setIsAdminSignedIn(true);
         return;
       }
+        
+
+
+    
+
+      // ✅ cleanup
+      Cookies.remove("callbackUrl");
+
       Cookies.remove("referralCode");
       toast.success("Signin successful");
-      router.push(redirect);
+      const safeRedirect = normalizeRedirect(cleanRedirect);
+
+      router.push(safeRedirect);
     },
     onError: (err: Error) => {
       const message = err.message;
@@ -198,7 +271,11 @@ function SignInFormContent() {
         setShowOpenBrowserDialog(true);
         return;
       }
-      await signIn("google", { callbackUrl: redirect });
+      const safeRedirect = normalizeRedirect(cleanRedirect);
+    
+      await signIn("google", {
+        callbackUrl: `${window.location.origin}${safeRedirect}`, // must be absolute
+      });
     } catch (error) {
       toast.error(
         getAxiosErrorMessage(
