@@ -255,25 +255,21 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
   const router = useRouter();
   const { redirectToSignin } = useReferralAndRedirect();
 
- const shareUrl = (() => {
+const shareUrl = (() => {
   if (typeof window === "undefined") return "";
 
   const url = new URL(window.location.href);
 
+  // ✅ keep only pathname (clean URL)
+  const cleanUrl = new URL(url.origin + url.pathname);
 
-  const searchParams = new URLSearchParams(url.search);
-  const refFromUrl = searchParams.get("ref");
-
-  const ref =
-    refFromUrl || session?.user?.referralCode;
-
-  url.searchParams.delete("ref");
+  const ref = session?.user?.referralCode;
 
   if (ref) {
-    url.searchParams.set("ref", ref);
+    cleanUrl.searchParams.set("ref", ref);
   }
 
-  return url.toString();
+  return cleanUrl.toString();
 })();
   const { data: statusData } = useQuery({
     queryKey: ["mmp-my-status"],
