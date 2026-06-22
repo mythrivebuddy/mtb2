@@ -40,6 +40,31 @@ import { isInAppBrowser } from "@/lib/utils/isInAppBrowser";
 
 import OpenInBrowserDialog from "./OpenInBrowserDialog";
 
+
+
+const getCleanRedirect = (raw: string) => {
+  try {
+    const decoded = decodeURIComponent(raw);
+    const url = new URL(decoded, window.location.origin);
+
+    const ref = url.searchParams.get("ref");
+
+    if (ref) {
+      url.searchParams.delete("ref");
+    }
+
+    return {
+      clean: url.toString(),
+      ref,
+    };
+  } catch {
+    return {
+      clean: "/dashboard",
+      ref: null,
+    };
+  }
+};
+
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -71,10 +96,23 @@ export default function SignUpForm() {
 
   const referralCodeFromURL = searchParams.get("ref");
 
-  const redirect =
-    searchParams.get("redirect") ||
-    searchParams.get("callbackUrl") ||
+
+  const rawRedirect =
+    searchParams.get("redirect") ??
+    searchParams.get("callbackUrl") ??
     "/signin";
+
+  const normalizeRedirect = (url: string) => {
+    try {
+      const parsed = new URL(url, window.location.origin);
+      return parsed.pathname + parsed.search + parsed.hash;
+    } catch {
+      return "/signin";
+    }
+  };
+
+  const redirect = normalizeRedirect(rawRedirect);
+
 
   const {
     register,
@@ -126,6 +164,7 @@ export default function SignUpForm() {
 
     const finalRef = refFromURL || existingRef;
 
+
     if (!finalRef) return;
 
     // ✅ Set form value
@@ -141,7 +180,7 @@ export default function SignUpForm() {
       const params = new URLSearchParams(searchParams.toString());
       params.set("ref", existingRef);
 
-      router.replace(`?${params.toString()}`);
+      router.replace(`${window.location.pathname}?${params.toString()}`);
     }
   }, [searchParams, setValue, router]);
 
@@ -179,11 +218,12 @@ export default function SignUpForm() {
 
       const callbackFromCookie = Cookies.get("callbackUrl");
 
-      const finalCallback = callbackFromCookie
-        ? decodeURIComponent(callbackFromCookie)
-        : redirect || "/dashboard";
+      const rawCallback = callbackFromCookie ?? redirect ?? "/dashboard";
 
-      router.push(`/signin?callbackUrl=${encodeURIComponent(finalCallback)}`);
+      const safeCallback = normalizeRedirect(rawCallback);
+
+
+      router.push(`/signin?callbackUrl=${encodeURIComponent(safeCallback)}`);
     },
 
     onError: (err) => {
@@ -228,18 +268,13 @@ export default function SignUpForm() {
       // ✅ fallback to cookie
       const callbackFromCookie = Cookies.get("callbackUrl");
 
-      let finalCallback =
-        callbackFromUrl ||
-        (callbackFromCookie ? decodeURIComponent(callbackFromCookie) : null) ||
-        "/dashboard";
+      const rawCallback = callbackFromUrl ?? callbackFromCookie ?? "/dashboard";
+          const { clean: cleanCallback } = getCleanRedirect(rawCallback);
+      const safeRedirect = normalizeRedirect(cleanCallback);
 
-      // ✅ normalize (VERY IMPORTANT)
-      try {
-        new URL(finalCallback); // already absolute
-      } catch {
-        finalCallback = `${window.location.origin}${finalCallback}`;
-      }
+      const finalCallback = `${window.location.origin}${safeRedirect}`;
 
+  
       await signIn("google", {
         callbackUrl: finalCallback,
       });

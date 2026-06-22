@@ -369,10 +369,10 @@ export default function ChallengeDetailView({
       const encodedCallback = encodeURIComponent(currentUrl);
 
       // 🔥 ALWAYS store callbackUrl (for fallback)
-      Cookies.set("callbackUrl", encodedCallback, {
-        expires: 1 / 24, // 1 hour
-        path: "/",
-      });
+     Cookies.set("callbackUrl", currentUrl, {
+  expires: 1 / 24,
+  path: "/",
+});
 
       router.push(`/signin?callbackUrl=${encodedCallback}`);
       return;
