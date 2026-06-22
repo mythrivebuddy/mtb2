@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { splitFullName } from "@/lib/utils/utils";
 import { addOrUpdateBrevoContact } from "@/lib/brevo";
+import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   try {
@@ -31,7 +32,9 @@ export async function POST(req: Request) {
       lastName: lastName,
       userType: updatedUser.userType,
     });
+    const cookieStore = await cookies();
 
+    cookieStore.delete("callbackUrl");
     return NextResponse.json(
       { success: true, message: `Your role has been updated to ${role}` },
       { status: 200 },

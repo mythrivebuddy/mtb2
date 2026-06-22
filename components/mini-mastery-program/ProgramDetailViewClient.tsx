@@ -3,7 +3,7 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import {
   CheckCircle2,
   Lock,
@@ -33,6 +33,8 @@ import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { DashboardContent } from "@/types/client/dashboard";
 import Share from "../common/ShareModal";
+import { useReferralAndRedirect } from "@/hooks/use-save-refferral-redirect";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -66,10 +68,12 @@ function EnrollButton({
   program,
   status,
   isLoggedIn,
+  redirectToSignin
 }: {
   program: Program;
   status?: ProgramCompStatus;
   isLoggedIn: boolean;
+  redirectToSignin: (router: AppRouterInstance) => void; 
 }) {
   const isPaid = (program.price ?? 0) > 0;
   const router = useRouter();
@@ -150,7 +154,7 @@ function EnrollButton({
   if (!isLoggedIn) {
     return (
       <button
-        onClick={() => signIn()}
+        onClick={() => redirectToSignin(router)}
         className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95 text-sm"
       >
         <LogIn size={16} /> Sign In to Enroll
@@ -246,14 +250,16 @@ function ErrorState({ message }: { message: string }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const ProgramDetailViewClient = ({ program }: { program: Program }) => {
-  const { status: authStatus, data: session } = useSession();
+  const { status: authStatus,data:session } = useSession();
   const isLoggedIn = authStatus === "authenticated";
   const router = useRouter();
+  const { redirectToSignin } = useReferralAndRedirect();
 
-  const shareUrl = (() => {
+ const shareUrl = (() => {
   if (typeof window === "undefined") return "";
 
   const url = new URL(window.location.href);
+
 
   const searchParams = new URLSearchParams(url.search);
   const refFromUrl = searchParams.get("ref");
@@ -261,17 +267,14 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
   const ref =
     refFromUrl || session?.user?.referralCode;
 
-  // ✅ clean existing ref
   url.searchParams.delete("ref");
 
-  // ✅ append only if valid
   if (ref) {
     url.searchParams.set("ref", ref);
   }
 
   return url.toString();
 })();
-
   const { data: statusData } = useQuery({
     queryKey: ["mmp-my-status"],
     queryFn: fetchMyStatuses,
@@ -445,6 +448,7 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
                   program={program}
                   status={progStatus}
                   isLoggedIn={isLoggedIn}
+                  redirectToSignin={redirectToSignin}
                 />
               </div>
             </div>
