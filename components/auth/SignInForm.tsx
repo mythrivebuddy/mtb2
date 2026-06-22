@@ -40,10 +40,14 @@ function SignInFormContent() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect =
-    searchParams.get("redirect") ||
-    searchParams.get("callbackUrl") ||
-    "/dashboard";
+  const callbackFromUrl = searchParams.get("callbackUrl");
+  const callbackFromCookie = Cookies.get("callbackUrl");
+
+  const redirect = callbackFromUrl
+    ? decodeURIComponent(callbackFromUrl)
+    : callbackFromCookie
+      ? decodeURIComponent(callbackFromCookie)
+      : "/dashboard";
 
   const errorFromUrl = searchParams.get("error");
 
@@ -86,32 +90,57 @@ function SignInFormContent() {
 
     resendMutation.mutate(email);
   };
+
   useEffect(() => {
+    const callbackFromUrl = searchParams.get("callbackUrl");
+    const callbackFromCookie = Cookies.get("callbackUrl");
+
+    // ✅ if URL missing but cookie exists → push into URL
+    if (!callbackFromUrl && callbackFromCookie) {
+      const params = new URLSearchParams(searchParams.toString());
+
+      params.set("callbackUrl", callbackFromCookie);
+
+      router.replace(`?${params.toString()}`);
+    }
+  }, [searchParams, router]);
+
+  useEffect(() => {
+    if (!redirect) return;
+
+    let refFromRedirect: string | null = null;
     let cleanRedirect = redirect;
-    let refFromCallback: string | null = null;
 
     try {
-      const url = new URL(redirect, window.location.origin);
+      const url = new URL(redirect, window.location.origin); // ✅ handles both cases
 
-      refFromCallback = url.searchParams.get("ref");
+      refFromRedirect = url.searchParams.get("ref");
 
-      if (refFromCallback) {
+      if (refFromRedirect) {
         url.searchParams.delete("ref");
-        cleanRedirect = url.pathname + url.search;
-
-        // ✅ set cookie here
-        Cookies.set("referralCode", refFromCallback, {
-          expires: 7,
-        });
+        cleanRedirect = url.toString();
       }
     } catch {}
 
+    const refFromUrl = searchParams.get("ref");
+    const existingRef = Cookies.get("referralCode");
+
+    // 🔥 priority
+    const latestRef = refFromRedirect || refFromUrl;
+
+    if (latestRef && latestRef !== existingRef) {
+      Cookies.set("referralCode", latestRef, { expires: 7 });
+    }
+
+    const finalRef = latestRef || existingRef;
+
     const finalHref = `/signup?callbackUrl=${encodeURIComponent(cleanRedirect)}${
-      refFromCallback ? `&ref=${refFromCallback}` : ""
+      finalRef ? `&ref=${finalRef}` : ""
     }`;
 
     setComputedHref(finalHref);
-  }, [redirect]);
+  }, [redirect, searchParams]);
+
   // ── Show URL errors on mount ───────────────────────────────────────────
   useEffect(() => {
     if (errorFromUrl === "account-exists-with-credentials") {
@@ -166,9 +195,31 @@ function SignInFormContent() {
         setIsAdminSignedIn(true);
         return;
       }
+      const callbackFromUrl = searchParams.get("callbackUrl");
+      const callbackFromCookie = Cookies.get("callbackUrl");
+
+      const finalRedirect = callbackFromUrl
+        ? decodeURIComponent(callbackFromUrl)
+        : callbackFromCookie
+          ? decodeURIComponent(callbackFromCookie)
+          : "/dashboard";
+
+      // 🔥 extract ref again (safety)
+      try {
+        const url = new URL(finalRedirect);
+        const ref = url.searchParams.get("ref");
+
+        if (ref) {
+          Cookies.set("referralCode", ref, { expires: 7, path: "/" });
+        }
+      } catch {}
+
+      // ✅ cleanup
+      Cookies.remove("callbackUrl");
+
       Cookies.remove("referralCode");
       toast.success("Signin successful");
-      router.push(redirect);
+      router.push(finalRedirect);
     },
     onError: (err: Error) => {
       const message = err.message;
@@ -198,7 +249,19 @@ function SignInFormContent() {
         setShowOpenBrowserDialog(true);
         return;
       }
-      await signIn("google", { callbackUrl: redirect });
+      let finalCallback = redirect;
+
+      // ✅ if relative → make absolute
+      if (redirect.startsWith("/")) {
+        finalCallback = `${window.location.origin}${redirect}`;
+      }
+
+      // ✅ if already absolute → keep as is
+      // (no change needed)
+
+      await signIn("google", {
+        callbackUrl: finalCallback,
+      });
     } catch (error) {
       toast.error(
         getAxiosErrorMessage(

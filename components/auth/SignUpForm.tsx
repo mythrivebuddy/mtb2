@@ -71,7 +71,7 @@ export default function SignUpForm() {
 
   const referralCodeFromURL = searchParams.get("ref");
 
-   const redirect =
+  const redirect =
     searchParams.get("redirect") ||
     searchParams.get("callbackUrl") ||
     "/signin";
@@ -117,12 +117,33 @@ export default function SignUpForm() {
   // ✅ Store referral code in cookie if present
 
   useEffect(() => {
-    if (referralCodeFromURL) {
-      setValue("referralCode", referralCodeFromURL);
+    const refFromURL = searchParams.get("ref");
+    const existingRef = Cookies.get("referralCode");
 
-      Cookies.set("referralCode", referralCodeFromURL, { expires: 7 });
+    if (refFromURL && refFromURL !== existingRef) {
+      Cookies.set("referralCode", refFromURL, { expires: 7 });
     }
-  }, [referralCodeFromURL, setValue]);
+
+    const finalRef = refFromURL || existingRef;
+
+    if (!finalRef) return;
+
+    // ✅ Set form value
+    setValue("referralCode", finalRef);
+
+    // ✅ Ensure cookie is set
+    if (!refFromURL) {
+      Cookies.set("referralCode", finalRef, { expires: 7 });
+    }
+
+    // ✅ Ensure URL has ?ref=
+    if (!refFromURL && existingRef) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("ref", existingRef);
+
+      router.replace(`?${params.toString()}`);
+    }
+  }, [searchParams, setValue, router]);
 
   // ✅ React Query mutation for signup
 
@@ -156,11 +177,13 @@ export default function SignUpForm() {
         }
       }
 
-     router.push(
-  `/signin?callbackUrl=${encodeURIComponent(
-    redirect || "/dashboard"
-  )}`
-);
+      const callbackFromCookie = Cookies.get("callbackUrl");
+
+      const finalCallback = callbackFromCookie
+        ? decodeURIComponent(callbackFromCookie)
+        : redirect || "/dashboard";
+
+      router.push(`/signin?callbackUrl=${encodeURIComponent(finalCallback)}`);
     },
 
     onError: (err) => {
@@ -200,12 +223,25 @@ export default function SignUpForm() {
         return;
       }
 
-      signIn("google", {
-        // redirect: false,
+      const callbackFromUrl = searchParams.get("callbackUrl");
 
-        callbackUrl: "/dashboard",
+      // ✅ fallback to cookie
+      const callbackFromCookie = Cookies.get("callbackUrl");
 
-        // state: "gggggggggg",
+      let finalCallback =
+        callbackFromUrl ||
+        (callbackFromCookie ? decodeURIComponent(callbackFromCookie) : null) ||
+        "/dashboard";
+
+      // ✅ normalize (VERY IMPORTANT)
+      try {
+        new URL(finalCallback); // already absolute
+      } catch {
+        finalCallback = `${window.location.origin}${finalCallback}`;
+      }
+
+      await signIn("google", {
+        callbackUrl: finalCallback,
       });
     } catch (error) {
       console.error("Error signing in", error);
