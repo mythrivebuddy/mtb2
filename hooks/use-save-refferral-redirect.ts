@@ -63,7 +63,7 @@ export const useReferralAndRedirect = (): UseReferralAndRedirectReturn => {
       const existingCallback = Cookies.get("callbackUrl");
 
       if (!existingCallback && current) {
-        Cookies.set("callbackUrl", encodeURIComponent(current), {
+        Cookies.set("callbackUrl", current, {
           expires: 1 / 24, // 1 hour
           path: "/",
         });
@@ -77,7 +77,7 @@ export const useReferralAndRedirect = (): UseReferralAndRedirectReturn => {
   const setCallbackUrl = (): void => {
     if (!currentUrl) return;
 
-    Cookies.set("callbackUrl", encodeURIComponent(currentUrl), {
+    Cookies.set("callbackUrl", currentUrl, {
       expires: 1 / 24,
       path: "/",
     });
@@ -90,23 +90,23 @@ export const useReferralAndRedirect = (): UseReferralAndRedirectReturn => {
   // 2. cookie
   // 3. /dashboard
   // ─────────────────────────────────────────────
-  const getFinalCallbackUrl = (): string => {
-    const fromUrl: string | null = searchParams.get("callbackUrl");
-    const fromCookie: string | undefined = Cookies.get("callbackUrl");
+const getFinalCallbackUrl = (): string => {
+  const fromUrl = searchParams.get("callbackUrl");
 
-    let cb: string =
-      fromUrl ||
-      (fromCookie ? decodeURIComponent(fromCookie) : "") ||
-      "/dashboard";
+  const fromCookieRaw = Cookies.get("callbackUrl");
+  const fromCookie = fromCookieRaw
+    ? decodeURIComponent(fromCookieRaw)
+    : null;
 
-    try {
-      new URL(cb); // absolute URL
-    } catch {
-      cb = `${window.location.origin}${cb}`;
-    }
+  const cb = fromUrl || fromCookie || "/dashboard";
 
-    return cb;
-  };
+  try {
+    const url = new URL(cb, window.location.origin);
+    return url.toString();
+  } catch {
+    return `${window.location.origin}/dashboard`;
+  }
+};
 
   // ─────────────────────────────────────────────
   // ✅ REDIRECT HANDLER

@@ -254,23 +254,15 @@ const ProgramDetailViewClient = ({ program }: { program: Program }) => {
   const isLoggedIn = authStatus === "authenticated";
   const router = useRouter();
   const { redirectToSignin } = useReferralAndRedirect();
+const ref = session?.user?.referralCode;
 
-const shareUrl = (() => {
-  if (typeof window === "undefined") return "";
+const baseUrl =
+  process.env.NEXT_PUBLIC_BASE_URL ||
+  (typeof window !== "undefined" ? window.location.origin : "");
 
-  const url = new URL(window.location.href);
-
-  // ✅ keep only pathname (clean URL)
-  const cleanUrl = new URL(url.origin + url.pathname);
-
-  const ref = session?.user?.referralCode;
-
-  if (ref) {
-    cleanUrl.searchParams.set("ref", ref);
-  }
-
-  return cleanUrl.toString();
-})();
+const shareUrl = `${baseUrl}/dashboard/mini-mastery-programs/${program.id}${
+  ref ? `?ref=${ref}` : ""
+}`;
   const { data: statusData } = useQuery({
     queryKey: ["mmp-my-status"],
     queryFn: fetchMyStatuses,
