@@ -31,7 +31,7 @@ import ChallengeDescription from "@/components/Dompurify";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { DashboardContent } from "@/types/client/dashboard";
-//import { useSearchParams } from "next/navigation";
+import Cookies from "js-cookie";
 
 type Creator = Pick<User, "id" | "name">;
 
@@ -217,6 +217,46 @@ export default function ChallengeDetailView({
     }
   }, [enrollment, challenge.id]);
 
+  useEffect(() => {
+    if (sessionStatus === "loading") return;
+
+    const currentUrl = window.location.href;
+    const url = new URL(currentUrl);
+
+    const refFromUrl = url.searchParams.get("ref");
+    const existingRef = Cookies.get("referralCode");
+
+    // 🔥 LAST TOUCH REF
+    // ✅ ONLY for unauthenticated users
+    if (sessionStatus !== "authenticated") {
+      if (refFromUrl && refFromUrl !== existingRef) {
+        Cookies.set("referralCode", refFromUrl, {
+          expires: 7,
+          path: "/",
+        });
+      }
+    }
+
+    // 🔥 ALWAYS store callbackUrl (only if not logged in)
+    if (sessionStatus !== "authenticated") {
+      const encoded = encodeURIComponent(currentUrl);
+
+      Cookies.set("callbackUrl", encoded, {
+        expires: 1 / 24, // 1 hour
+        path: "/",
+      });
+    }
+  }, [sessionStatus]);
+
+  // useEffect(() => {
+  //   if (!challenge?.id) return;
+
+  //   // ✅ user already fully enrolled
+  //   if (enrollment && enrollment.userTasks.length > 0) {
+  //     router.replace(`/dashboard/challenge/my-challenges/${challenge.id}`);
+  //   }
+  // }, [enrollment, challenge.id]);
+
   const handleEnroll = async () => {
     setIsEnrolling(true);
     setError(null);
@@ -307,8 +347,34 @@ export default function ChallengeDetailView({
     if (sessionStatus === "loading") return;
 
     if (sessionStatus !== "authenticated") {
-      const redirectPath = window.location.href;
-      router.push(`/signin?callbackUrl=${redirectPath}`);
+      const currentUrl = window.location.href;
+
+      const url = new URL(currentUrl);
+
+      // ✅ extract ref from current page
+      const refFromUrl = url.searchParams.get("ref");
+
+      // ✅ get existing cookie
+      const existingRef = Cookies.get("referralCode");
+
+      // 🔥 LAST TOUCH: always override if new ref comes
+      if (refFromUrl && refFromUrl !== existingRef) {
+        Cookies.set("referralCode", refFromUrl, {
+          expires: 7,
+          path: "/",
+        });
+      }
+
+      // ✅ encode full callbackUrl
+      const encodedCallback = encodeURIComponent(currentUrl);
+
+      // 🔥 ALWAYS store callbackUrl (for fallback)
+     Cookies.set("callbackUrl", currentUrl, {
+  expires: 1 / 24,
+  path: "/",
+});
+
+      router.push(`/signin?callbackUrl=${encodedCallback}`);
       return;
     }
 
@@ -381,7 +447,9 @@ export default function ChallengeDetailView({
                     className="p-4 bg-slate-50 rounded-lg border border-slate-200 flex items-center dark:border-slate-700 dark:bg-slate-800"
                   >
                     <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                    <p className="text-slate-800 dark:text-slate-200">{task.description}</p>
+                    <p className="text-slate-800 dark:text-slate-200">
+                      {task.description}
+                    </p>
                   </li>
                 ))
               ) : (
@@ -401,7 +469,9 @@ export default function ChallengeDetailView({
               <div className="flex items-center">
                 <Calendar className="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" />
                 <div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Duration</div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    Duration
+                  </div>
                   <div className="font-semibold text-slate-700 flex flex-col sm:flex-row sm:items-center sm:gap-2 dark:text-slate-200">
                     <span>
                       {formatDate(challenge.startDate)} to{" "}
@@ -422,7 +492,9 @@ export default function ChallengeDetailView({
                 <div className="flex items-center">
                   <Coins className="w-6 h-6 text-green-500 mr-3 flex-shrink-0" />
                   <div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">Joining Cost</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Joining Cost
+                    </div>
                     <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {challenge.challengeJoiningType ===
                         ChallengeJoiningType.PAID && (
@@ -442,7 +514,9 @@ export default function ChallengeDetailView({
                 <div className="flex items-center">
                   <Award className="w-6 h-6 text-yellow-500 mr-3 flex-shrink-0" />
                   <div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">Reward</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Reward
+                    </div>
                     <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {challenge.reward} GP
                     </div>
@@ -453,7 +527,9 @@ export default function ChallengeDetailView({
                     className={`w-6 h-6 mr-3 flex-shrink-0 ${challenge.penalty > 0 ? "text-red-500" : "text-gray-400"}`}
                   />
                   <div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">Penalty</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Penalty
+                    </div>
                     <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {challenge.penalty > 0
                         ? `${challenge.penalty} GP`
@@ -464,7 +540,9 @@ export default function ChallengeDetailView({
                 <div className="flex items-center">
                   <Users className="w-6 h-6 text-slate-500 mr-3 flex-shrink-0" />
                   <div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">Participants</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Participants
+                    </div>
                     <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {challenge._count.enrollments}
                     </div>
@@ -473,7 +551,9 @@ export default function ChallengeDetailView({
                 <div className="flex items-center">
                   <UserCircle className="w-6 h-6 text-gray-500 mr-3 flex-shrink-0" />
                   <div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">Created By</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                      Created By
+                    </div>
                     <div className="font-semibold text-slate-700 dark:text-slate-200">
                       {challenge.creator?.name ?? "Unknown User"}
                     </div>
@@ -496,7 +576,9 @@ export default function ChallengeDetailView({
                               {" "}
                               <span
                                 onClick={() =>
-                                  router.push("/dashboard/subscription?ref=join-challenge")
+                                  router.push(
+                                    "/dashboard/subscription?ref=join-challenge",
+                                  )
                                 }
                                 className="underline cursor-pointer font-medium"
                               >

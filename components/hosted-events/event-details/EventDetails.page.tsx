@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useEnrollFreeEvent } from "@/hooks/use-free-event-enroll";
 import assets from "@/lib/constants/assets";
 import SafeHTML from "@/components/common/SafeHTML";
+import { useReferralAndRedirect } from "@/hooks/use-save-refferral-redirect";
 
 type EventDetailResponse = {
   event: HostedEvent & {
@@ -336,6 +337,7 @@ export default function EventDetailsPage({ eventId }: { eventId: string }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  useReferralAndRedirect();
 
   const { data, isLoading, isError } = useQuery<EventDetail>({
     queryKey: ["event-detail", eventId],
