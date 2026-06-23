@@ -1,7 +1,7 @@
 {
-  "name": "My Thrive Buddy",
+  "name": "MyThriveBuddy",
   "short_name": "MTB",
-  "description": "Progressive Web App for MTB project.",
+  "description": "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F1F9FF",
@@ -11,12 +11,12 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icons/mtb-v2-icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/icons/mtb-v2-icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
