@@ -41,6 +41,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     pathname === "/dashboard/store" ||
     pathname.startsWith("/dashboard/store/") ||
     pathname === "/dashboard/mini-mastery-programs" ||
+    pathname.startsWith("/dashboard/mini-mastery-programs") ||
     pathname === "/dashboard/events" ||
     (/^\/dashboard\/events\/[^/]+$/.test(pathname) &&
       !pathname.startsWith("/dashboard/events/coach") &&
