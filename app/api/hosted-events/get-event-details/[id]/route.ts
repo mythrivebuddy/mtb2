@@ -61,6 +61,7 @@ type RouteContext = { params: Promise<{ id: string }> };
   timeZone: string | null;
   isPaid: boolean;
   resourcesVisibility: HostedEventResourceVisibility;
+  resources?: string | null;
   status: Status;
   ticket: PublicEventTicket | null;
   agendaSlots: PublicEventAgendaSlot[];
@@ -95,6 +96,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
         timeZone: true,
         isPaid: true,
         resourcesVisibility: true,
+        resources: true,
         status: true,
         tickets: {
           take: 1,
