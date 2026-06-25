@@ -434,7 +434,7 @@ const RecommendedSection = ({
           </p>
         </div>
         <Link
-          href="/dashboard/events"
+          href="/dashboard/events/all-events"
           className={`${theme.text.brandDeep} hidden md:flex items-center text-sm font-medium  hover:underline`}
         >
           View All <ChevronRight size={16} />
@@ -446,7 +446,7 @@ const RecommendedSection = ({
         ref={scrollRef}
         onScroll={handleScroll}
         className="
-          flex sm:grid sm:grid-cols-2 md:grid-cols-5
+          flex sm:grid sm:grid-cols-2 md:grid-cols-3 x1260:grid-cols-4
           gap-5
           overflow-x-auto sm:overflow-visible
           snap-x snap-mandatory sm:snap-none
@@ -468,11 +468,11 @@ const RecommendedSection = ({
           >
             {/* Image */}
             <div className="relative h-40 w-full overflow-hidden">
-              {event.isPaid && (
-                <span className="absolute top-3 left-3 bg-amber-700 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full z-10 uppercase">
-                  Paid
-                </span>
-              )}
+              <span
+                className={`absolute top-3 left-3 ${theme.bg.base} ${theme.text.accent} text-xs px-2.5 py-1 rounded-full z-10 uppercase shadow-sm`}
+              >
+                {event.type?.replace("_", " ") || "Free"}
+              </span>
               <Image
                 src={event.coverImage || FALLBACK_IMAGE}
                 alt={event.title}
@@ -543,7 +543,7 @@ const RecommendedSection = ({
 
         {/* View All — pushed to the right */}
         <Link
-          href="/dashboard/events"
+          href="/dashboard/events/all-events"
           className={`${theme.text.brandDeep} ml-auto flex items-center text-sm font-medium hover:underline`}
         >
           View All <ChevronRight size={16} />
@@ -552,7 +552,7 @@ const RecommendedSection = ({
       {/* View all — tablet only (sm to md) */}
       <div className="hidden sm:flex md:hidden justify-end mt-5">
         <Link
-          href="/dashboard/events"
+          href="/dashboard/events/all-events"
           className={`${theme.text.brandDeep} flex items-center text-sm font-medium  hover:underline`}
         >
           View All <ChevronRight size={16} />

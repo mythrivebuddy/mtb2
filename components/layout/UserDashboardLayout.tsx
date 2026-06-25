@@ -111,7 +111,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       className={`w-full min-h-screen  ${shouldUseInheritBg ? "bg-inherit" : "bg-dashboard dark:bg-slate-950"} max-w-full text-slate-950 dark:text-slate-100`}
     >
       {isLoggedIn && session.user.role === "USER" && (
-        <div className="fixed top-0 left-0 w-64 z-20 m-3">
+        <div className="fixed top-0 left-0 w-64 z-50 m-3">
           <Sidebar
             user={user}
             isOpen={isSidebarOpen}
@@ -121,7 +121,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       )}
 
       {isLoggedIn && session.user.role === "USER" && (
-        <div className="lg:hidden px-6 py-4 mb-8 fixed top-0 left-0 right-0 z-10">
+        <div className="lg:hidden px-6 py-4 mb-8 fixed top-0 left-0 right-0 z-50">
           <TopBar user={user} toggleSidebar={() => setIsSidebarOpen(true)} />
         </div>
       )}

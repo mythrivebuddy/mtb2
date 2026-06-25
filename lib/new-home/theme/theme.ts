@@ -93,7 +93,7 @@ export const theme = {
   /* ================= LAYOUT ================= */
   // ONLY repeated responsive patterns (used 3+ times)
   layout: {
-    container: "px-4 sm:px-6 md:px-12 max-w-[1440px] mx-auto",
+    container: "px-4 sm:px-6  max-w-[1440px] mx-auto",
     sectionY: "py-14 sm:py-24",
     grid3: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
   },
