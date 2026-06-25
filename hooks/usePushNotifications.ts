@@ -162,7 +162,7 @@ export default function usePushNotifications() {
 
   const handleFirstVisitAllow = async () => {
     sessionStorage.setItem("notif_permission_asked", "true");
-    setShowFirstVisitPopup(false);
+
     await subscribe(); // user gesture context
   };
 

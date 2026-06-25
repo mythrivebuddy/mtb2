@@ -48,7 +48,8 @@ type PageSkeletonProps = {
     | "events-discovery-page"
     | "events-detail-page"
     | "events-discovery-page-inner"
-};
+    | "all-events-page"
+  };
 
 export default function PageSkeleton({ type }: PageSkeletonProps) {
   // ! user-panel
@@ -1723,6 +1724,92 @@ if(type === "events-detail-page") {
   </div>
   )
 }
+
+if (type === "all-events-page") {
+    return (
+      <div className="animate-pulse min-h-screen">
+        {/* HERO SECTION SKELETON */}
+        <section className="relative h-[60vh] min-h-[491px] sm:min-h-[584px] w-full flex items-center overflow-hidden bg-slate-200 dark:bg-slate-800">
+          <div className="relative z-10 max-w-[1440px] mx-auto w-full px-4 sm:px-6 flex flex-col justify-center items-center text-center md:items-start md:text-left">
+            {/* Featured Event Pill */}
+            <Skeleton className="h-8 w-36 rounded-full mb-6" />
+            
+            <div className="w-full max-w-2xl flex flex-col items-center md:items-start">
+              {/* Title */}
+              <Skeleton className="h-10 md:h-12 w-full mb-3" />
+              <Skeleton className="h-10 md:h-12 w-3/4 mb-6" />
+              
+              {/* Description */}
+              <Skeleton className="h-5 w-full mb-2" />
+              <Skeleton className="h-5 w-5/6 mb-8" />
+              
+              {/* View Details Button */}
+              <Skeleton className="h-12 w-40 rounded-full" />
+            </div>
+          </div>
+        </section>
+
+        {/* MAIN CONTENT SKELETON */}
+        <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-12 w-full">
+          {/* FILTERS & SEARCH ROW */}
+          <div className="border-b border-gray-200 dark:border-slate-700 flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-12 pb-3">
+            {/* Chips */}
+            <div className="flex overflow-x-auto no-scrollbar gap-3 w-full">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-9 w-24 rounded-full shrink-0" />
+              ))}
+            </div>
+
+            {/* Search Bar */}
+            <div className="w-full max-w-xs shrink-0">
+              <Skeleton className="h-10 w-full rounded-full" />
+            </div>
+          </div>
+
+          {/* EVENT GRID SKELETON */}
+          <div className="grid grid-cols-1 place-items-center sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-800 flex flex-col w-full h-[360px]"
+              >
+                {/* Image Area */}
+                <div className="relative h-40 w-full bg-slate-200 dark:bg-slate-800 shrink-0">
+                  {/* Event Type Badge */}
+                  <Skeleton className="absolute top-3 left-3 h-6 w-16 rounded-full" />
+                </div>
+
+                {/* Body Area */}
+                <div className="p-4 flex flex-col flex-1">
+                  {/* Creator Row */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <Skeleton className="w-5 h-5 rounded-full" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+
+                  {/* Title */}
+                  <Skeleton className="h-6 w-full mb-1.5" />
+                  <Skeleton className="h-6 w-3/4 mb-4" />
+
+                  {/* Meta Row (Clock + Date) */}
+                  <div className="flex items-center gap-2 mb-4 mt-auto">
+                    <Skeleton className="w-4 h-4 rounded-full" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+
+                  {/* Price + CTA Row */}
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-50 dark:border-slate-800">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    );
+  }
   // fallback default
   return (
     <div className="p-4">

@@ -28,6 +28,12 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (session.user.email === "test1@example.com" || session.user.email === "test2example.com") {
+      return NextResponse.json(
+        { error: "Enrollment failed for testing" },
+        { status: 500 }
+      );
+    }
 
     const joinerId = session.user.id;
     const { challengeId } = await request.json();

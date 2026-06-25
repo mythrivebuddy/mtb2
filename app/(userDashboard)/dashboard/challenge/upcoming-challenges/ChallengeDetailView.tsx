@@ -32,6 +32,8 @@ import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { DashboardContent } from "@/types/client/dashboard";
 import Cookies from "js-cookie";
+import usePushNotifications from "@/hooks/usePushNotifications";
+import FirstVisitNotificationPopup from "@/components/dashboard/user/FirstNotificationPopUp";
 
 type Creator = Pick<User, "id" | "name">;
 
@@ -78,9 +80,19 @@ export default function ChallengeDetailView({
 }: ChallengeDetailViewProps) {
   const router = useRouter();
   const { status: sessionStatus, data: session } = useSession();
+  const {
+    showFirstVisitPopup,
+    handleFirstVisitAllow,
+    setShowFirstVisitPopup,
+    handleFirstVisitLater,
+    isLoading,
+    isSubscribed,
+  } = usePushNotifications();
   const [enrollment, setEnrollment] = useState(initialEnrollment);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
+  const [showLongEnrollMsg, setShowLongEnrollMsg] = useState(false);
+
   const [error, setError] = useState<{
     message: string;
     isUpgradeFlagShow?: boolean;
@@ -119,10 +131,27 @@ export default function ChallengeDetailView({
           );
 
           setAutoEnrollAttempted(true);
+          let enrollSuccess = false;
+          setIsEnrolling(true);
+          const timer = setTimeout(() => {
+            setShowLongEnrollMsg(true);
+          }, 5000);
+          axios
+            .post("/api/challenge/enroll-fallback", {
+              challengeId: challenge.id,
+              orderId,
+            })
+            .catch((err) =>
+              console.error("Failed to trigger fallback job:", err),
+            );
+
           try {
-            setIsEnrolling(true);
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete("orderId");
+            window.history.replaceState({}, "", newUrl);
 
             await autoEnrollWithRetry(challenge.id);
+            enrollSuccess = true;
 
             const enrollmentResp = await axios.get(
               `/api/challenge/enrollments/${challenge.id}`,
@@ -161,19 +190,22 @@ export default function ChallengeDetailView({
               queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] }),
             ]);
             toast.success("You have successfully enrolled in this challenge.");
+             setIsEnrolling(false);
 
             router.replace(
               `/dashboard/challenge/my-challenges/${challenge.id}`,
             );
           } catch (err) {
             console.error("Auto enroll failed", err);
-
-            await axios.post("/api/challenge/enroll-failure", {
-              challengeId: challenge.id,
-              orderId,
-            });
+            setShowLongEnrollMsg(true);
           } finally {
+            clearTimeout(timer);
             setIsEnrolling(false);
+
+            // Only hide message on success
+            if (enrollSuccess) {
+              setShowLongEnrollMsg(false);
+            }
           }
         }
       } catch (err) {
@@ -248,20 +280,22 @@ export default function ChallengeDetailView({
     }
   }, [sessionStatus]);
 
-  // useEffect(() => {
-  //   if (!challenge?.id) return;
+  useEffect(() => {
+    if (!challenge?.id) return;
 
-  //   // ✅ user already fully enrolled
-  //   if (enrollment && enrollment.userTasks.length > 0) {
-  //     router.replace(`/dashboard/challenge/my-challenges/${challenge.id}`);
-  //   }
-  // }, [enrollment, challenge.id]);
+    // ✅ user already fully enrolled
+    if (enrollment && enrollment.userTasks.length > 0) {
+      router.replace(`/dashboard/challenge/my-challenges/${challenge.id}`);
+    }
+  }, [enrollment, challenge.id]);
 
   const handleEnroll = async () => {
     setIsEnrolling(true);
     setError(null);
     try {
-      await axios.post("/api/challenge/enroll", { challengeId: challenge.id });
+      await axios.post("/api/challenge/enroll", {
+        challengeId: challenge.id,
+      });
 
       const enrollmentResp = await axios.get(
         `/api/challenge/enrollments/${challenge.id}`,
@@ -320,27 +354,9 @@ export default function ChallengeDetailView({
     }
   };
 
-  const autoEnrollWithRetry = async (challengeId: string, retries = 3) => {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        await axios.post("/api/challenge/enroll", { challengeId });
-        return true;
-      } catch (err) {
-        if (axios.isAxiosError(err)) {
-          const status = err.response?.status;
-
-          // already enrolled → stop retries
-          if (status === 409) return true;
-
-          // client errors should not retry
-          if (status && status < 500) throw err;
-        }
-
-        if (attempt === retries) throw err;
-
-        await new Promise((r) => setTimeout(r, 1500 * attempt));
-      }
-    }
+  const autoEnrollWithRetry = async (challengeId: string) => {
+    await axios.post("/api/challenge/enroll", { challengeId });
+    return true;
   };
 
   const handleJoinClick = () => {
@@ -369,10 +385,10 @@ export default function ChallengeDetailView({
       const encodedCallback = encodeURIComponent(currentUrl);
 
       // 🔥 ALWAYS store callbackUrl (for fallback)
-     Cookies.set("callbackUrl", currentUrl, {
-  expires: 1 / 24,
-  path: "/",
-});
+      Cookies.set("callbackUrl", currentUrl, {
+        expires: 1 / 24,
+        path: "/",
+      });
 
       router.push(`/signin?callbackUrl=${encodedCallback}`);
       return;
@@ -642,6 +658,20 @@ export default function ChallengeDetailView({
                             "Enroll Now"
                           )}
                         </button>
+                        {showLongEnrollMsg && !isSubscribed && (
+                          <p className="text-sm text-center  font-medium animate-fade-in mt-2">
+                            We are creating your enrollment and we will notify
+                            you once this is completed. Please keep your
+                            <button
+                              onClick={() => setShowFirstVisitPopup(true)}
+                              className="text-blue-600"
+                            >
+                              {" "}
+                              notifications{" "}
+                            </button>
+                            turned on.
+                          </p>
+                        )}
                       </div>
                     );
                   }
@@ -697,7 +727,13 @@ export default function ChallengeDetailView({
       ) : (
         <AppLayout>{pageContent}</AppLayout>
       )}
-
+      <FirstVisitNotificationPopup
+        open={showFirstVisitPopup}
+        onOpenChange={setShowFirstVisitPopup}
+        onAllow={handleFirstVisitAllow}
+        onLater={handleFirstVisitLater}
+        isLoading={isLoading}
+      />
       {/* Enrollment Success Modal */}
       {isEnrollSuccessModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

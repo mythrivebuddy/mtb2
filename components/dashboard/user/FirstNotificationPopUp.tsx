@@ -9,20 +9,56 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import usePushNotifications from "@/hooks/usePushNotifications";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
-export default function FirstVisitNotificationPopup() {
-  const {
-    showFirstVisitPopup,
-    handleFirstVisitAllow,
-    setShowFirstVisitPopup,
-    handleFirstVisitLater,
-    isLoading,
-  } = usePushNotifications();
+interface FirstVisitNotificationPopupProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onAllow?: () => Promise<void>;
+  onLater?: () => void;
+  isLoading?: boolean;
+}
+
+export default function FirstVisitNotificationPopup(
+  props?: FirstVisitNotificationPopupProps,
+) {
+  const hookState = usePushNotifications();
+  const [allowLoading, setAllowLoading] = useState(false);
+  // ✅ Use props if provided, otherwise use hook
+  const showFirstVisitPopup = props?.open ?? hookState.showFirstVisitPopup;
+  const setShowFirstVisitPopup =
+    props?.onOpenChange ?? hookState.setShowFirstVisitPopup;
+  const handleFirstVisitAllow =
+    props?.onAllow ?? hookState.handleFirstVisitAllow;
+  const handleFirstVisitLater =
+    props?.onLater ?? hookState.handleFirstVisitLater;
+  const isLoading = props?.isLoading ?? hookState.isLoading;
+
+  const handleAllowClick = async () => {
+    setAllowLoading(true);
+    try {
+      await handleFirstVisitAllow();
+   
+    } finally {
+        setShowFirstVisitPopup(false); // ✅ Close AFTER success
+      setAllowLoading(false);
+    }
+  };
+  const handleLaterClick = () => {
+    setShowFirstVisitPopup(false); // ✅ Close instantly
+    handleFirstVisitLater();
+  };
 
   return (
     <Dialog
       open={showFirstVisitPopup}
-      onOpenChange={(isOpen) => setShowFirstVisitPopup(isOpen)}
+      onOpenChange={(isOpen) => {
+        // ✅ CHANGE: Only allow closing if explicitly calling
+        if (!isOpen && !allowLoading) {
+          setShowFirstVisitPopup(false);
+        }
+      }}
     >
       <DialogContent
         className="
@@ -51,16 +87,23 @@ export default function FirstVisitNotificationPopup() {
           "
         >
           <Button
-            onClick={handleFirstVisitAllow}
-            disabled={isLoading}
-            className="w-full sm:w-auto   dark:text-black"
+            onClick={handleAllowClick}
+            disabled={isLoading || allowLoading}
+            className="flex items-center    dark:text-black"
           >
-            Allow
+            {allowLoading ? (
+              <>
+                Allowing...
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              </>
+            ) : (
+              "Allow"
+            )}
           </Button>
           <Button
             variant="outline"
-            onClick={handleFirstVisitLater}
-            disabled={isLoading}
+            onClick={handleLaterClick} // ✅ CHANGE
+            disabled={allowLoading}
             className="w-full sm:w-auto"
           >
             Later
