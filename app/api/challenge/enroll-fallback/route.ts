@@ -15,15 +15,19 @@ export async function POST(request: Request) {
     if (!challengeId) {
       return NextResponse.json({ error: "Challenge ID is required" }, { status: 400 });
     }
-
+       const idempotencyKey = orderId 
+      ? `${session.user.id}-${challengeId}-${orderId}`
+      : `${session.user.id}-${challengeId}`;
     // Trigger the background job
     await safeInngestSend({
       name: "challenge-enrollment.fallback",
+      id:idempotencyKey,
       data: {
         userId: session.user.id,
         challengeId,
         orderId,
       },
+      
     });
 
     return NextResponse.json({ success: true });

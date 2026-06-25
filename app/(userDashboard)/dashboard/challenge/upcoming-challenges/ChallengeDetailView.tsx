@@ -190,7 +190,7 @@ export default function ChallengeDetailView({
               queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] }),
             ]);
             toast.success("You have successfully enrolled in this challenge.");
-             setIsEnrolling(false);
+            setIsEnrolling(false);
 
             router.replace(
               `/dashboard/challenge/my-challenges/${challenge.id}`,
@@ -292,6 +292,17 @@ export default function ChallengeDetailView({
   const handleEnroll = async () => {
     setIsEnrolling(true);
     setError(null);
+
+    const timer = setTimeout(() => {
+      setShowLongEnrollMsg(true);
+    }, 5000);
+
+    axios
+      .post("/api/challenge/enroll-fallback", {
+        challengeId: challenge.id,
+      })
+      .catch((err) => console.error("Failed to trigger fallback job:", err));
+
     try {
       await axios.post("/api/challenge/enroll", {
         challengeId: challenge.id,
@@ -331,8 +342,10 @@ export default function ChallengeDetailView({
         queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] }),
       ]);
       toast.success("You have successfully enrolled in this challenge.");
+      setShowLongEnrollMsg(false);
       router.push(`/dashboard/challenge/my-challenges/${challenge.id}`);
     } catch (err) {
+      setShowLongEnrollMsg(false);
       if (axios.isAxiosError(err) && err.response?.data) {
         const errorData = err.response.data;
 
@@ -350,6 +363,7 @@ export default function ChallengeDetailView({
       });
       toast.error(getAxiosErrorMessage(err));
     } finally {
+      clearTimeout(timer);
       setIsEnrolling(false);
     }
   };
@@ -658,18 +672,23 @@ export default function ChallengeDetailView({
                             "Enroll Now"
                           )}
                         </button>
-                        {showLongEnrollMsg && !isSubscribed && (
-                          <p className="text-sm text-center  font-medium animate-fade-in mt-2">
+                        {showLongEnrollMsg && (
+                          <p className="text-sm text-center font-medium animate-fade-in mt-2">
                             We are creating your enrollment and we will notify
-                            you once this is completed. Please keep your
-                            <button
-                              onClick={() => setShowFirstVisitPopup(true)}
-                              className="text-blue-600"
-                            >
-                              {" "}
-                              notifications{" "}
-                            </button>
-                            turned on.
+                            you once this is completed.
+                            {!isSubscribed && (
+                              <>
+                                {" "}
+                                Please keep your{" "}
+                                <button
+                                  onClick={() => setShowFirstVisitPopup(true)}
+                                  className="text-blue-600"
+                                >
+                                  notifications
+                                </button>{" "}
+                                turned on.
+                              </>
+                            )}
                           </p>
                         )}
                       </div>
@@ -693,23 +712,44 @@ export default function ChallengeDetailView({
 
                   // ✅ Default join/pay button
                   return (
-                    <button
-                      onClick={handleJoinClick}
-                      disabled={isEnrolling || sessionStatus === "loading"}
-                      className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
-                    >
-                      {isEnrolling ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Enrolling...
-                        </>
-                      ) : challenge.challengeJoiningType ===
-                        ChallengeJoiningType.PAID ? (
-                        "Pay & Join Challenge"
-                      ) : (
-                        "Join Challenge"
+                    <>
+                      <button
+                        onClick={handleJoinClick}
+                        disabled={isEnrolling || sessionStatus === "loading"}
+                        className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                      >
+                        {isEnrolling ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Enrolling...
+                          </>
+                        ) : challenge.challengeJoiningType ===
+                          ChallengeJoiningType.PAID ? (
+                          "Pay & Join Challenge"
+                        ) : (
+                          "Join Challenge"
+                        )}
+                      </button>
+                      {showLongEnrollMsg && (
+                        <p className="text-sm text-center font-medium animate-fade-in mt-2">
+                          We are creating your enrollment and we will notify you
+                          once this is completed.
+                          {!isSubscribed && (
+                            <>
+                              {" "}
+                              Please keep your{" "}
+                              <button
+                                onClick={() => setShowFirstVisitPopup(true)}
+                                className="text-blue-600"
+                              >
+                                notifications
+                              </button>{" "}
+                              turned on.
+                            </>
+                          )}
+                        </p>
                       )}
-                    </button>
+                    </>
                   );
                 })()}
               </div>
