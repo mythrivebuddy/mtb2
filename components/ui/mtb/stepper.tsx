@@ -208,8 +208,8 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
                       <div
                         className={cn(
                           theme.stepperLine,
-                          "justify-self-center self-start mt-[18px] h-[2px] min-w-[10px]",
-                          isVisualActive ? "opacity-100" : "opacity-50"
+                          "justify-self-center self-start mt-[18px] h-[2px] min-w-[15px] max-sm:max-w-[15px]",
+                       
                         )}
                       />
                     )}

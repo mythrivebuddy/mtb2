@@ -121,7 +121,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       )}
 
       {isLoggedIn && session.user.role === "USER" && (
-        <div className="lg:hidden px-6 py-4 mb-8 fixed top-0 left-0 right-0 z-50">
+        <div className="lg:hidden px-6 py-4 mb-8 fixed top-0 left-0 right-0 z-40">
           <TopBar user={user} toggleSidebar={() => setIsSidebarOpen(true)} />
         </div>
       )}
