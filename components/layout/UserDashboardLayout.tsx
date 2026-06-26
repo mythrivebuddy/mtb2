@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
@@ -14,13 +14,17 @@ import Footer from "../footer/Footer";
 import { usePathname } from "next/navigation";
 import FirstVisitNotificationPopup from "../dashboard/user/FirstNotificationPopUp";
 import UserTypeSelection from "../dashboard/user/UserTypeSelection";
+import GettingStartedModal from "../dashboard/user/GettingStartedModal";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { status: sessionStatus, data: session, update } = useSession();
 
   const pathname = usePathname();
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showGetStartedModal, setShowGetStartedModal] = useState(false);
+  const [modalType, setModalType] = useState<"COACH" | "ENTHUSIAST" | null>(
+    null,
+  );
   const { data: user } = useQuery<User>({
     queryKey: ["userInfo"],
     queryFn: async () => {
@@ -29,6 +33,13 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     },
     retry: false,
     enabled: sessionStatus === "authenticated",
+  });
+  const { data: cmpPlan } = useQuery({
+    queryKey: ["cmp-program"],
+    queryFn: async () => {
+      const res = await axios.get("/api/program");
+      return res.data.plan;
+    },
   });
 
   useUserPresence();
@@ -47,6 +58,26 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       !pathname.startsWith("/dashboard/events/coach") &&
       !pathname.startsWith("/dashboard/events/create"));
   const shouldUseInheritBg = isChallengeRoute && isGuest && !isLoading;
+
+  const shouldShowBusinessProfileSetup =
+  user?.userType === "COACH" &&
+  (user?.gettingStartedStatus === "NOT_STARTED" || user?.gettingStartedStatus === "STARTED");
+
+
+  const shouldShowLifeBlueprintSetup =
+  user?.userType === "ENTHUSIAST" &&
+  (user?.gettingStartedStatus === "NOT_STARTED" || user?.gettingStartedStatus === "STARTED");;
+
+useEffect(() => {
+  if (!user) return;
+  if (user?.gettingStartedStatus !== "NOT_STARTED") return;
+  if (showGetStartedModal) return;
+
+  if (user.gettingStartedStatus !== "NOT_STARTED") return;
+
+  setModalType(user.userType === "COACH" ? "COACH" : "ENTHUSIAST");
+  setShowGetStartedModal(true);
+}, [user?.userType,  user?.gettingStartedStatus,showGetStartedModal ]);
 
   useEffect(() => {
     if (!user) return;
@@ -116,6 +147,9 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
             user={user}
             isOpen={isSidebarOpen}
             setIsOpen={setIsSidebarOpen}
+            shouldShowBusinessProfileSetup={shouldShowBusinessProfileSetup}
+            shouldShowLifeBlueprintSetup={shouldShowLifeBlueprintSetup}
+            cmpPlanId={cmpPlan?.id}
           />
         </div>
       )}
@@ -141,6 +175,9 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </main>
       </div>
       <FirstVisitNotificationPopup />
+      {isLoggedIn && showGetStartedModal && modalType && (
+        <GettingStartedModal modalType={modalType} cmpPlanId={cmpPlan?.id} />
+      )}
       <UserTypeSelection authMethod={session?.user.authMethod} />
     </div>
   );

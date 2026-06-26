@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { CURRENT_MAKEOVER_PROGRAM_QUARTER } from "@/lib/constant";
 import { inngest } from "@/lib/inngest";
 import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
+import { GettingStartedStatus } from "@prisma/client";
 
 /* ───────────────── TYPES ───────────────── */
 
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
     });
 
     const isEdit = state.onboarded === true;
-
+    let gettingStartedStatus: GettingStartedStatus | null = null;
     /* ───────────── PHASE 1: TRANSACTION (FAST) ───────────── */
     await prisma.$transaction(async (tx) => {
       /* ✏️ EDIT MODE → commitments only */
@@ -153,6 +154,18 @@ export async function POST(req: Request) {
         where: { userId_programId: { userId, programId } },
         data: { onboarded: true, onboardedAt: new Date() },
       });
+      const updatedUser = await tx.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          gettingStartedStatus: GettingStartedStatus.COMPLETED,
+        },
+        select:{
+          gettingStartedStatus: true
+        }
+      });
+       gettingStartedStatus = updatedUser.gettingStartedStatus;
     });
 
     if (!isEdit) {
@@ -199,6 +212,7 @@ export async function POST(req: Request) {
         ? "Makeover onboarding updated successfully"
         : "Makeover onboarding completed successfully",
       isPurchased,
+      gettingStartedStatus,
       userMakeoverCommitment: formattedCommitments,
     });
   } catch (error) {

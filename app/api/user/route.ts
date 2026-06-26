@@ -8,10 +8,10 @@ export async function GET() {
   //   const { searchParams } = new URL(req.url);
   //   const userId = searchParams.get("userId");
   // const session = await checkRole("USER");
-    const session = await getServerSession(authConfig)
-    if (!session?.user) {
+  const session = await getServerSession(authConfig);
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  }
   const userId = session.user.id;
 
   if (!userId) {
@@ -22,9 +22,21 @@ export async function GET() {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        transaction: true,
+        transaction: {
+          take: 10, // limit transactions
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
         spotlight: true,
         userBusinessProfile: true,
+        programStates: {
+          where: {
+            program: {
+              slug: "2026-complete-makeover",
+            },
+          },
+        },
       },
       omit: {
         password: true,
@@ -37,16 +49,16 @@ export async function GET() {
 
     return NextResponse.json(
       { message: "User fetched successfully", user },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error(
       "Get user API Error:",
-      error instanceof Error ? error.message : error
+      error instanceof Error ? error.message : error,
     );
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

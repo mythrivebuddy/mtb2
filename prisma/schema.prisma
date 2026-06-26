@@ -64,6 +64,7 @@ model User {
   affiliateCommissionType    AffiliateCommissionType?  // "MTB" | "SUBSCRIPTION"
   affiliateEnabledAt DateTime?
   notificationMode NotificationMode @default(ALL_ON)
+  gettingStartedStatus GettingStartedStatus?
 
   ActivityFeedItem              ActivityFeedItem[]
   alignedActions                AlignedAction[]
@@ -167,6 +168,13 @@ model User {
   @@index([email])
 
 }
+// For user's onboarding flow after signup and signin
+enum GettingStartedStatus {
+  NOT_STARTED // show the onboarding modal Show modal.
+  STARTED  // Keep guiding the user.
+  COMPLETED // Done
+}
+
 enum AffiliateCommissionType {
   MTB
   SUBSCRIPTION
