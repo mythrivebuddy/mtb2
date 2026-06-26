@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
@@ -59,26 +59,58 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       !pathname.startsWith("/dashboard/events/create"));
   const shouldUseInheritBg = isChallengeRoute && isGuest && !isLoading;
 
-  const shouldShowBusinessProfileSetup =
-  user?.userType === "COACH" &&
-  (user?.gettingStartedStatus === "NOT_STARTED" || user?.gettingStartedStatus === "STARTED");
+  const isDeferred =
+    typeof window !== "undefined" &&
+    sessionStorage.getItem("deferGettingStarted") === "true";
 
+  const shouldShowBusinessProfileSetup =
+    user?.userType === "COACH" &&
+    (user?.gettingStartedStatus === "NOT_STARTED" ||
+      user?.gettingStartedStatus === "STARTED") &&
+    !isDeferred;
 
   const shouldShowLifeBlueprintSetup =
-  user?.userType === "ENTHUSIAST" &&
-  (user?.gettingStartedStatus === "NOT_STARTED" || user?.gettingStartedStatus === "STARTED");;
+    user?.userType === "ENTHUSIAST" &&
+    (user?.gettingStartedStatus === "NOT_STARTED" ||
+      user?.gettingStartedStatus === "STARTED") &&
+    !isDeferred;
 
-useEffect(() => {
-  if (!user) return;
-  if (user?.gettingStartedStatus !== "NOT_STARTED") return;
-  if (showGetStartedModal) return;
+  const openGettingStartedModal = useCallback(() => {
+    if (!user) return;
+    if (user.gettingStartedStatus !== "NOT_STARTED") return;
 
-  if (user.gettingStartedStatus !== "NOT_STARTED") return;
+    setModalType(user.userType === "COACH" ? "COACH" : "ENTHUSIAST");
+    setShowGetStartedModal(true);
+  }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    if (user.gettingStartedStatus !== "NOT_STARTED") return;
+    if (showGetStartedModal) return;
 
-  setModalType(user.userType === "COACH" ? "COACH" : "ENTHUSIAST");
-  setShowGetStartedModal(true);
-}, [user?.userType,  user?.gettingStartedStatus,showGetStartedModal ]);
+    const shouldDefer =
+      sessionStorage.getItem("deferGettingStarted") !== "true";
 
+    if (shouldDefer) {
+      openGettingStartedModal();
+    }
+  }, [user, showGetStartedModal, openGettingStartedModal]);
+
+  useEffect(() => {
+    const handleShowGettingStarted = () => {
+      setTimeout(() => {
+        sessionStorage.removeItem("deferGettingStarted");
+        openGettingStartedModal();
+      }, 3000);
+    };
+    console.log("Event received for waiting for 3s");
+    window.addEventListener("show-getting-started", handleShowGettingStarted);
+
+    return () =>
+      window.removeEventListener(
+        "show-getting-started",
+        handleShowGettingStarted,
+      );
+  }, [openGettingStartedModal]);
   useEffect(() => {
     if (!user) return;
 

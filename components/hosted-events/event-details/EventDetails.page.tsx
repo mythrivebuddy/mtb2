@@ -380,6 +380,11 @@ export default function EventDetailsPage({ eventId }: { eventId: string }) {
       router.replace(pathname, { scroll: false });
     }
   }, [searchParams, pathname, router]);
+    useEffect(() => {
+    // if (sessionStorage.getItem("deferGettingStarted") === "true") return;
+    sessionStorage.setItem("deferGettingStarted", "false");
+    window.dispatchEvent(new Event("show-getting-started"));
+  }, []);
   const content = (() => {
     if (isLoading) return <PageSkeleton type="events-detail-page" />;
     if (isError || !data)
