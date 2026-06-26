@@ -151,29 +151,41 @@ export async function PUT(req: Request) {
     /* ---------------- PROFILE PHOTO HANDLING ---------------- */
 
     let profilePhotoUrl: string | undefined;
-
     if (formData) {
       const photoFile = formData.get("profilePhoto");
-      if (photoFile instanceof File && photoFile.size > 0) {
-        // Delete previous profile photo if it exists
-        if (existingProfile?.profilePhoto) {
-          const photoPath = existingProfile.profilePhoto.split("/").pop();
-          if (photoPath) {
-            const { error: deleteError } = await supabaseAdmin.storage
-              .from("profile-images")
-              .remove([photoPath]);
 
-            if (deleteError) {
-              console.error(
-                "Error deleting previous photo:",
-                deleteError.message,
-              );
-            }
-          }
+      if (photoFile instanceof File && photoFile.size > 0) {
+        const fileExt = photoFile.name.split(".").pop() || "jpg";
+        const folderPath = `${userId}`;
+        const filePath = `${folderPath}/business.${fileExt}`;
+
+        // Find existing "business.*" files only (any extension)
+        const { data: existingFiles, error: listError } =
+          await supabaseAdmin.storage.from("profile-images").list(folderPath);
+
+        if (listError) {
+          console.error("Error listing existing photos:", listError.message);
         }
 
-        const fileName = `profile`;
-        const filePath = `${fileName}`;
+        const businessFiles = (existingFiles ?? []).filter((f) =>
+          f.name.startsWith("business."),
+        );
+
+        if (businessFiles.length > 0) {
+          const pathsToRemove = businessFiles.map(
+            (f) => `${folderPath}/${f.name}`,
+          );
+          const { error: deleteError } = await supabaseAdmin.storage
+            .from("profile-images")
+            .remove(pathsToRemove);
+
+          if (deleteError) {
+            console.error(
+              "Error deleting previous photo:",
+              deleteError.message,
+            );
+          }
+        }
 
         const { error } = await supabaseAdmin.storage
           .from("profile-images")
@@ -184,9 +196,9 @@ export async function PUT(req: Request) {
         const { data } = await supabaseAdmin.storage
           .from("profile-images")
           .getPublicUrl(filePath);
+
         profilePhotoUrl = data.publicUrl;
-      } // 2️⃣ Existing photo kept (string URL)
-      else if (typeof photoFile === "string") {
+      } else if (typeof photoFile === "string") {
         profilePhotoUrl = photoFile;
       }
     }
@@ -295,14 +307,13 @@ export async function PUT(req: Request) {
       where: { id: userId },
       data: {
         ...(bodyData.transformation && { bio: bodyData.transformation }),
-        ...(updateData.profilePhoto && { image: updateData.profilePhoto }),
       },
     });
 
     /* ---------------- COMPLETION ---------------- */
 
     const newCompletion = calculateRequiredProfileCompletion(profile);
-    
+
     const isCurrentlyComplete = newCompletion == 100;
     const needsJpReward =
       isCurrentlyComplete && !existingProfile?.profileJpRewarded;

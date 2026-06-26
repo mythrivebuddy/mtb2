@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { profileSchema } from "@/schema/zodSchema";
-import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 //import { authOptions } from "@/lib/auth";
@@ -35,32 +34,64 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let imageUrl = "";
+       const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+
+
+   let imageUrl = "";
     const profilePicture = formData.get("profilePicture") as File;
 
     if (profilePicture && profilePicture.size > 0) {
       try {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: session.user.email },
-          select: { image: true },
-        });
+        const fileExt = profilePicture.name.split(".").pop() || "jpg";
+        const folderPath = `${user.id}`;
+        const filePath = `${folderPath}/personal.${fileExt}`;
 
-        if (existingUser?.image) {
-          try {
-            const url = new URL(existingUser.image);
-            const path = decodeURIComponent(
-              url.pathname.split("/profile-images/")[1],
-            );
-            if (path)
-              await supabaseAdmin.storage.from("profile-images").remove([path]);
-          } catch {}
+        // Find existing "personal.*" files only (any extension) and remove them
+        const { data: existingFiles, error: listError } =
+          await supabaseAdmin.storage.from("profile-images").list(folderPath);
+
+        if (listError) {
+          console.error("Error listing existing photos:", listError.message);
         }
-        console.log("Uploading profile picture...");
-        imageUrl = await handleSupabaseImageUpload(
-          profilePicture,
-          "profile-images",
-          session.user.email,
+
+        const personalFiles = (existingFiles ?? []).filter((f) =>
+          f.name.startsWith("personal."),
         );
+
+        if (personalFiles.length > 0) {
+          const pathsToRemove = personalFiles.map(
+            (f) => `${folderPath}/${f.name}`,
+          );
+          const { error: deleteError } = await supabaseAdmin.storage
+            .from("profile-images")
+            .remove(pathsToRemove);
+
+          if (deleteError) {
+            console.error(
+              "Error deleting previous photo:",
+              deleteError.message,
+            );
+          }
+        }
+
+        console.log("Uploading profile picture...");
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from("profile-images")
+          .upload(filePath, profilePicture, { upsert: true });
+
+        if (uploadError) throw new Error(uploadError.message);
+
+        const { data } = await supabaseAdmin.storage
+          .from("profile-images")
+          .getPublicUrl(filePath);
+
+        imageUrl = data.publicUrl;
         console.log("Uploaded image URL:", imageUrl);
       } catch (error) {
         console.error("Error uploading profile picture:", error);
@@ -70,14 +101,7 @@ export async function POST(req: NextRequest) {
         );
       }
     }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
-    }
+ 
 
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
