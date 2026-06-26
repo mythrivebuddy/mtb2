@@ -46,6 +46,7 @@ export default function MyProfile() {
   const { data: profileData, isLoading: isLoadingProfile } =
     useQuery<ProfileResponse>({
       queryKey: ["userProfile"],
+
       queryFn: async () => {
         try {
           const response =

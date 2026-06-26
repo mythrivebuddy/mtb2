@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
+import { useReferralAndRedirect } from "./use-save-refferral-redirect";
 
 type EventInput = {
   id: string;
@@ -125,11 +126,13 @@ export function useEnrollFreeEvent(queryKeys: QueryKey[]) {
       setLoadingId(null);
     },
   });
+const {setCallbackUrl} =useReferralAndRedirect()
 
   const freeEnroll = (event: EventInput) => {
     if (status === "unauthenticated") {
+      setCallbackUrl(`${window.location.origin}/dashboard/membership/checkout?eventId=${event.id}&context=HOSTED_EVENT`);
       router.push(
-        `/signin?callbackUrl=${encodeURIComponent(window.location.href)}`,
+        `/dashboard/membership/checkout?eventId=${event.id}&context=HOSTED_EVENT`,
       );
       return;
     }

@@ -9,7 +9,7 @@ import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.
 
 type UseReferralAndRedirectReturn = {
   ref: string | undefined;
-  setCallbackUrl: () => void;
+  setCallbackUrl: (url?: string) => void;
   getFinalCallbackUrl: () => string;
   redirectToSignin: (router: AppRouterInstance) => void;
 };
@@ -74,10 +74,12 @@ export const useReferralAndRedirect = (): UseReferralAndRedirectReturn => {
   // ─────────────────────────────────────────────
   // ✅ MANUAL CALLBACK SETTER (USER INTENT)
   // ─────────────────────────────────────────────
-  const setCallbackUrl = (): void => {
-    if (!currentUrl) return;
+  const setCallbackUrl = (url?:string): void => {
+    const callbackUrl = url ?? currentUrl;
 
-    Cookies.set("callbackUrl", currentUrl, {
+  if (!callbackUrl) return;
+
+    Cookies.set("callbackUrl", callbackUrl, {
       expires: 1 / 24,
       path: "/",
     });

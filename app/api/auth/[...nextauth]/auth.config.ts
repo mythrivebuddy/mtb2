@@ -1,5 +1,5 @@
-import { ActivityType, AuthMethod, Role, Prisma } from "@prisma/client"; // <-- FIX: Added Role and Prisma
-import { AuthOptions, DefaultSession } from "next-auth"; // <-- FIX: Added DefaultSession and User
+import { ActivityType, AuthMethod, Role, Prisma, GettingStartedStatus } from "@prisma/client"; 
+import { AuthOptions, DefaultSession } from "next-auth"; 
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
@@ -208,6 +208,7 @@ export const authConfig: AuthOptions = {
               isEmailVerified: true,
               isFirstTimeSurvey: true,
               referralCode: nanoid(8),
+              gettingStartedStatus:GettingStartedStatus.NOT_STARTED,
             },
             include: {
               plan: true,
