@@ -110,6 +110,23 @@ export default function ChallengeDetailView({
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const autoEnrollTriggered = useRef(false);
 
+  const [isAwaitingEnrollment, setIsAwaitingEnrollment] = useState(false);
+  const awaitingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startAwaitingEnrollmentWindow = () => {
+    setIsAwaitingEnrollment(true);
+    if (awaitingTimerRef.current) clearTimeout(awaitingTimerRef.current);
+    awaitingTimerRef.current = setTimeout(() => {
+      setIsAwaitingEnrollment(false);
+    }, 120000); // 2 minutes — applies to both free & paid flows
+  };
+
+  useEffect(() => {
+    return () => {
+      if (awaitingTimerRef.current) clearTimeout(awaitingTimerRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     if (!orderId || enrollment || autoEnrollAttempted) return;
 
@@ -133,6 +150,7 @@ export default function ChallengeDetailView({
           setAutoEnrollAttempted(true);
           let enrollSuccess = false;
           setIsEnrolling(true);
+          startAwaitingEnrollmentWindow();
           const timer = setTimeout(() => {
             setShowLongEnrollMsg(true);
           }, 5000);
@@ -197,6 +215,10 @@ export default function ChallengeDetailView({
             );
           } catch (err) {
             console.error("Auto enroll failed", err);
+            setError({
+              message:
+                getAxiosErrorMessage(err) || "An unexpected error occurred.",
+            });
             setShowLongEnrollMsg(true);
           } finally {
             clearTimeout(timer);
@@ -292,7 +314,7 @@ export default function ChallengeDetailView({
   const handleEnroll = async () => {
     setIsEnrolling(true);
     setError(null);
-
+    startAwaitingEnrollmentWindow();
     const timer = setTimeout(() => {
       setShowLongEnrollMsg(true);
     }, 5000);
@@ -359,7 +381,7 @@ export default function ChallengeDetailView({
       }
 
       setError({
-        message: "An unexpected error occurred. Please try again.",
+        message: getAxiosErrorMessage(err) || "An unexpected error occurred.",
       });
       toast.error(getAxiosErrorMessage(err));
     } finally {
@@ -619,6 +641,30 @@ export default function ChallengeDetailView({
                           )}
                       </span>
                     </div>
+                    <p className="text-sm font-normal mt-2">
+                      Don&apos;t worry — we will complete your enrollment
+                      shortly and notify you once it&apos;s done.
+                      {!isSubscribed && (
+                        <>
+                          {isLoading ? (
+                            <span className="inline-flex items-center font-medium">
+                              Enabling notifications...
+                            </span>
+                          ) : (
+                            <>
+                              {" "}
+                              Please turn on notifications by{" "}
+                              <button
+                                onClick={handleFirstVisitAllow}
+                                className="underline font-medium"
+                              >
+                                clicking here
+                              </button>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </p>
                   </div>
                 )}
 
@@ -651,19 +697,50 @@ export default function ChallengeDetailView({
                   if (hasPaidOrder && !enrollment) {
                     return (
                       <div className="space-y-3">
-                        <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
-                          <span className="font-semibold">
-                            You purchased this challenge. Please wait while we
-                            confirm your enrollment.
-                          </span>
-                        </div>
+                        {!error && (
+                          <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
+                            <p className="font-semibold mb-1">
+                              You purchased this challenge. Please wait while we
+                              confirm your enrollment.
+                            </p>
+                            <p className="text-sm font-normal">
+                              We are creating your enrollment and we will notify
+                              you once this is completed.
+                              {!isSubscribed && (
+                                <>
+                                  {isLoading ? (
+                                    <span className="inline-flex items-center font-medium">
+                                      Enabling notifications...
+                                    </span>
+                                  ) : (
+                                    <>
+                                      {" "}
+                                      Please turn on notifications by{" "}
+                                      <button
+                                        onClick={handleFirstVisitAllow}
+                                        className="underline font-medium"
+                                      >
+                                        clicking here
+                                      </button>
+                                    </>
+                                  )}
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        )}
 
                         <button
                           onClick={handleEnroll}
-                          disabled={isEnrolling}
+                          disabled={isEnrolling || isAwaitingEnrollment}
                           className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
                         >
-                          {isEnrolling ? (
+                          {isAwaitingEnrollment ? (
+                            <>
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                              Awaiting enrollment...
+                            </>
+                          ) : isEnrolling ? (
                             <>
                               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                               Enrolling...
@@ -672,25 +749,6 @@ export default function ChallengeDetailView({
                             "Enroll Now"
                           )}
                         </button>
-                        {showLongEnrollMsg && (
-                          <p className="text-sm text-center font-medium animate-fade-in mt-2">
-                            We are creating your enrollment and we will notify
-                            you once this is completed.
-                            {!isSubscribed && (
-                              <>
-                                {" "}
-                                Please keep your{" "}
-                                <button
-                                  onClick={() => setShowFirstVisitPopup(true)}
-                                  className="text-blue-600"
-                                >
-                                  notifications
-                                </button>{" "}
-                                turned on.
-                              </>
-                            )}
-                          </p>
-                        )}
                       </div>
                     );
                   }
@@ -713,12 +771,44 @@ export default function ChallengeDetailView({
                   // ✅ Default join/pay button
                   return (
                     <>
+                      {showLongEnrollMsg && (
+                        <p className="text-sm text-center font-medium animate-fade-in mt-2">
+                          We are creating your enrollment and we will notify you
+                          once this is completed.
+                          {!isSubscribed && (
+                            <>
+                              {" "}
+                              Please turn on notifications by{" "}
+                              <button
+                                onClick={() => handleFirstVisitAllow()}
+                                disabled={isLoading}
+                                className="text-blue-600 underline"
+                              >
+                                {isLoading ? (
+                                  <>Enabling Notifications...</>
+                                ) : (
+                                  "clicking here"
+                                )}
+                              </button>
+                            </>
+                          )}
+                        </p>
+                      )}
                       <button
                         onClick={handleJoinClick}
-                        disabled={isEnrolling || sessionStatus === "loading"}
+                        disabled={
+                          isEnrolling ||
+                          isAwaitingEnrollment ||
+                          sessionStatus === "loading"
+                        }
                         className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
                       >
-                        {isEnrolling ? (
+                        {isAwaitingEnrollment ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Awaiting enrollment...
+                          </>
+                        ) : isEnrolling ? (
                           <>
                             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                             Enrolling...
@@ -730,25 +820,6 @@ export default function ChallengeDetailView({
                           "Join Challenge"
                         )}
                       </button>
-                      {showLongEnrollMsg && (
-                        <p className="text-sm text-center font-medium animate-fade-in mt-2">
-                          We are creating your enrollment and we will notify you
-                          once this is completed.
-                          {!isSubscribed && (
-                            <>
-                              {" "}
-                              Please keep your{" "}
-                              <button
-                                onClick={() => setShowFirstVisitPopup(true)}
-                                className="text-blue-600"
-                              >
-                                notifications
-                              </button>{" "}
-                              turned on.
-                            </>
-                          )}
-                        </p>
-                      )}
                     </>
                   );
                 })()}
