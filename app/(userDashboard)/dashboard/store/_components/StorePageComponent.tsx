@@ -12,6 +12,7 @@ import { Item, WishlistItem, Category } from "@/types/client/store";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import AppLayout from "@/components/layout/AppLayout";
+import { useReferralAndRedirect } from "@/hooks/use-save-refferral-redirect";
 
 // ✅ Updated to include GP
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -179,6 +180,8 @@ const StorePageComponent: React.FC = () => {
         queryFn: () => selectedCategory ? fetchItemsByCategory(selectedCategory) : fetchAllItems(),
         placeholderData: (prev) => prev,
     });
+
+    const {setCallbackUrl} = useReferralAndRedirect();
 
     const toggleWishlistMutation = useMutation({
         mutationFn: async (itemId: string) => {
@@ -495,6 +498,7 @@ const StorePageComponent: React.FC = () => {
                                                 className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700  active:scale-95  font-semibold text-xs rounded-xl px-3 py-2.5 shadow-sm hover:shadow-md transition-all duration-200"
                                                 onClick={() => {
                                                     if (!session) {
+                                                        setCallbackUrl(`${window.location.origin}/dashboard/store/checkout?cartItem=${item.id}:1`);
                                                         redirectToLogin(`/dashboard/store/checkout?cartItem=${item.id}:1`);
                                                         return;
                                                     }

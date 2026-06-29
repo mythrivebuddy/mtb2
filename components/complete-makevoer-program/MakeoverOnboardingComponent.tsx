@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useRouter } from "next/navigation";
 import { DashboardContent } from "@/types/client/dashboard";
+import { User } from "@/types/types";
 /* ───────────── TYPES ───────────── */
 
 type ApiArea = {
@@ -101,7 +102,7 @@ const MakeoverOnboardingParent = ({
 
     return () => clearTimeout(timeout);
   }, [step]);
-  
+
   /* ───────────── NORMALIZATION ───────────── */
 
   const areas = useMemo<NormalizedArea[]>(() => {
@@ -191,6 +192,14 @@ const MakeoverOnboardingParent = ({
           };
         },
       );
+      queryClient.setQueryData<User>(["userInfo"], (oldUser) => {
+        if (!oldUser) return oldUser;
+
+        return {
+          ...oldUser,
+          gettingStartedStatus: res.data.gettingStartedStatus,
+        };
+      });
       if (actionType === "save") {
         if (isPurchased) {
           setStep(6); // ✅ go to rules step

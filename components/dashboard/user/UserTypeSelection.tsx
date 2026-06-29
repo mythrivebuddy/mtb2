@@ -66,10 +66,10 @@ export default function UserTypeSelection({
         className="max-w-xs sm:max-w-md rounded-2xl p-6  shadow-xl border border-slate-200"
       >
         <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-bold text-slate-800">
-            Welcome to Your Growth Journey
+          <DialogTitle className="text-center text-xl font-bold ">
+            Welcome to Your Growth Environment
           </DialogTitle>
-          <DialogDescription className="text-center text-slate-600 mt-2">
+          <DialogDescription className="text-center  mt-2">
             You signed in with Google. Before we personalize your dashboard,
             tell us what best describes you.
           </DialogDescription>
@@ -113,7 +113,7 @@ export default function UserTypeSelection({
           </button>
         </div>
 
-        <p className="text-center text-xs text-slate-500 mt-4">
+        <p className="text-center text-xs mt-4">
           Your selection helps us tailor recommendations and features for you.
         </p>
       </DialogContent>

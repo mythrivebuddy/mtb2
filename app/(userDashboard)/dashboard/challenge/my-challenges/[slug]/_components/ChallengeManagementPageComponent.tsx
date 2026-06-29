@@ -375,6 +375,11 @@ export default function ChallengeManagementPage({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isCalendarVisible]);
+useEffect(() => {
+  // if (sessionStorage.getItem("deferGettingStarted") === "true") return;
+  sessionStorage.setItem("deferGettingStarted", "false");
+  window.dispatchEvent(new Event("show-getting-started"));
+}, []);
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({

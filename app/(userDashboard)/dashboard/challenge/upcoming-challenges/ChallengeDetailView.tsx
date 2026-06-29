@@ -32,6 +32,8 @@ import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { DashboardContent } from "@/types/client/dashboard";
 import Cookies from "js-cookie";
+import usePushNotifications from "@/hooks/usePushNotifications";
+import FirstVisitNotificationPopup from "@/components/dashboard/user/FirstNotificationPopUp";
 
 type Creator = Pick<User, "id" | "name">;
 
@@ -78,9 +80,19 @@ export default function ChallengeDetailView({
 }: ChallengeDetailViewProps) {
   const router = useRouter();
   const { status: sessionStatus, data: session } = useSession();
+  const {
+    showFirstVisitPopup,
+    handleFirstVisitAllow,
+    setShowFirstVisitPopup,
+    handleFirstVisitLater,
+    isLoading,
+    isSubscribed,
+  } = usePushNotifications();
   const [enrollment, setEnrollment] = useState(initialEnrollment);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
+  const [showLongEnrollMsg, setShowLongEnrollMsg] = useState(false);
+
   const [error, setError] = useState<{
     message: string;
     isUpgradeFlagShow?: boolean;
@@ -97,6 +109,23 @@ export default function ChallengeDetailView({
   const [hasPaidOrder, setHasPaidOrder] = useState(false);
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const autoEnrollTriggered = useRef(false);
+
+  const [isAwaitingEnrollment, setIsAwaitingEnrollment] = useState(false);
+  const awaitingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startAwaitingEnrollmentWindow = () => {
+    setIsAwaitingEnrollment(true);
+    if (awaitingTimerRef.current) clearTimeout(awaitingTimerRef.current);
+    awaitingTimerRef.current = setTimeout(() => {
+      setIsAwaitingEnrollment(false);
+    }, 120000); // 2 minutes — applies to both free & paid flows
+  };
+
+  useEffect(() => {
+    return () => {
+      if (awaitingTimerRef.current) clearTimeout(awaitingTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!orderId || enrollment || autoEnrollAttempted) return;
@@ -119,10 +148,28 @@ export default function ChallengeDetailView({
           );
 
           setAutoEnrollAttempted(true);
+          let enrollSuccess = false;
+          setIsEnrolling(true);
+          startAwaitingEnrollmentWindow();
+          const timer = setTimeout(() => {
+            setShowLongEnrollMsg(true);
+          }, 5000);
+          axios
+            .post("/api/challenge/enroll-fallback", {
+              challengeId: challenge.id,
+              orderId,
+            })
+            .catch((err) =>
+              console.error("Failed to trigger fallback job:", err),
+            );
+
           try {
-            setIsEnrolling(true);
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete("orderId");
+            window.history.replaceState({}, "", newUrl);
 
             await autoEnrollWithRetry(challenge.id);
+            enrollSuccess = true;
 
             const enrollmentResp = await axios.get(
               `/api/challenge/enrollments/${challenge.id}`,
@@ -161,19 +208,26 @@ export default function ChallengeDetailView({
               queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] }),
             ]);
             toast.success("You have successfully enrolled in this challenge.");
+            setIsEnrolling(false);
 
             router.replace(
               `/dashboard/challenge/my-challenges/${challenge.id}`,
             );
           } catch (err) {
             console.error("Auto enroll failed", err);
-
-            await axios.post("/api/challenge/enroll-failure", {
-              challengeId: challenge.id,
-              orderId,
+            setError({
+              message:
+                getAxiosErrorMessage(err) || "An unexpected error occurred.",
             });
+            setShowLongEnrollMsg(true);
           } finally {
+            clearTimeout(timer);
             setIsEnrolling(false);
+
+            // Only hide message on success
+            if (enrollSuccess) {
+              setShowLongEnrollMsg(false);
+            }
           }
         }
       } catch (err) {
@@ -239,29 +293,42 @@ export default function ChallengeDetailView({
 
     // 🔥 ALWAYS store callbackUrl (only if not logged in)
     if (sessionStatus !== "authenticated") {
-      const encoded = encodeURIComponent(currentUrl);
+     
 
-      Cookies.set("callbackUrl", encoded, {
+      Cookies.set("callbackUrl", currentUrl, {
         expires: 1 / 24, // 1 hour
         path: "/",
       });
     }
   }, [sessionStatus]);
 
-  // useEffect(() => {
-  //   if (!challenge?.id) return;
+  useEffect(() => {
+    if (!challenge?.id) return;
 
-  //   // ✅ user already fully enrolled
-  //   if (enrollment && enrollment.userTasks.length > 0) {
-  //     router.replace(`/dashboard/challenge/my-challenges/${challenge.id}`);
-  //   }
-  // }, [enrollment, challenge.id]);
+    // ✅ user already fully enrolled
+    if (enrollment && enrollment.userTasks.length > 0) {
+      router.replace(`/dashboard/challenge/my-challenges/${challenge.id}`);
+    }
+  }, [enrollment, challenge.id]);
 
   const handleEnroll = async () => {
     setIsEnrolling(true);
     setError(null);
+    startAwaitingEnrollmentWindow();
+    const timer = setTimeout(() => {
+      setShowLongEnrollMsg(true);
+    }, 5000);
+
+    axios
+      .post("/api/challenge/enroll-fallback", {
+        challengeId: challenge.id,
+      })
+      .catch((err) => console.error("Failed to trigger fallback job:", err));
+
     try {
-      await axios.post("/api/challenge/enroll", { challengeId: challenge.id });
+      await axios.post("/api/challenge/enroll", {
+        challengeId: challenge.id,
+      });
 
       const enrollmentResp = await axios.get(
         `/api/challenge/enrollments/${challenge.id}`,
@@ -297,8 +364,10 @@ export default function ChallengeDetailView({
         queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] }),
       ]);
       toast.success("You have successfully enrolled in this challenge.");
+      setShowLongEnrollMsg(false);
       router.push(`/dashboard/challenge/my-challenges/${challenge.id}`);
     } catch (err) {
+      setShowLongEnrollMsg(false);
       if (axios.isAxiosError(err) && err.response?.data) {
         const errorData = err.response.data;
 
@@ -312,35 +381,18 @@ export default function ChallengeDetailView({
       }
 
       setError({
-        message: "An unexpected error occurred. Please try again.",
+        message: getAxiosErrorMessage(err) || "An unexpected error occurred.",
       });
       toast.error(getAxiosErrorMessage(err));
     } finally {
+      clearTimeout(timer);
       setIsEnrolling(false);
     }
   };
 
-  const autoEnrollWithRetry = async (challengeId: string, retries = 3) => {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        await axios.post("/api/challenge/enroll", { challengeId });
-        return true;
-      } catch (err) {
-        if (axios.isAxiosError(err)) {
-          const status = err.response?.status;
-
-          // already enrolled → stop retries
-          if (status === 409) return true;
-
-          // client errors should not retry
-          if (status && status < 500) throw err;
-        }
-
-        if (attempt === retries) throw err;
-
-        await new Promise((r) => setTimeout(r, 1500 * attempt));
-      }
-    }
+  const autoEnrollWithRetry = async (challengeId: string) => {
+    await axios.post("/api/challenge/enroll", { challengeId });
+    return true;
   };
 
   const handleJoinClick = () => {
@@ -369,10 +421,10 @@ export default function ChallengeDetailView({
       const encodedCallback = encodeURIComponent(currentUrl);
 
       // 🔥 ALWAYS store callbackUrl (for fallback)
-     Cookies.set("callbackUrl", currentUrl, {
-  expires: 1 / 24,
-  path: "/",
-});
+      Cookies.set("callbackUrl", currentUrl, {
+        expires: 1 / 24,
+        path: "/",
+      });
 
       router.push(`/signin?callbackUrl=${encodedCallback}`);
       return;
@@ -589,6 +641,30 @@ export default function ChallengeDetailView({
                           )}
                       </span>
                     </div>
+                    <p className="text-sm font-normal mt-2">
+                      Don&apos;t worry — we will complete your enrollment
+                      shortly and notify you once it&apos;s done.
+                      {!isSubscribed && (
+                        <>
+                          {isLoading ? (
+                            <span className="inline-flex items-center font-medium">
+                              Enabling notifications...
+                            </span>
+                          ) : (
+                            <>
+                              {" "}
+                              Please turn on notifications by{" "}
+                              <button
+                                onClick={handleFirstVisitAllow}
+                                className="underline font-medium"
+                              >
+                                clicking here
+                              </button>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </p>
                   </div>
                 )}
 
@@ -621,19 +697,50 @@ export default function ChallengeDetailView({
                   if (hasPaidOrder && !enrollment) {
                     return (
                       <div className="space-y-3">
-                        <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
-                          <span className="font-semibold">
-                            You purchased this challenge. Please wait while we
-                            confirm your enrollment.
-                          </span>
-                        </div>
+                        {!error && (
+                          <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
+                            <p className="font-semibold mb-1">
+                              You purchased this challenge. Please wait while we
+                              confirm your enrollment.
+                            </p>
+                            <p className="text-sm font-normal">
+                              We are creating your enrollment and we will notify
+                              you once this is completed.
+                              {!isSubscribed && (
+                                <>
+                                  {isLoading ? (
+                                    <span className="inline-flex items-center font-medium">
+                                      Enabling notifications...
+                                    </span>
+                                  ) : (
+                                    <>
+                                      {" "}
+                                      Please turn on notifications by{" "}
+                                      <button
+                                        onClick={handleFirstVisitAllow}
+                                        className="underline font-medium"
+                                      >
+                                        clicking here
+                                      </button>
+                                    </>
+                                  )}
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        )}
 
                         <button
                           onClick={handleEnroll}
-                          disabled={isEnrolling}
+                          disabled={isEnrolling || isAwaitingEnrollment}
                           className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
                         >
-                          {isEnrolling ? (
+                          {isAwaitingEnrollment ? (
+                            <>
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                              Awaiting enrollment...
+                            </>
+                          ) : isEnrolling ? (
                             <>
                               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                               Enrolling...
@@ -663,23 +770,57 @@ export default function ChallengeDetailView({
 
                   // ✅ Default join/pay button
                   return (
-                    <button
-                      onClick={handleJoinClick}
-                      disabled={isEnrolling || sessionStatus === "loading"}
-                      className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
-                    >
-                      {isEnrolling ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Enrolling...
-                        </>
-                      ) : challenge.challengeJoiningType ===
-                        ChallengeJoiningType.PAID ? (
-                        "Pay & Join Challenge"
-                      ) : (
-                        "Join Challenge"
+                    <>
+                      {showLongEnrollMsg && (
+                        <p className="text-sm text-center font-medium animate-fade-in mt-2">
+                          We are creating your enrollment and we will notify you
+                          once this is completed.
+                          {!isSubscribed && (
+                            <>
+                              {" "}
+                              Please turn on notifications by{" "}
+                              <button
+                                onClick={() => handleFirstVisitAllow()}
+                                disabled={isLoading}
+                                className="text-blue-600 underline"
+                              >
+                                {isLoading ? (
+                                  <>Enabling Notifications...</>
+                                ) : (
+                                  "clicking here"
+                                )}
+                              </button>
+                            </>
+                          )}
+                        </p>
                       )}
-                    </button>
+                      <button
+                        onClick={handleJoinClick}
+                        disabled={
+                          isEnrolling ||
+                          isAwaitingEnrollment ||
+                          sessionStatus === "loading"
+                        }
+                        className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                      >
+                        {isAwaitingEnrollment ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Awaiting enrollment...
+                          </>
+                        ) : isEnrolling ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Enrolling...
+                          </>
+                        ) : challenge.challengeJoiningType ===
+                          ChallengeJoiningType.PAID ? (
+                          "Pay & Join Challenge"
+                        ) : (
+                          "Join Challenge"
+                        )}
+                      </button>
+                    </>
                   );
                 })()}
               </div>
@@ -697,7 +838,13 @@ export default function ChallengeDetailView({
       ) : (
         <AppLayout>{pageContent}</AppLayout>
       )}
-
+      <FirstVisitNotificationPopup
+        open={showFirstVisitPopup}
+        onOpenChange={setShowFirstVisitPopup}
+        onAllow={handleFirstVisitAllow}
+        onLater={handleFirstVisitLater}
+        isLoading={isLoading}
+      />
       {/* Enrollment Success Modal */}
       {isEnrollSuccessModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

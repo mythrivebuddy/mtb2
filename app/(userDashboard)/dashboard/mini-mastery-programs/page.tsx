@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import axios from "axios";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import {
   useQuery,
   keepPreviousData,
@@ -254,7 +254,7 @@ function ProgramCTA({
     return (
       <div className="flex gap-2 pt-1 mt-auto">
         <button
-          onClick={() => signIn()}
+          onClick={() => router.push(`/dashboard/mini-mastery-programs/${prog.id}`)}
           className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 light:shadow-lg light:shadow-blue-100 flex items-center justify-center gap-1.5"
         >
           <LogIn size={13} /> Enroll
@@ -405,10 +405,10 @@ function ProgramDetailModal({
   const hasCert = !!program?.certificateTitle;
 
   function handleEnroll() {
-    if (!isLoggedIn) {
-      signIn();
-      return;
-    }
+    // if (!isLoggedIn) {
+    //   signIn();
+    //   return;
+    // }
     window.location.href = `/dashboard/membership/checkout?mmp_programId=${programId}&context=MMP_PROGRAM`;
   }
 

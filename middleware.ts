@@ -93,7 +93,8 @@ export default withAuth(
         // Allow public access to Mini Mastery Programs
         if (
           path === "/dashboard/mini-mastery-programs" ||
-          /^\/dashboard\/mini-mastery-programs\/[^/]+$/.test(path)
+          (/^\/dashboard\/mini-mastery-programs\/[^/]+$/.test(path) &&
+            !path.startsWith("/dashboard/mini-mastery-programs/create"))
         ) {
           return true;
         }
