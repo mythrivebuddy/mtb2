@@ -25,9 +25,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
-import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import axios from "axios";
+
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -35,6 +34,7 @@ type NavItemProps = {
   icon: React.ReactNode;
   label: string;
   onLinkClick?: () => void; // Add prop for handling link click
+  className?: string;
 };
 function formatUserName(name?: string) {
   if (!name) return "Your Name";
@@ -56,7 +56,7 @@ function formatUserName(name?: string) {
   // 3+ names → first + middle initial
   return `${first} ${parts[1][0]}`;
 }
-const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
+const NavItem = ({ href, icon, label, onLinkClick,className }: NavItemProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -89,6 +89,7 @@ const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
           className={cn(
             "flex items-center py-2 ",
             isActive ? "text-jp-orange" : "text-[#6C7894] dark:text-slate-300",
+            className
           )}
           onClick={onLinkClick} // Call onLinkClick when link is clicked
         >
@@ -117,6 +118,9 @@ type SidebarProps = {
   user?: UserType;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  shouldShowBusinessProfileSetup?:boolean;
+  cmpPlanId?:string;
+  shouldShowLifeBlueprintSetup?:boolean
 };
 
 const NavSection = ({ title, children, className }: NavSectionProps) => (
@@ -131,14 +135,8 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 );
 
 // Main sidebar component
-const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
-  const { data: cmpPlan } = useQuery({
-    queryKey: ["cmp-program"],
-    queryFn: async () => {
-      const res = await axios.get("/api/program");
-      return res.data.plan;
-    },
-  });
+const Sidebar = ({ user, isOpen, setIsOpen,shouldShowBusinessProfileSetup,cmpPlanId,shouldShowLifeBlueprintSetup }: SidebarProps) => {
+
   const pathname = usePathname();
 
   const session = useSession();
@@ -148,6 +146,8 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
   const isCoachOrSoloprenuer =
     session.data?.user.userType == "COACH" ||
     session.data?.user.userType == "SOLOPRENEUR";
+
+    
 
   return (
     <div className="px-1 md:px-2">
@@ -252,6 +252,7 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                     icon={<User size={20} />}
                     label="Setup Business Profile"
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    className={shouldShowBusinessProfileSetup ? " animate-pulse text-blue-600" : ""}
                   />
                   <NavItem
                     href="/dashboard/spotlight"
@@ -360,10 +361,11 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                 <NavSection title={`${isCoachOrSoloprenuer ? "Personal Growth Tools" : ""}`}>
                   <div className={`${isCoachOrSoloprenuer ? "mt-2" : ""}`}>
                     <NavItem
-                      href={`/dashboard/complete-makeover-program/onboarding?planId=${cmpPlan?.id}`}
+                      href={`/dashboard/complete-makeover-program/onboarding?planId=${cmpPlanId}`}
                       icon={<Compass size={20} />}
                       label="Life Blueprint"
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
+                      className={`${shouldShowLifeBlueprintSetup ? " animate-pulse text-green-600" : ""}`}
                     />
                     <NavItem
                       href="/dashboard/aligned-actions"

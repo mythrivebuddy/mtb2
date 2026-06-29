@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Calendar, Leaf, ArrowRight } from "lucide-react";
+import { MapPin, Calendar, ArrowRight } from "lucide-react";
 import { theme } from "@/lib/new-home/theme/theme";
 import { cormorant } from "@/lib/new-home/fonts/fonts";
 import Link from "next/link";
@@ -21,6 +21,9 @@ import { useEnrollFreeEvent } from "@/hooks/use-free-event-enroll";
 import assets from "@/lib/constants/assets";
 import SafeHTML from "@/components/common/SafeHTML";
 import { useReferralAndRedirect } from "@/hooks/use-save-refferral-redirect";
+import { MtbTriBloomIcon } from "@/icons/mtb-icons";
+import { Button } from "@/components/ui/button";
+import Stepper from "@/components/ui/mtb/stepper";
 
 type EventDetailResponse = {
   event: HostedEvent & {
@@ -69,35 +72,53 @@ const HeroSection = ({ event }: { event: EventDetail }) => {
       ? `${window.location.origin}${eventPath}`
       : eventPath;
   return (
-    <section
-      className="relative h-[60vh] min-h-[500px] w-full flex items-end pb-16"
-      // style={{ backgroundImage: `url('${event.coverImage ?? ""}')` }}
-    >
+    <section className="relative h-[60vh] min-h-[491px] sm:min-h-[632px] w-full flex items-end pb-20">
       <Image
         src={event?.coverImage ?? assets.logo.current}
         alt={event.title}
         fill
-        className="object-cover object-center  " // object-top shows the top of image (faces/subjects)
+        className="object-cover object-center"
         priority
         quality={100}
         unoptimized
       />
-      {/* <div className="absolute inset-0 bg-black/40" /> */}
+
+      {/* The "Blackish" Overlay: Gradient from 80% black at the bottom to transparent at the top */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-0" />
+
       {/* Share button top-right */}
       <div className="absolute top-4 right-4 z-20">
         <Share url={eventUrl} title={event.title} buttonLabel="Share" />
       </div>
-      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 md:px-12">
+
+      {/* Content Container: 
+    - flex flex-col items-center text-center (Centers on mobile)
+    - md:items-start md:text-left (Aligns left on screens md and up)
+  */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 md:px-12 flex flex-col items-center text-center md:items-start md:text-left">
         <div
-          className={`${cormorant.className} ${theme.chip} ${theme.bgSecondary} ${theme.textAccent} border-2 ${theme.hightLightBorderColor} inline-flex items-center gap-2 mb-4 border-none`}
+          className={`text-base font-semibold ${cormorant.className} ${theme.bg.base} ${theme.chip} ${theme.text.accent} inline-flex items-center gap-2 mb-6 border-none`}
         >
-          <Leaf className="w-4 h-4" /> {event.type.replace(/_/g, " ")}
+          <MtbTriBloomIcon className="w-4 h-4" />{" "}
+          {event.type.replace(/_/g, " ")}
         </div>
+
         <h1
-          className={`${theme.typography.h1} ${theme.bgDark} text-white px-2 py-1 rounded-lg text-4xl md:text-5xl w-fit max-w-2xl`}
+          className={`${theme.typography.h1} text-white text-3xl md:text-4xl lg:text-6xl  max-w-2xl drop-shadow-md mb-6 sm:mb-5`}
         >
           {event.title}
         </h1>
+        {event.resources && (
+          <Button
+            variant="mtbSecondary"
+            size="mtbPill"
+            onClick={() =>
+              window.open(event.resources!, "_blank", "noopener,noreferrer")
+            }
+          >
+            View Resource <ArrowRight className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </section>
   );
@@ -107,28 +128,28 @@ const GuideCard = ({ event }: { event: EventDetail }) => {
   const bp = event.creator.businessProfile;
   return (
     <div
-      className={`${theme.bgPrimary} p-6 md:p-8 rounded-xl border ${theme.borderLight} mt-8`}
+      className={`${theme.bg.warm} p-6 md:p-8 rounded-2xl border ${theme.border.muted} shadow-md mt-8`}
     >
       <Link
         href={`/profile/${event.creator.id}`}
         target="_blank"
-        className="flex flex-col sm:flex-row gap-6 items-start"
+        className="flex flex-col sm:flex-row gap-4 sm:gap-8 items-start"
       >
         <Image
           src={event.creator.image ?? ""}
           alt={event.creator.name}
-          width={80}
-          height={80}
-          className="rounded-full object-cover shadow-md w-20 h-20"
+          width={128}
+          height={128}
+          className="rounded-full object-cover shadow-md w-32 h-32"
         />
         <div>
-          <h3
-            className={`text-2xl mb-2 ${theme.textDark} ${cormorant.className} font-medium`}
-          >
+          <h3 className={`text-2xl mb-3  ${cormorant.className} font-semibold`}>
             {event.creator.name}
             {bp?.tagline ? `, ${bp.tagline}` : ""}
           </h3>
-          <p className="leading-relaxed opacity-80 text-sm md:text-base">
+          <p
+            className={`${theme.text.tertiary} max-w-2xl sm:max-w-xl leading-relaxed text-sm md:text-base`}
+          >
             {bp?.shortBio ?? event.creator.bio ?? ""}
           </p>
         </div>
@@ -151,50 +172,51 @@ const JourneyTimeline = ({ slots }: { slots: AgendaSlot[] }) => {
     events,
   }));
 
-  return (
-    <div className="mt-16">
-      <h2
-        className={`text-2xl sm:text-4xl mb-8 ${theme.textDark} ${cormorant.className} font-medium`}
+  const itinerarySteps = days.map((day) => ({
+    icon: <span>{day.dayNumber}</span>,
+    label: (
+      <h3
+        className={`text-xl sm:text-2xl md:text-3xl  ${cormorant.className} font-medium`}
       >
-        The Journey Timeline
-      </h2>
-      <div className="space-y-12 pl-2">
-        {days.map((day) => (
-          <div key={day.dayNumber} className="relative">
-            <div className="flex items-center gap-4 mb-6">
-              <div
-                className={`${theme.stepperCircleBase} ${theme.stepperCircleActive} z-10`}
+        {day.label}
+      </h3>
+    ),
+    description: (
+      <div className="mt-4 space-y-6 pb-2 w-full">
+        {day.events.map((event) => (
+          <div key={event.id}>
+            <div className="flex flex-col text-base sm:flex-row  sm:gap-12">
+              <span
+                className={`${theme.text.accent} font-medium text-base sm:w-24 shrink-0`}
               >
-                {day.dayNumber}
-              </div>
-              <h3
-                className={`text-xl sm:text-2xl md:text-3xl ${theme.textDark} ${cormorant.className} font-medium`}
-              >
-                {day.label}
-              </h3>
+                {event.time}
+              </span>
+              <span className={`font-semibold sm:flex-1 sm:text-end`}>
+                {event.title}
+              </span>
             </div>
-            <div
-              className={`ml-5 border-l-2 ${theme.borderLight} pl-8 space-y-6 pb-6`}
-            >
-              {day.events.map((event) => (
-                <div key={event.id}>
-                  <div className="flex flex-col text-base sm:flex-row sm:gap-12">
-                    <span
-                      className={`${theme.textAccent} font-medium text-sm sm:w-24 shrink-0`}
-                    >
-                      {event.time}
-                    </span>
-                    <span className={`${theme.textDark} font-medium`}>
-                      {event.title}
-                    </span>
-                  </div>
-                  <div className="mt-2 border-t border-gray-200" />
-                </div>
-              ))}
-            </div>
+            <div className="mt-2 border-t border-gray-200" />
           </div>
         ))}
       </div>
+    ),
+  }));
+
+  return (
+    <div className="mt-14 sm:mt-20">
+      <h2
+        className={`text-3xl sm:text-4xl mb-8 sm:mb-10 ${cormorant.className} font-medium`}
+      >
+        The Journey Timeline
+      </h2>
+
+      <Stepper
+        steps={itinerarySteps}
+        currentStep={1}
+        variant="vertical"
+        readOnly={true} // Forces all lines/circles to active color, disables clicking
+        className="pl-2"
+      />
     </div>
   );
 };
@@ -202,27 +224,25 @@ const JourneyTimeline = ({ slots }: { slots: AgendaSlot[] }) => {
 const SanctuaryLocation = ({ event }: { event: EventDetail }) => (
   <div className="mt-16">
     <h2
-      className={`text-2xl mb-8 ${theme.textDark} ${cormorant.className} font-medium`}
+      className={`text-3xl sm:text-4xl mb-8 ${cormorant.className} font-medium`}
     >
       The Sanctuary Location
     </h2>
     <div className="flex flex-col md:flex-row gap-6">
       <div
-        className={`w-full ${theme.bgTertiary} rounded-xl p-8 flex flex-col items-center justify-center text-center border ${theme.borderLight}`}
+        className={`w-full ${theme.bg.calm} rounded-xl p-8 flex flex-col items-center justify-center text-center border ${theme.borderLight}`}
       >
-        <MapPin className={`w-8 h-8 ${theme.textAccent} mb-4`} />
-        <h4 className={`font-semibold text-lg mb-2 ${theme.textDark}`}>
+        <MapPin className={`w-8 h-8 ${theme.text.accent} mb-4`} />
+        <h4 className={`font-semibold text-sm mb-2`}>
           {event.venueName ?? "Venue TBD"}
         </h4>
-        <p className={`${theme.textDark} opacity-70 text-sm mb-4`}>
-          {event.address ?? ""}
-        </p>
+        <p className={`opacity-70 text-sm mb-4`}>{event.address ?? ""}</p>
         {event.address && (
           <Link
             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${event?.venueName} ${event?.address}`)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${theme.textAccent} font-medium text-sm ${theme.hoverTextAccent} flex items-center gap-1`}
+            className={`${theme.text.accent} font-medium text-sm flex items-center gap-1`}
           >
             View on Map <ArrowRight className="w-4 h-4" />
           </Link>
@@ -258,33 +278,33 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
       <div
         className={`${theme.bgSecondary} rounded-2xl p-6 border ${theme.borderLight} shadow-xl`}
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start justify-between">
           <div>
             <span
-              className={`text-xs ${theme.textDark} opacity-60 font-semibold uppercase tracking-wider`}
+              className={`text-xs ${theme.text.accent} uppercase tracking-wider`}
             >
               {event.isPaid ? "Starting From" : "Free Event"}
             </span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className={`text-3xl  ${theme.textDark}`}>
+              <h3 className={`text-3xl`}>
                 {event.isPaid && ticket
-                  ? `${ticket.currency === "INR" ? "₹" : "$"} ${ticket.price}`
+                  ? `${ticket.currency === "INR" ? "₹" : "$"}${ticket.price}`
                   : "Free"}
-              </span>
+              </h3>
             </div>
           </div>
           {ticket && (
             <span
-              className={`${theme.highLightBgColor} whitespace-nowrap text-white text-xs px-1 sm:px-3 py-1 rounded-full`}
+              className={`${theme.bg.accent} whitespace-nowrap ${theme.text.inverse} text-xs px-1 sm:px-3 py-1 mt-1 rounded-full`}
             >
               Only {ticket.spotsLeft} left
             </span>
           )}
         </div>
 
-        <div className={`space-y-4 my-6 py-6 border-y ${theme.borderLight}`}>
-          <div className={`flex items-center gap-3 text-sm ${theme.textDark}`}>
-            <Calendar className="w-5 h-5 opacity-50" />
+        <div className={`py-3 sm:py-6 `}>
+          <div className={`flex py-1 sm:py-2 items-center gap-3 text-base`}>
+            <Calendar className="w-5 h-5" />
             <span>
               {event.startTime ? formatDate(event.startTime) : "Not Scheduled"}
               {event.endTime && !sameDay
@@ -295,7 +315,10 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
         </div>
 
         {event.status == "PUBLISHED" && (
-          <button
+          <Button
+            variant="mtbPrimary"
+            size="mtbPill"
+            width="full"
             disabled={isEnrolled || loadingId === event.id || isEventOver}
             onClick={() => {
               if (session.data?.user.role === "ADMIN") {
@@ -308,7 +331,7 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
                 isEnrolled: event.isEnrolled,
               });
             }}
-            className={`${theme.buttonDark} w-full py-4 rounded-xl font-medium text-lg flex items-center justify-center gap-2 transition-colors ease-linear ${
+            className={`${
               isEnrolled || isEventOver ? "opacity-75 cursor-not-allowed" : ""
             }`}
           >
@@ -325,7 +348,7 @@ const PricingSidebar = ({ event }: { event: EventDetail }) => {
             ) : (
               "Enroll for Free"
             )}
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -357,6 +380,11 @@ export default function EventDetailsPage({ eventId }: { eventId: string }) {
       router.replace(pathname, { scroll: false });
     }
   }, [searchParams, pathname, router]);
+    useEffect(() => {
+    // if (sessionStorage.getItem("deferGettingStarted") === "true") return;
+    sessionStorage.setItem("deferGettingStarted", "false");
+    window.dispatchEvent(new Event("show-getting-started"));
+  }, []);
   const content = (() => {
     if (isLoading) return <PageSkeleton type="events-detail-page" />;
     if (isError || !data)
@@ -368,19 +396,19 @@ export default function EventDetailsPage({ eventId }: { eventId: string }) {
 
     // data is guaranteed PublicEventDetail here
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen px-4">
         <HeroSection event={data} />
-        <main className="mx-auto px-4 md:px-6 py-16">
+        <main className="mx-auto  py-12">
           <div className="flex flex-col lg:flex-row gap-8 xl:gap-12">
             <div className="flex-1 min-w-0 order-2 lg:order-1">
               <section>
                 <h2
-                  className={`text-2xl sm:text-4xl mb-6 ${theme.textDark} ${cormorant.className} font-medium`}
+                  className={`text-3xl sm:text-4xl mb-8 sm:mb-10 ${theme.textDark} ${cormorant.className} font-medium `}
                 >
                   {data.title}
                 </h2>
                 <SafeHTML
-                  className="prose prose-sm  max-w-none text-gray-700 dark:prose-invert dark:text-slate-300 space-y-4 leading-relaxed"
+                  className="prose prose-sm  max-w-none text-base text-gray-700 dark:prose-invert dark:text-slate-300 space-y-4 leading-relaxed"
                   html={data.description}
                 />
                 <GuideCard event={data} />

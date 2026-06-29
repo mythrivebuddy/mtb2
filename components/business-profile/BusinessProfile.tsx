@@ -21,6 +21,7 @@ import Step6Pricing from "./steps/Step6Pricing";
 import Step7Review from "./steps/Step7Review";
 import ProgressBar from "./PrgressBar";
 import { Loader2 } from "lucide-react";
+import { User } from "@/types/types";
 
 const STORAGE_KEY =
   process.env.LOCALSTORAGE_PROFILE_KEY || "business_profile_draft";
@@ -168,8 +169,23 @@ export default function BusinessProfileLayout() {
       return res.json();
     },
 
-    onSuccess: () => {
+    onSuccess: (data) => {
       localStorage.removeItem(STORAGE_KEY);
+      if (data?.profile) {
+        queryClient.setQueryData<User | undefined>(["userInfo"], (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            userBusinessProfile: {
+              ...oldData.userBusinessProfile,
+
+              ...data.profile, // Injects the newly updated profile (including isProfileComplete)
+            },
+            isProfileComplete: data.profile.isProfileComplete,
+            gettingStartedStatus:data.gettingStartedStatus,
+          };
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast.success("Profile saved successfully 🎉");
       window.open(`/profile/${userId}`, "_blank");

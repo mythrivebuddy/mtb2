@@ -33,8 +33,6 @@ const normalizeRedirect = (url: string) => {
   }
 };
 
-
-
 const getCleanRedirect = (raw: string) => {
   try {
     const decoded = decodeURIComponent(raw);
@@ -81,14 +79,12 @@ function SignInFormContent() {
   const callbackFromUrl = searchParams.get("callbackUrl");
   const callbackFromCookie = Cookies.get("callbackUrl");
 
-const rawRedirect =
-  callbackFromUrl ?? callbackFromCookie ?? "/dashboard";
+  const rawRedirect = callbackFromUrl ?? callbackFromCookie ?? "/dashboard";
 
-const { clean: cleanRedirect, ref: refFromRedirect } =
-  getCleanRedirect(rawRedirect);
+  const { clean: cleanRedirect, ref: refFromRedirect } =
+    getCleanRedirect(rawRedirect);
 
-const redirect = rawRedirect;
-
+  const redirect = rawRedirect;
 
   const errorFromUrl = searchParams.get("error");
 
@@ -135,7 +131,7 @@ const redirect = rawRedirect;
   useEffect(() => {
     const callbackFromUrl = searchParams.get("callbackUrl");
     const callbackFromCookie = Cookies.get("callbackUrl");
-   
+
     // ✅ if URL missing but cookie exists → push into URL
     if (!callbackFromUrl && callbackFromCookie) {
       const params = new URLSearchParams(searchParams.toString());
@@ -148,9 +144,6 @@ const redirect = rawRedirect;
 
   useEffect(() => {
     if (!redirect) return;
-
-   
-  
 
     const refFromUrl = searchParams.get("ref");
     const existingRef = Cookies.get("referralCode");
@@ -205,8 +198,8 @@ const redirect = rawRedirect;
   // ── Credentials sign-in mutation ──────────────────────────────────────
   const signinMutation = useMutation({
     mutationFn: async (data: SigninFormType) => {
-        const safeRedirect = normalizeRedirect(cleanRedirect);
-   
+      const safeRedirect = normalizeRedirect(cleanRedirect);
+
       const response = await signIn("credentials", {
         redirect: false,
         email: data.email,
@@ -229,10 +222,6 @@ const redirect = rawRedirect;
         setIsAdminSignedIn(true);
         return;
       }
-        
-
-
-    
 
       // ✅ cleanup
       Cookies.remove("callbackUrl");
@@ -240,7 +229,16 @@ const redirect = rawRedirect;
       Cookies.remove("referralCode");
       toast.success("Signin successful");
       const safeRedirect = normalizeRedirect(cleanRedirect);
+      const isSharedFlow =
+        safeRedirect.startsWith("/dashboard/challenge/") ||
+        safeRedirect.startsWith("/dashboard/events/") ||
+        safeRedirect.startsWith("/dashboard/mini-mastery-programs/") ||
+        safeRedirect.startsWith("/dashboard/store/") || 
+        safeRedirect.includes("context=HOSTED_EVENT");
 
+      if (isSharedFlow) {
+        sessionStorage.setItem("deferGettingStarted", "true");
+      }
       router.push(safeRedirect);
     },
     onError: (err: Error) => {
@@ -272,7 +270,7 @@ const redirect = rawRedirect;
         return;
       }
       const safeRedirect = normalizeRedirect(cleanRedirect);
-    
+
       await signIn("google", {
         callbackUrl: `${window.location.origin}${safeRedirect}`, // must be absolute
       });

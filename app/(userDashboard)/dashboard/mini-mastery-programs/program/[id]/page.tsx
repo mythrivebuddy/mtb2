@@ -759,6 +759,13 @@ const tz = data?.state?.user?.timezone || "UTC";
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.courseCompletion?.courseCompleted]);
 
+  useEffect(() => {
+  // if (sessionStorage.getItem("deferGettingStarted") === "true") return;
+  sessionStorage.setItem("deferGettingStarted", "false");
+  window.dispatchEvent(new Event("show-getting-started"));
+}, []);
+
+
   // ── Complete day mutation ──────────────────────────────────────────────────
   const completeMutation = useMutation({
     mutationFn: (vars: {

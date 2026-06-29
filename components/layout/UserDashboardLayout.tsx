@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
@@ -14,13 +14,17 @@ import Footer from "../footer/Footer";
 import { usePathname } from "next/navigation";
 import FirstVisitNotificationPopup from "../dashboard/user/FirstNotificationPopUp";
 import UserTypeSelection from "../dashboard/user/UserTypeSelection";
+import GettingStartedModal from "../dashboard/user/GettingStartedModal";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { status: sessionStatus, data: session, update } = useSession();
 
   const pathname = usePathname();
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showGetStartedModal, setShowGetStartedModal] = useState(false);
+  const [modalType, setModalType] = useState<"COACH" | "ENTHUSIAST" | null>(
+    null,
+  );
   const { data: user } = useQuery<User>({
     queryKey: ["userInfo"],
     queryFn: async () => {
@@ -29,6 +33,13 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     },
     retry: false,
     enabled: sessionStatus === "authenticated",
+  });
+  const { data: cmpPlan } = useQuery({
+    queryKey: ["cmp-program"],
+    queryFn: async () => {
+      const res = await axios.get("/api/program");
+      return res.data.plan;
+    },
   });
 
   useUserPresence();
@@ -41,12 +52,65 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     pathname === "/dashboard/store" ||
     pathname.startsWith("/dashboard/store/") ||
     pathname === "/dashboard/mini-mastery-programs" ||
+    pathname.startsWith("/dashboard/mini-mastery-programs") ||
     pathname === "/dashboard/events" ||
     (/^\/dashboard\/events\/[^/]+$/.test(pathname) &&
       !pathname.startsWith("/dashboard/events/coach") &&
       !pathname.startsWith("/dashboard/events/create"));
   const shouldUseInheritBg = isChallengeRoute && isGuest && !isLoading;
 
+  const isDeferred =
+    typeof window !== "undefined" &&
+    sessionStorage.getItem("deferGettingStarted") === "true";
+
+  const shouldShowBusinessProfileSetup =
+    user?.userType === "COACH" &&
+    (user?.gettingStartedStatus === "NOT_STARTED" ||
+      user?.gettingStartedStatus === "STARTED") &&
+    !isDeferred;
+
+  const shouldShowLifeBlueprintSetup =
+    user?.userType === "ENTHUSIAST" &&
+    (user?.gettingStartedStatus === "NOT_STARTED" ||
+      user?.gettingStartedStatus === "STARTED") &&
+    !isDeferred;
+
+  const openGettingStartedModal = useCallback(() => {
+    if (!user) return;
+    if (user.gettingStartedStatus !== "NOT_STARTED") return;
+
+    setModalType(user.userType === "COACH" ? "COACH" : "ENTHUSIAST");
+    setShowGetStartedModal(true);
+  }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    if (user.gettingStartedStatus !== "NOT_STARTED") return;
+    if (showGetStartedModal) return;
+
+    const shouldDefer =
+      sessionStorage.getItem("deferGettingStarted") !== "true";
+
+    if (shouldDefer) {
+      openGettingStartedModal();
+    }
+  }, [user, showGetStartedModal, openGettingStartedModal]);
+
+  useEffect(() => {
+    const handleShowGettingStarted = () => {
+      setTimeout(() => {
+        sessionStorage.removeItem("deferGettingStarted");
+        openGettingStartedModal();
+      }, 3000);
+    };
+    console.log("Event received for waiting for 3s");
+    window.addEventListener("show-getting-started", handleShowGettingStarted);
+
+    return () =>
+      window.removeEventListener(
+        "show-getting-started",
+        handleShowGettingStarted,
+      );
+  }, [openGettingStartedModal]);
   useEffect(() => {
     if (!user) return;
 
@@ -110,17 +174,20 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       className={`w-full min-h-screen  ${shouldUseInheritBg ? "bg-inherit" : "bg-dashboard dark:bg-slate-950"} max-w-full text-slate-950 dark:text-slate-100`}
     >
       {isLoggedIn && session.user.role === "USER" && (
-        <div className="fixed top-0 left-0 w-64 z-20 m-3">
+        <div className="fixed top-0 left-0 w-64 z-50 m-3">
           <Sidebar
             user={user}
             isOpen={isSidebarOpen}
             setIsOpen={setIsSidebarOpen}
+            shouldShowBusinessProfileSetup={shouldShowBusinessProfileSetup}
+            shouldShowLifeBlueprintSetup={shouldShowLifeBlueprintSetup}
+            cmpPlanId={cmpPlan?.id}
           />
         </div>
       )}
 
       {isLoggedIn && session.user.role === "USER" && (
-        <div className="lg:hidden px-6 py-4 mb-8 fixed top-0 left-0 right-0 z-10">
+        <div className="lg:hidden px-6 py-4 mb-8 fixed top-0 left-0 right-0 z-40">
           <TopBar user={user} toggleSidebar={() => setIsSidebarOpen(true)} />
         </div>
       )}
@@ -140,6 +207,9 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </main>
       </div>
       <FirstVisitNotificationPopup />
+      {isLoggedIn && showGetStartedModal && modalType && (
+        <GettingStartedModal modalType={modalType} cmpPlanId={cmpPlan?.id} />
+      )}
       <UserTypeSelection authMethod={session?.user.authMethod} />
     </div>
   );

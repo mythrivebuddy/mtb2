@@ -163,6 +163,15 @@ function StoreProfilePageComponent() {
         url.searchParams.delete("orderId");
         window.history.replaceState({}, "", url.toString());
     }, [searchParams, data]);
+
+
+        useEffect(() => {
+        // if (sessionStorage.getItem("deferGettingStarted") === "true") return;
+        sessionStorage.setItem("deferGettingStarted", "false");
+        window.dispatchEvent(new Event("show-getting-started"));
+      }, []);
+
+      
     if (isLoading || authStatus === "loading") {
         return (
             <div className="flex h-screen items-center justify-center">

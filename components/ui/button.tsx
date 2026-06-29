@@ -24,7 +24,7 @@ const buttonVariants = cva(
         mtbPrimary:
           "bg-[var(--brand-deep)] text-[var(--ink-inverse)] hover:bg-[var(--brand-deep-hover)] shadow-md",
         mtbSecondary:
-          "bg-[var(--surface-base)] text-[var(--ink-primary)] hover:bg-[var(--surface-calm)] disabled:opacity-70 ",
+          "bg-[var(--surface-base)] text-[var(--ink-primary)] hover:shadow-xl disabled:opacity-70 ",
         mtbOutline:
           "border-2 border-[var(--border-accent)] text-[var(--ink-accent)] bg-transparent hover:bg-[var(--surface-calm)]",
         mtbTertiary: "border border-[var(--border-ink)]",

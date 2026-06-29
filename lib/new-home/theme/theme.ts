@@ -6,10 +6,12 @@ const sharedTokens = {
     base: "bg-[var(--surface-base)]",
     calm: "bg-[var(--surface-calm)]",
     brand_deep: "bg-[var(--brand-deep)]",
+    muted:"bg-[var(--surface-muted)]"
   },
   border: {
     accent: "border-[var(--border-accent)]",
     light: "border-[var(--border-light)]",
+    muted:"border-[var(--surface-muted)]",
   },
   text: {
     accent: "text-[var(--ink-accent)]",
@@ -32,6 +34,7 @@ export const theme = {
     cta: "[background:var(--surface-cta)]",
     accent: "bg-[var(--ink-accent)]", // used in event discovery
     brandDeep: sharedTokens.bg.brand_deep,
+    muted:sharedTokens.bg.muted
   },
 
   /* ================= TEXT ================= */
@@ -53,7 +56,8 @@ export const theme = {
     light: sharedTokens.border.light,
     accent: sharedTokens.border.accent,
     soft: "border-[var(--border-soft)]",
-    brandDeep:"border-[var(--brand-deep)]"
+    brandDeep:"border-[var(--brand-deep)]",
+    muted:sharedTokens.border.muted
   },
 
   /* ================= BUTTONS ================= */
@@ -89,7 +93,7 @@ export const theme = {
   /* ================= LAYOUT ================= */
   // ONLY repeated responsive patterns (used 3+ times)
   layout: {
-    container: "px-4 sm:px-6 md:px-12 max-w-[1440px] mx-auto",
+    container: "px-4 sm:px-6  max-w-[1440px] mx-auto",
     sectionY: "py-14 sm:py-24",
     grid3: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
   },
@@ -149,7 +153,8 @@ export const theme = {
   stepperLabelInactive:
     "text-[var(--brand-deep)] text-xs sm:text-sm opacity-50",
 
-  stepperLine: "flex-1  mx-4 -mt-8 border-t border-[var(--border-stepper)]",
+  stepperLine: `flex-1  mx-4 -mt-8 border-t ${sharedTokens.border.muted}`,
+  stepperLineVertical: `w-[1px] flex-1 ${sharedTokens.bg.muted}`, 
   inputBase:
     `w-full bg-[transparent] border ${sharedTokens.border.light} rounded-lg px-4 py-3 outline-none focus:${sharedTokens.border.accent} transition-all`,
 

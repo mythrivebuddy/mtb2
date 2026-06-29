@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signupSchema } from "@/schema/zodSchema";
-import { ActivityType } from "@prisma/client";
+import { ActivityType, GettingStartedStatus } from "@prisma/client";
 import { assignJp } from "@/lib/utils/jp";
 import axios from "axios";
 
@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
         emailVerificationToken: token,
         emailVerificationTokenExpires: expires,
         emailVerificationLastSentAt: new Date(),
-        referralCode:nanoid(8)
+        referralCode:nanoid(8),
+        gettingStartedStatus:GettingStartedStatus.NOT_STARTED,
       },
       omit: { password: true },
       include: { plan: true },

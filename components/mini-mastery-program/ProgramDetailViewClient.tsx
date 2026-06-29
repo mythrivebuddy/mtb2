@@ -35,6 +35,7 @@ import { DashboardContent } from "@/types/client/dashboard";
 import Share from "../common/ShareModal";
 import { useReferralAndRedirect } from "@/hooks/use-save-refferral-redirect";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import AppLayout from "../layout/AppLayout";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -68,12 +69,12 @@ function EnrollButton({
   program,
   status,
   isLoggedIn,
-  redirectToSignin
+  redirectToSignin,
 }: {
   program: Program;
   status?: ProgramCompStatus;
   isLoggedIn: boolean;
-  redirectToSignin: (router: AppRouterInstance) => void; 
+  redirectToSignin: (router: AppRouterInstance) => void;
 }) {
   const isPaid = (program.price ?? 0) > 0;
   const router = useRouter();
@@ -155,7 +156,7 @@ function EnrollButton({
     return (
       <button
         onClick={() => redirectToSignin(router)}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95 text-sm"
+        className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-2 sm:px-8 sm:py-4 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95 text-xs sm:text-sm"
       >
         <LogIn size={16} /> Sign In to Enroll
       </button>
@@ -250,19 +251,19 @@ function ErrorState({ message }: { message: string }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 const ProgramDetailViewClient = ({ program }: { program: Program }) => {
-  const { status: authStatus,data:session } = useSession();
+  const { status: authStatus, data: session } = useSession();
   const isLoggedIn = authStatus === "authenticated";
   const router = useRouter();
   const { redirectToSignin } = useReferralAndRedirect();
-const ref = session?.user?.referralCode;
+  const ref = session?.user?.referralCode;
 
-const baseUrl =
-  process.env.NEXT_PUBLIC_BASE_URL ||
-  (typeof window !== "undefined" ? window.location.origin : "");
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
 
-const shareUrl = `${baseUrl}/dashboard/mini-mastery-programs/${program.id}${
-  ref ? `?ref=${ref}` : ""
-}`;
+  const shareUrl = `${baseUrl}/dashboard/mini-mastery-programs/${program.id}${
+    ref ? `?ref=${ref}` : ""
+  }`;
   const { data: statusData } = useQuery({
     queryKey: ["mmp-my-status"],
     queryFn: fetchMyStatuses,
@@ -278,15 +279,14 @@ const shareUrl = `${baseUrl}/dashboard/mini-mastery-programs/${program.id}${
   const achievements = parseAchievements(program.achievements);
   const modules = parseModules(program.modules);
   const hasCert = !!program.certificateTitle;
-
-  return (
+  const pageContent = (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 selection:bg-blue-100 dark:selection:bg-blue-900">
       {/* ── Hero ── */}
       <div className="max-w-6xl mx-auto px-4 pt-10">
         {/* Back + Share row */}
         <div className="flex items-center justify-between mb-6">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push(`/dashboard/mini-mastery-programs`)}
             className="flex items-center gap-2 text-slate-400 dark:text-slate-200 transition-colors group"
           >
             <div className="w-8 h-8 bg-white dark:bg-slate-900 rounded-full shadow-sm border border-slate-100 flex items-center justify-center group-hover:shadow-md transition-all">
@@ -301,10 +301,7 @@ const shareUrl = `${baseUrl}/dashboard/mini-mastery-programs/${program.id}${
           </button>
 
           {/* Share Button */}
-          <Share
-            url={shareUrl}
-            title={program.name}
-          />
+          <Share url={shareUrl} title={program.name} />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-10 items-center">
@@ -547,6 +544,12 @@ const shareUrl = `${baseUrl}/dashboard/mini-mastery-programs/${program.id}${
         </div>
       </div>
     </div>
+  );
+
+  return authStatus === "authenticated" ? (
+    pageContent
+  ) : (
+    <AppLayout>{pageContent}</AppLayout>
   );
 };
 

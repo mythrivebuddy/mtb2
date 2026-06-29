@@ -77,7 +77,7 @@ const Step5VisionSummary = ({
   isJoining,
 }: Step5Props) => {
   return (
-    <div className="flex min-h-screen flex-col font-['Inter'] text-[#064e3b] dark:text-slate-100">
+    <div className="flex min-h-screen flex-col  text-[#064e3b] dark:text-slate-100">
       <main className="mx-auto w-full max-w-[1024px] flex-1 px-6 py-8 md:px-10 md:py-12">
         {/* Progress Tracker */}
         <div className="mx-auto mb-12 flex max-w-6xl flex-col gap-3">

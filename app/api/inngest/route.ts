@@ -7,6 +7,7 @@ import { sendInvoiceFunction } from "@/app/inngest/invoice/send-invoice";
 import { mmpProgramReminder } from "@/app/inngest/mmp-reminder/mmpReminder";
 import { notifyStakeholders } from "@/app/inngest/mmp-challenge-store-notify/notify";
 import { sendNotifications } from "@/app/inngest/send-notification/send-notification";
+import { challengeEnrollmentFallbackJob } from "@/app/inngest/challenge/challenge-enrollment-fallback";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -19,6 +20,7 @@ export const { GET, POST, PUT } = serve({
     sendInvoiceFunction,
     mmpProgramReminder,
     notifyStakeholders,
-    sendNotifications
+    sendNotifications,
+    challengeEnrollmentFallbackJob
   ],
 });
