@@ -293,9 +293,9 @@ export default function ChallengeDetailView({
 
     // 🔥 ALWAYS store callbackUrl (only if not logged in)
     if (sessionStatus !== "authenticated") {
-      const encoded = encodeURIComponent(currentUrl);
+     
 
-      Cookies.set("callbackUrl", encoded, {
+      Cookies.set("callbackUrl", currentUrl, {
         expires: 1 / 24, // 1 hour
         path: "/",
       });
