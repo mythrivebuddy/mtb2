@@ -669,7 +669,7 @@ const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug
 
   return (
     <>
-      <div className="min-h-screen font-sans">
+      <div className="min-h-screen">
         {/* HEADER */}
         <header className="bg-white m-4 p-4 sm:p-6 rounded-2xl shadow-sm dark:border dark:border-slate-700 dark:bg-slate-900">
           <div className="max-w-7xl mx-auto">
@@ -714,7 +714,7 @@ const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug
         </header>
 
         {/* MAIN */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <main className="mx-auto px-4  pb-8">
           {/* DESCRIPTION */}
           {challenge.description && (
             <div className="bg-white p-6 rounded-2xl shadow-sm mb-8 dark:border dark:border-slate-700 dark:bg-slate-900">

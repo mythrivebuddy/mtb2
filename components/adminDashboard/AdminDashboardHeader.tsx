@@ -79,8 +79,8 @@ export default function AdminDashboardHeader() {
   const razorpayMode = paymentConfig?.razorpay?.mode;
 
   return (
-    <header className="h-16 bg-white px-1 sm:px-8 lg:px-10 rounded-lg flex items-center justify-between">
-      <div className="flex justify-between gap-4 sm:gap-8 w-full items-center">
+    <header className="min-h-16 bg-white px-1 sm:px-8 lg:px-10 pt-3 sm:pt-0  rounded-lg flex items-center justify-between">
+      <div className="flex flex-wrap justify-between gap-4 sm:gap-8 w-full items-center">
         <div className="flex items-center space-x-3 sm:space-x-4">
           <button
             onClick={() => router.push("/admin/notifications")}
@@ -102,7 +102,7 @@ export default function AdminDashboardHeader() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto order-3 sm:order-none justify-center sm:justify-start pb-2 sm:pb-0">
           {paymentConfig && (
             <>
               {/* Cashfree */}
