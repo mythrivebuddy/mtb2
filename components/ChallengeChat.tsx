@@ -793,10 +793,10 @@ export default function ChallengeChat({
           {whoIsTyping && `${whoIsTyping} is typing…`}
         </p>
       </CardHeader>
-      <ScrollArea ref={scrollRef} className="flex-1 w-full overflow-x-auto">
+      <ScrollArea ref={scrollRef} className="flex-1 w-full">
         <CardContent
           // onScroll={handleScroll}
-          className="flex flex-col justify-end min-h-[350px] h-full  overflow-x-auto p-4 space-y-6 bg-muted/20 w-full"
+          className="flex flex-col justify-end min-h-[350px] h-full p-4 space-y-6 bg-muted/20 w-full"
         >
           {messages.length === 0 ? (
             <div className="flex flex-1 items-center justify-center text-gray-500 italic">
@@ -859,39 +859,30 @@ export default function ChallengeChat({
                   <div
                     key={msg.id}
                     id={`msg-${msg.id}`}
-                    className={`flex items-end gap-2 group relative transition-colors duration-500 p-1 rounded w-full ${
+                    className={`flex items-end gap-2 group relative transition-colors duration-500 p-1 rounded w-full min-w-0 ${
                       isMe ? "justify-end mr-4" : "justify-start"
                     } ${isHighlighted ? "bg-yellow-100/80" : ""}`}
                   >
                     {!isMe && (
-                      <Avatar className="w-8 h-8 self-end mb-4 shrink-0">
-                        <AvatarImage
-                          src={
-                            msg.user?.image && !msg.user.image.endsWith("/0")
-                              ? msg.user.image
-                              : undefined
-                          }
-                        />
-                        <AvatarFallback className="text-xs">
-                          {getInitials(msg.user?.name)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <Link href={`/profile/${msg.user?.id}`} target="_blank">
+                        <Avatar className="w-8 h-8 self-end mb-4 shrink-0">
+                          <AvatarImage
+                            src={
+                              msg.user?.image && !msg.user.image.endsWith("/0")
+                                ? msg.user.image
+                                : undefined
+                            }
+                          />
+                          <AvatarFallback className="text-xs">
+                            {getInitials(msg.user?.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Link>
                     )}
 
-                    {/* ✅ FIX: Adjusted widths. Mobile max-w-[70%] allows room for avatar + padding. */}
-                    <div
-                      className="
-    relative
-    max-w-max
-    flex flex-col
-    min-w-fit
-    overflow-visible
-    whitespace-pre-wrap
-    break-words
-  "
-                    >
+                    <div className="relative max-w-max flex flex-col min-w-0 overflow-visible whitespace-pre-wrap break-words">
                       <div
-                        className={`px-4 py-2 rounded-lg shadow-sm z-10 relative ${
+                        className={`px-4 pt-3 pb-2 rounded-lg shadow-sm z-10 relative ${
                           isMe
                             ? "bg-emerald-800 text-white rounded-br-none"
                             : "bg-white text-black rounded-bl-none border"
@@ -923,9 +914,13 @@ export default function ChallengeChat({
                         )}
 
                         {!isMe && (
-                          <p className="text-xs font-semibold text-primary mb-1">
+                          <Link
+                            href={`/profile/${msg.user?.id}`}
+                            target="_blank"
+                            className="text-xs font-semibold text-primary dark:text-black mb-1 hover:underline"
+                          >
                             {msg.user?.name ?? "Member"}
-                          </p>
+                          </Link>
                         )}
 
                         {/* ✅ FIX: Added break-words, break-all and whitespace-pre-wrap for safety */}
@@ -966,7 +961,9 @@ export default function ChallengeChat({
                         !isChatDisabled &&
                         !msg.__optimistic && (
                           <div
-                            className={`absolute -top-2 flex gap-1 z-20    ${isMe ? "left-2 sm:-left-1" : "right-2 sm:-right-1"}`}
+                            className={`absolute -top-3 flex gap-1 z-20 ${
+                              isMe ? "left-0" : "right-0 "
+                            }`}
                           >
                             {/* Hide Reply button for polls for simplicity */}
                             {!msg.poll && (
